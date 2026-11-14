@@ -87,6 +87,19 @@ export const configSchema = z.strictObject({
        */
       hooks: z.enum(["gate-errors", "warn", "off"]).optional()
     })
+    .optional(),
+  /**
+   * Rendering a snippet executes the project's component code in a headless browser, so it is off unless a person
+   * turns it on here (docs/decisions/0004-rendered-preview.md, D1). Nothing else reads this section.
+   */
+  preview: z
+    .strictObject({
+      enabled: z.boolean().optional(),
+      /** Project-relative stylesheets the page loads, so token variables exist. */
+      stylesheets: z.array(relPath).max(50).optional(),
+      /** Optional module exporting providers (theme, router) a snippet needs. */
+      wrapper: relPath.optional()
+    })
     .optional()
 })
 export type InvariantConfig = z.infer<typeof configSchema>

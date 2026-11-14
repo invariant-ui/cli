@@ -51,6 +51,37 @@ describe("configuration", () => {
     expect(validateConfig(ok)).toEqual(ok)
   })
 
+  it("accepts a preview section, and refuses unknown keys in it", () => {
+    const withPreview = {
+      ...ok,
+      preview: { enabled: true, stylesheets: ["packages/tokens/dist/tokens.css"] }
+    }
+    expect(validateConfig(withPreview)).toEqual(withPreview)
+    expect(() => validateConfig({ ...ok, preview: { enabled: true, rm: "x" } })).toThrow(
+      /invalid configuration/
+    )
+    expect(() => validateConfig({ ...ok, preview: { wrapper: "../escape.tsx" } })).toThrow(
+      /invalid configuration/
+    )
+  })
+
+  it("preview refuses to render unless the project opted in, and says how", async () => {
+    const dir = project("storybook/acme-ui")
+    writeFileSync(path.join(dir, "invariant.config.json"), JSON.stringify({ name: "DS", sources: [] }))
+    const off = await cli(dir, "preview", "src/Button.tsx")
+    expect(off.code).toBe(2)
+    expect(off.err).toMatch(/preview is off for this project/)
+    expect(off.err).toMatch(/"preview": \{ "enabled": true \}/)
+    expect((await cli(dir, "preview")).code).toBe(2)
+
+    writeFileSync(
+      path.join(dir, "invariant.config.json"),
+      JSON.stringify({ name: "DS", sources: [], preview: { enabled: true } })
+    )
+    const on = await cli(dir, "preview", "src/Button.tsx")
+    expect(on.err).toMatch(/not built yet/)
+  })
+
   it("explains that zeroheight and Figma are not supported yet instead of failing obscurely", () => {
     expect(() => validateConfig({ name: "DS", sources: [{ id: "z", type: "zeroheight" }] })).toThrow(
       /not supported yet/

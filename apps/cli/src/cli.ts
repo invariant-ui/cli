@@ -7,6 +7,7 @@ import * as enforcementCommands from "./commands-enforcement.js"
 import * as governance from "./commands-governance.js"
 import * as hookCommands from "./commands-hook.js"
 import * as patterns from "./commands-patterns.js"
+import { previewCommand } from "./commands-preview.js"
 import * as setupCommands from "./commands-setup.js"
 import * as validation from "./commands-validate.js"
 import { CliError } from "./errors.js"
@@ -40,6 +41,7 @@ usage: ${CLI_NAME} <command> [options]
   export --to <dir>             write a portable copy of the artifacts
   mcp                           serve the compiled contract to AI tools over stdio (read-only)
   hook                          check an agent's Write/Edit against the contract and answer in its hook format (stdin payload) [--posture gate-errors|warn|off] [--client claude-code|cursor] [--quiet]
+  preview <file>                render a snippet with its findings drawn on it (off unless preview.enabled is set)
   enforcement report            the enforcement timeline of an agent session [--session id|--all] [--format text|html] [--to file]
   agent init <client|all>       write MCP config and skills for claude-code, cursor, codex, windsurf
   agent list                    list supported clients
@@ -104,6 +106,8 @@ export async function run(argv: string[], io: Io): Promise<number> {
         return await commands.mcp(context)
       case "hook":
         return await hookCommands.hook(context)
+      case "preview":
+        return await previewCommand(context)
       case "enforcement":
         return await enforcementCommands.enforcement(context)
       case "agent":
