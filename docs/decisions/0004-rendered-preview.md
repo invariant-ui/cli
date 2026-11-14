@@ -1,6 +1,6 @@
 # ADR 0004: Rendered preview with annotated findings
 
-Status: **Proposed** (Phase D of the enforcement plan, 2026-11-11). No code is written. This needs an owner decision on D1 before the build starts.
+Status: **Proposed**, D1 decided (2026-11-14: opt-in per project). No code is written. Esbuild approval is still needed before the build starts.
 Related: `docs/specifications/rendered-preview-v1.md`, `docs/decisions/0003-agent-enforcement-hooks.md`, `docs/specifications/browser-verification-v1.md`
 
 ## Context
@@ -59,6 +59,6 @@ If rejected: the card and report stay text-only.
 
 ## Open items for the owner
 
-1. **Preview render versus "no customer code execution" (D1): undecided.** A narrow, per-project, person-approved opt-in is the proposal. A full "no" blocks the feature.
+1. **Preview render versus "no customer code execution" (D1): decided 2026-11-14, opt-in per project.** Rendering runs only when `preview.enabled` is set in `invariant.config.json` and only on an explicit command or tool call. Nothing renders in `compile`, `validate`, the hook or the default MCP tools.
 2. Can the person watching see an image in Claude Code's chat? MCP image content goes to the model and the client decides what to show. This is unverified and must be checked against current Claude Code before the build is planned. If chat cannot show it, the first place a person sees the image is the HTML report.
 3. Approval of esbuild (or another bundler) when the build starts.

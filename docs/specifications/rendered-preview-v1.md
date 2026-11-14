@@ -100,7 +100,7 @@ These are the constraints from `CLAUDE.md`, applied to rendering. Rendering exec
 
 ## Open questions
 
-1. **Does a preview count as "executing customer source code"?** `CLAUDE.md` forbids arbitrary execution during static analysis. A preview is not static analysis, but it does run customer components. The owner has not decided (2026-11-11). The design assumes the strictest workable reading: a per-project, person-approved opt-in. A flat no blocks the feature.
+1. **[Decided 2026-11-14: opt-in per project.]** Does a preview count as "executing customer source code"? `CLAUDE.md` forbids arbitrary execution during static analysis. A preview is not static analysis, but it does run customer components. The owner has not decided (2026-11-11). The design assumes the strictest workable reading: a per-project, person-approved opt-in. A flat no blocks the feature.
 2. **Bundler approval.** esbuild is proposed. It is a new dependency, and how well a small bundler resolves real customer aliases, CSS modules and SVG imports is unproven.
 3. **CSS delivery.** Token CSS may come from a package, a Sass build, a CSS-in-JS runtime, or Style Dictionary output that has to be generated first. How does the harness find the right stylesheets?
 4. **Frameworks.** React is the framework patterns and interaction checks support today. Vue and Angular snippets need their own render paths; Angular in particular needs a compiler pass. The first build is React only.
