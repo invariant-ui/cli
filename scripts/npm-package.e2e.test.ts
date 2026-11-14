@@ -60,7 +60,7 @@ describe("the published package", () => {
     expect(manifest.name).toBe(NPM_NAME)
     expect(manifest.name).not.toBe("invariant")
     expect(manifest.bin).toEqual({ invariant: "dist/cli/main.js" })
-    expect(Object.keys(manifest.dependencies)).toEqual(["@vue/compiler-sfc", "typescript", "zod"])
+    expect(Object.keys(manifest.dependencies)).toEqual(["@vue/compiler-sfc", "esbuild", "typescript", "zod"])
     expect(manifest.files).toEqual(["dist", "README.md", "LICENSE"])
     expect(readFileSync(path.join(pkg, "dist/cli/main.js"), "utf8").startsWith("#!/usr/bin/env node")).toBe(
       true

@@ -1,3 +1,8 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# esbuild's install script only verifies the platform binary it already gets from an optional package. Approved
+# explicitly so frozen installs do not fail on it (docs/decisions/0004-rendered-preview.md).
+allowBuilds:
+  esbuild: true

@@ -37,6 +37,7 @@
     "@invariant/semantic-engine": "workspace:*",
     "@invariant/shared": "workspace:*",
     "@invariant/validation": "workspace:*",
+    "esbuild": "0.28.2",
     "zod": "4.6.7"
   }
 }
