@@ -6,7 +6,7 @@
   </picture>
 </p>
 
-<p align="center"><strong>Turn your design system into a contract that AI agents can read and check.</strong></p>
+<p align="center"><strong>Turn your design system into a contract that AI agents can read and enforce.</strong></p>
 
 <p align="center">
   <a href="https://invariant-ui.com/">Website</a> &middot;
