@@ -37,8 +37,9 @@ The marketing site and docs are dark only. A light theme for docs is a decided f
 
 ## Typography
 
-- **Headings (h1, h2) and the logo word:** system serif stack, `"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif`, weight 500 for headings and 600 for the logo, `letter-spacing:-.015em`. The hero h1 sets the second line in italic.
+- **Headings (h1, h2):** system serif stack, `"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif`, weight 500, `letter-spacing:-.015em`. The hero h1 sets the second line in italic.
 - **Body:** system sans, `system-ui,-apple-system,"Segoe UI",Roboto,sans-serif`.
+- **Logo word:** system sans (same stack as body), weight 600, `letter-spacing:-.035em`. Chosen 2026-11-17 (option G, `docs/design/logo-options-3.html`). Never serif.
 - **Code, commands, labels, status chips, kickers:** system mono, `ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`.
 - No webfont and no external requests. Do not add one without an ADR.
 - h3 and card titles stay sans, weight 600.
@@ -65,10 +66,10 @@ The marketing site and docs are dark only. A light theme for docs is a decided f
 
 ## Logo
 
-Constraint-frame mark: an outlined 26-unit square (2.4 stroke, 2 radius) holding a 9-unit accent square at its lower left, drawn on a 32-unit grid, beside the word `invariant` in the semibold serif. No period.
+Constraint-frame mark: an outlined 26-unit square (2.4 stroke, 2 radius) holding a 9-unit accent square at its lower left, drawn on a 32-unit grid, beside the word `invariant` in semibold system sans. No period.
 
 - Mark ink is `--text` on dark and `#0e0e0d` on light. The inner square is always `#7c8cff`. Do not recolor it.
-- In the nav it is inline SVG using `currentColor`, 22px, with the serif word at 24px and a 9px gap.
+- In the nav it is inline SVG using `currentColor`, 22px, with the sans word at 22px and a 9px gap.
 - Files in `site/assets/`: `logo-wordmark.svg` (light ink for dark backgrounds), `logo-wordmark-light.svg` (dark ink), `logo-icon.svg` and `favicon.svg` (mark on a dark 6px-radius tile), `og-image.svg`. PNG exports are made from the SVGs with headless Chrome: `logo-wordmark.png`, `logo-icon-512.png`, `favicon-32.png`, `apple-touch-icon.png`, `og-image.png`. Re-export them whenever an SVG changes. See `site/assets/README.md`.
 - Options considered and rejected are kept in `docs/design/logo-options.html` and `logo-options-2.html`.
 
