@@ -91,3 +91,7 @@ Do not skip tests to save time.
 Do not implement future phases unless explicitly requested.
 
 Do not make architectural changes silently. Document significant decisions in ADRs.
+
+## Site and docs design
+
+Before changing `site/` (marketing page, docs, logo assets), read `site/design.md`. It locks the colors, type, layout, logo and copy rules.

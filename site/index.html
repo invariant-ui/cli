@@ -13,11 +13,13 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<meta name="theme-color" content="#0b0d12">
+<meta name="theme-color" content="#0e0e0d">
 <style>
 :root{
-  --bg:#0b0d12; --panel:#12151c; --line:#222733; --text:#e8eaf0; --muted:#8d95a6;
+  --bg:#0e0e0d; --panel:#151514; --line:#2a2a27; --text:#ece9e2; --muted:#9a968c;
   --accent:#7c8cff; --accent2:#5eead4; --warn:#fbbf24; --bad:#f87171; --ok:#4ade80;
+  /* one color per fact status; every use also carries a text label */
+  --st-discovered:var(--ok); --st-documented:var(--accent2); --st-inferred:var(--warn); --st-approved:var(--accent);
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
@@ -26,7 +28,7 @@ html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
 a{color:inherit}
 .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
-nav{position:sticky;top:0;z-index:10;background:rgba(11,13,18,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav{position:sticky;top:0;z-index:10;background:rgba(14,14,13,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
 .logo{font-weight:700;letter-spacing:-.02em;text-decoration:none;font-size:20px}
 .logo span{color:var(--accent)}
@@ -48,6 +50,63 @@ h1{font-size:clamp(34px,6vw,60px);line-height:1.08;letter-spacing:-.03em;margin:
 h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .lead{max-width:640px;margin:0 auto 32px;color:var(--muted);font-size:18px}
 .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:40px}
+.explorer{display:grid;grid-template-columns:200px minmax(0,1fr);background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-height:340px}
+.extree{border-right:1px solid var(--line);padding:10px 6px;font:13px var(--mono);max-height:520px;overflow-y:auto}
+.extree .dir{color:var(--muted);padding:2px 10px 8px}
+.extree button{display:block;width:100%;text-align:left;font:inherit;color:var(--muted);background:transparent;border:0;border-radius:6px;padding:5px 10px;cursor:pointer}
+.extree button:hover{color:var(--text)}
+.extree button[aria-selected=true]{background:#0e1118;color:var(--text)}
+.extree button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.expane{padding:18px 20px;min-width:0}
+.expane h3{margin:0 0 4px;font:600 18px var(--mono)}
+.expane .desc{color:var(--muted);margin:0 0 16px;font-size:14px}
+.proptable{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+.proptable th{text-align:left;font:12px var(--mono);color:var(--muted);padding:6px 10px 6px 0;border-bottom:1px solid var(--line)}
+.proptable td{padding:8px 10px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.proptable td:first-child{white-space:nowrap}
+.proptable td:nth-child(2),.facttable td:nth-child(4){min-width:130px}
+.proptable .fact{animation:none;white-space:nowrap}
+.proptable .req{color:var(--warn)}
+@media(max-width:720px){.explorer{grid-template-columns:minmax(0,1fr)}.extree{border-right:0;border-bottom:1px solid var(--line);max-height:180px}}
+.prcheck{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.prhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
+.prhead .fact{animation:none}
+.prtag{margin-left:auto;font:11px var(--mono)}
+.prchips{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 0}
+.sev{font:12px var(--mono);padding:3px 10px;border-radius:99px;border:1px solid var(--line)}
+.sev.e{color:var(--bad)} .sev.w2{color:var(--warn)} .sev.mute{color:var(--muted)}
+.prcheck pre{margin:0;padding:12px 16px 16px;font-size:13px;line-height:1.7;overflow-x:auto}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.flt{font:12px var(--mono);cursor:pointer;color:var(--muted);background:#0e1118;border:1px solid var(--line);border-radius:6px;padding:4px 10px;animation:none}
+.flt[aria-pressed=true]{border-color:currentColor;background:var(--panel)}
+.flt[data-s=all][aria-pressed=true]{color:var(--text)}
+.flt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.facttable{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
+.facttable th{text-align:left;font:12px var(--mono);color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--line)}
+.facttable td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.facttable tr:last-child td{border-bottom:0}
+.facttable td .fact{animation:none;white-space:nowrap}
+.facttable tr.none td{color:var(--muted)}
+.tnote{margin:14px 0 0;font-size:14px}
+.tnote .fact{animation:none}
+.tabs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px;align-items:start}
+.tablist{display:grid;gap:8px}
+.tab{text-align:left;font:inherit;color:var(--muted);background:transparent;border:1px solid var(--line);border-left:3px solid var(--line);border-radius:10px;padding:14px 16px;cursor:pointer}
+.tab b{display:block;color:var(--text);font-size:16px;margin-bottom:4px}
+.tab span{font-size:14px}
+.tab:hover{border-color:var(--muted)}
+.tab[aria-selected=true]{background:var(--panel);border-color:var(--line);border-left-color:var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tabpanels .term{max-width:none;animation:none}
+.panote{margin:0;padding:0 18px 14px;font:12px var(--mono);color:var(--muted)}
+@media(max-width:720px){.tabs{grid-template-columns:minmax(0,1fr)}}
+.install{display:flex;align-items:center;gap:12px;max-width:100%;margin:0 auto 20px;padding:8px 8px 8px 18px;width:fit-content;background:var(--panel);border:1px solid var(--line);border-radius:99px;font:14px var(--mono)}
+.install code{white-space:nowrap;overflow-x:auto}
+.install .copy{flex:none;font:600 12px var(--mono);color:var(--text);background:transparent;border:1px solid var(--line);border-radius:99px;padding:6px 14px;cursor:pointer}
+.install .copy:hover{border-color:var(--muted)}
+.install .copy:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.installnote{margin:0 0 28px;font:12px var(--mono);color:var(--muted)}
 pre,code{font-family:var(--mono)}
 code{overflow-wrap:anywhere}
 .term{max-width:640px;margin:0 auto;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -74,7 +133,7 @@ h2{font-size:clamp(26px,4vw,38px);letter-spacing:-.02em;line-height:1.15;margin:
 @media(max-width:720px){.flow{grid-template-columns:minmax(0,1fr)}.arrow{transform:rotate(90deg);text-align:center}nav ul{display:none}}
 .facts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .fact{font:12px var(--mono);padding:4px 10px;border-radius:6px;background:#0e1118;border:1px solid var(--line)}
-.fact.d{color:var(--ok)} .fact.m{color:var(--accent2)} .fact.i{color:var(--warn)} .fact.a{color:var(--accent)}
+.fact.d{color:var(--st-discovered)} .fact.m{color:var(--st-documented)} .fact.i{color:var(--st-inferred)} .fact.a{color:var(--st-approved)}
 .code{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px;overflow-x:auto}
 .code pre{margin:0;font-size:13.5px;line-height:1.7}
 .steps{counter-reset:s;display:grid;gap:14px}
@@ -90,29 +149,12 @@ footer a:hover{color:var(--text)}
 /* ---------- motion & imagery ---------- */
 .hero{position:relative;overflow:hidden}
 .hero .wrap{position:relative;z-index:2}
-.bg-grid{position:absolute;inset:0;z-index:0;opacity:.5;
-  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-  background-size:48px 48px;
-  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 30%,transparent 75%);
-  mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,#000 30%,transparent 75%);
-  animation:gridmove 20s linear infinite}
-@keyframes gridmove{to{background-position:48px 48px}}
-.orb{position:absolute;border-radius:50%;filter:blur(90px);z-index:1;opacity:.45;pointer-events:none}
-.orb.o1{width:420px;height:420px;background:var(--accent);top:-120px;left:8%;animation:float1 14s ease-in-out infinite}
-.orb.o2{width:380px;height:380px;background:var(--accent2);top:40px;right:6%;animation:float2 17s ease-in-out infinite}
-@keyframes float1{50%{transform:translate(70px,50px) scale(1.15)}}
-@keyframes float2{50%{transform:translate(-80px,40px) scale(.9)}}
-.eyebrow{position:relative}
-.eyebrow::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent2);margin-right:8px;animation:pulse 2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(94,234,212,.6)}100%{box-shadow:0 0 0 10px rgba(94,234,212,0)}}
 
 .stage{position:relative;max-width:900px;margin:0 auto;display:grid;grid-template-columns:1.1fr 1fr;gap:18px;text-align:left;align-items:start}
 @media(max-width:760px){.stage{grid-template-columns:minmax(0,1fr)}}
 .stage .term{margin:0;max-width:none}
 .term,.contract{box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}
-.term{animation:bob 7s ease-in-out infinite}
-.contract{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;animation:bob 7s ease-in-out -3.5s infinite}
-@keyframes bob{50%{transform:translateY(-8px)}}
+.contract{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .contract pre{margin:0;padding:16px 18px;font-size:13px;line-height:1.7;overflow-x:auto}
 .contract .term-bar{display:flex;justify-content:space-between}
 .tl{display:block;min-height:1.7em;white-space:pre}
@@ -203,22 +245,15 @@ footer a:hover{color:var(--text)}
 .st .s1{opacity:1}
 @keyframes tglow{0%,3.33%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}4.44%,34.44%{border-color:var(--accent2);box-shadow:0 0 0 1px rgba(94,234,212,.35),0 30px 80px -30px rgba(94,234,212,.5)}36.67%,100%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}}
 @keyframes cglow{0%,35%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}36.67%,77.78%{border-color:var(--accent);box-shadow:0 0 0 1px rgba(124,140,255,.5),0 30px 90px -25px rgba(124,140,255,.7)}88.89%,100%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}}
-.stage .term{animation:bob 7s ease-in-out infinite,tglow 18s infinite}.stage .contract{animation:bob 7s ease-in-out -3.5s infinite,cglow 18s infinite}
+.stage .term{animation:tglow 18s infinite}.stage .contract{animation:cglow 18s infinite}
 @keyframes c9{0%,56.28%{opacity:.12;background:transparent}56.58%{opacity:1;background:rgba(124,140,255,.35)}62.28%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(10){animation:c9 18s infinite}
 /* demo:end */
 .cursor{display:inline-block;width:8px;height:15px;background:var(--accent2);vertical-align:-2px;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 
-.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;transition-delay:var(--d,0s)}
-.reveal.in{opacity:1;transform:none}
 .card{transition:opacity .7s ease,transform .25s ease,border-color .25s ease,box-shadow .25s ease;position:relative;overflow:hidden}
-.card.reveal:not(.in){transition:opacity .7s ease,transform .7s ease}
 .card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 18px 40px -20px rgba(124,140,255,.5)}
-.card::after{content:"";position:absolute;inset:0;background:radial-gradient(300px circle at var(--mx,50%) var(--my,0%),rgba(124,140,255,.12),transparent 60%);opacity:0;transition:opacity .3s;pointer-events:none}
-.card:hover::after{opacity:1}
-.icon{width:42px;height:42px;margin-bottom:14px}
-.icon *{vector-effect:non-scaling-stroke}
 
 .flow .arrow{position:relative;height:2px;background:var(--line);overflow:hidden;font-size:0;border-radius:2px}
 .flow .arrow::after{content:"";position:absolute;top:0;left:-40%;width:40%;height:100%;background:linear-gradient(90deg,transparent,var(--accent2),transparent);animation:travel 2s linear infinite}
@@ -227,8 +262,6 @@ footer a:hover{color:var(--text)}
 .node.hl{animation:glow 3s ease-in-out infinite}
 @keyframes glow{50%{box-shadow:0 0 30px -4px rgba(124,140,255,.55)}}
 
-.checks .ck{opacity:0;transform:translateX(-8px);display:block;transition:opacity .4s,transform .4s;transition-delay:calc(var(--i)*.25s)}
-.in .checks .ck,.checks.in .ck{opacity:1;transform:none}
 
 .fact{animation:chip 4s ease-in-out infinite}
 .fact:nth-child(2){animation-delay:.5s}.fact:nth-child(3){animation-delay:1s}.fact:nth-child(4){animation-delay:1.5s}
@@ -239,7 +272,6 @@ footer a:hover{color:var(--text)}
 .step::before{transition:background .3s,color .3s,box-shadow .3s}
 .step:hover::before{background:var(--accent);color:#0b0d12;box-shadow:0 0 20px rgba(124,140,255,.6)}
 
-.progress{position:fixed;top:0;left:0;height:2px;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));z-index:20}
 
 @media(max-width:720px){
   .wrap{padding:0 20px}
@@ -251,18 +283,59 @@ footer a:hover{color:var(--text)}
 }
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .reveal,.checks .ck,.o,.pl3,.dn,.cl{opacity:1!important;transform:none!important}.ty{width:auto!important}.spin,.cw,.pl2{opacity:0!important}.t2,.pl2{opacity:1!important}.status .s1,.status .s2{opacity:0!important}.status .s3{opacity:1!important}
+  .o,.pl3,.dn,.cl{opacity:1!important;transform:none!important}.ty{width:auto!important}.spin,.cw,.pl2{opacity:0!important}.t2,.pl2{opacity:1!important}.status .s1,.status .s2{opacity:0!important}.status .s3{opacity:1!important}
 }
+
+/* ---------- editorial restyle: flat, ruled, serif headings, no decoration ---------- */
+:root{--serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif}
+@keyframes tglow{0%,3.33%{border-color:var(--line)}4.44%,34.44%{border-color:var(--muted)}36.67%,100%{border-color:var(--line)}}
+@keyframes cglow{0%,35%{border-color:var(--line)}36.67%,77.78%{border-color:var(--muted)}88.89%,100%{border-color:var(--line)}}
+.term,.contract,.code,.explorer,.tablewrap,.install,.prcheck,.tab,.btn,.flt,.fact,.sev,.proptable,.install .copy{border-radius:3px}
+.term,.contract{box-shadow:none}
+.fact{animation:none}
+nav{backdrop-filter:none}
+.btn.primary{background:var(--text);border-color:var(--text);color:var(--bg)}
+.btn.primary:hover{filter:none;background:#fff}
+h1,h2{font-family:var(--serif);font-weight:500;letter-spacing:-.015em}
+h1{font-size:clamp(38px,6.2vw,68px);line-height:1.04}
+h1 em{font-style:italic;background:none;color:var(--text);-webkit-background-clip:initial;background-clip:initial}
+h2{font-size:clamp(26px,3.6vw,36px);line-height:1.18}
+.label{color:var(--muted);letter-spacing:.08em}
+.hero{text-align:left;padding:88px 0 64px}
+.hero .lead{margin:0 0 28px;font-size:18px}
+.hero .install,.hero .installnote{margin-left:0}
+.hero .cta{justify-content:flex-start}
+.stage{max-width:none}
+.install{background:transparent}
+section .wrap{display:grid;grid-template-columns:120px minmax(0,1fr);column-gap:28px}
+section .wrap>*{grid-column:2;min-width:0}
+section .wrap>.explorer,section .wrap>.tablewrap,section .wrap>.prcheck{grid-column:1/-1}
+section .wrap>.label{grid-column:1;grid-row:1;padding-top:.75em}
+.card{background:none;border:0;border-top:1px solid var(--line);border-radius:0;padding:16px 0 0;transition:none}
+.card:hover{transform:none;box-shadow:none;border-color:var(--muted)}
+.card h3{font-size:16px}
+.grid{gap:28px 32px}
+.step::before{border:0;border-radius:0;width:auto;height:auto;place-items:start;color:var(--muted);transition:none}
+.step{grid-template-columns:28px minmax(0,1fr)}
+.step:hover::before{background:none;box-shadow:none;color:var(--text)}
+.tab[aria-selected=true]{border-left-color:var(--text)}
+.extree button[aria-selected=true]{background:var(--bg)}
+@media(max-width:720px){
+  section .wrap{display:block}
+  section .wrap>.label{padding:0 0 4px}
+}
+.logo{font-family:var(--serif);font-weight:600;letter-spacing:0;font-size:24px;display:inline-flex;align-items:center;gap:9px;color:var(--text)}
 </style>
 </head>
 <body>
 
 <nav>
   <div class="wrap">
-    <a class="logo" href="#top">invariant<span>.</span></a>
+    <a class="logo" href="#top"><svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="2" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="8" y="15" width="9" height="9" fill="#7c8cff"/></svg>invariant</a>
     <ul>
       <li><a href="#problem">Problem</a></li>
       <li><a href="#how">How it works</a></li>
+      <li><a href="#facts">Fact status</a></li>
       <li><a href="#patterns">Patterns</a></li>
       <li><a href="#proof">Proof</a></li>
       <li><a href="#trust">Trust</a></li>
@@ -275,18 +348,19 @@ footer a:hover{color:var(--text)}
   </div>
 </nav>
 
-<div class="progress" id="progress"></div>
 <header class="hero" id="top">
-  <div class="bg-grid"></div>
-  <div class="orb o1"></div>
-  <div class="orb o2"></div>
   <div class="wrap">
     <!-- <span class="eyebrow">source-available &middot; runs locally &middot; no account</span> -->
     <h1>Make AI agents build with<br><em>your design system</em></h1>
     <p class="lead">Invariant turns your design system components, tokens and approved UX patterns into a contract that AI agents read and enforce.</p>
+    <div class="install">
+      <span class="p" aria-hidden="true">$</span><code id="installcmd">npx @invariant-ui/cli setup</code>
+      <button class="copy" type="button" id="copybtn" aria-label="Copy install command">Copy</button>
+    </div>
+    <p class="installnote">Needs Node 20+ &middot; runs locally &middot; no account</p>
     <div class="cta">
       <a class="btn primary" href="#start">Get started</a>
-      <a class="btn" href="#problem">See the problem</a>
+      <a class="btn" href="docs/">Read the docs</a>
     </div>
     <div class="stage">
       <div class="term">
@@ -304,7 +378,7 @@ footer a:hover{color:var(--text)}
 <section id="problem">
   <div class="wrap">
     <div class="label">The problem</div>
-    <h2>Your design system rules are annotated across docs and code. Agents miss the big picture.</h2>
+    <h2>Your design system's rules live in docs, Storybook and people's heads. The agent has read none of them.</h2>
     <p class="sub">Teams adopt AI coding tools and watch the design system erode one pull request at a time. The agent never saw your rules, so it guesses, and a person has to catch every guess.</p>
     <div class="grid g3">
       <div class="card"><h3>Invented APIs</h3><p>Props, variants and components that don't exist. The code looks right and fails in review, or worse, in production.</p></div>
@@ -318,11 +392,43 @@ footer a:hover{color:var(--text)}
 <section id="how">
   <div class="wrap">
     <div class="label">How it works</div>
-    <h2>Compile it. Approve it. Enforce it.</h2>
-    <div class="grid g3">
-      <div class="card"><h3>1. Compile</h3><p>Read your React, Vue or Angular components, Storybook and tokens. Every component, prop and token is extracted from source with the file and line behind it. Nothing is executed.</p></div>
-      <div class="card"><h3>2. Approve</h3><p>Add the UX patterns and page layouts your team has decided on. People approve them. Nothing is promoted to a rule automatically.</p></div>
-      <div class="card"><h3>3. Enforce</h3><p>Agents read the contract over MCP before they write. CI checks the result, and an opt-in browser run confirms behavior.</p></div>
+    <h2>Three steps: read the source, get sign-off, check the code.</h2>
+    <div class="tabs" id="howtabs">
+      <div class="tablist" role="tablist" aria-label="Compile, approve, enforce">
+        <button class="tab" role="tab" type="button" id="tab-compile" aria-controls="pan-compile" aria-selected="true"><b>1. Compile</b><span>Read your React, Vue or Angular components, Storybook and tokens. Every component, prop and token is extracted from source with the file and line behind it. Nothing is executed.</span></button>
+        <button class="tab" role="tab" type="button" id="tab-approve" aria-controls="pan-approve" aria-selected="false" tabindex="-1"><b>2. Approve</b><span>Add the UX patterns and page layouts your team has decided on. People approve them. Nothing is promoted to a rule automatically.</span></button>
+        <button class="tab" role="tab" type="button" id="tab-enforce" aria-controls="pan-enforce" aria-selected="false" tabindex="-1"><b>3. Enforce</b><span>Agents read the contract over MCP before they write. CI checks the result, and an opt-in browser run confirms behavior.</span></button>
+      </div>
+      <div class="tabpanels">
+        <div class="term" role="tabpanel" id="pan-compile" aria-labelledby="tab-compile">
+          <div class="term-bar">~/your-project</div>
+<pre><span class="p">$ </span>invariant compile
+<span class="ok">&#10003; </span>compiled Acme Design System
+<span class="c">  ui-library (react packages/ui) -&gt; ui-library</span>
+<span class="c">  ui-stories (storybook packages/ui) -&gt; ui-stories</span>
+components 42, tokens 318, themes 2, guidelines 6
+<span class="w">conflicts 2, needs review 5</span>
+wrote invariant/ (6 files)</pre>
+        </div>
+        <div class="term" role="tabpanel" id="pan-approve" aria-labelledby="tab-approve">
+          <div class="term-bar">~/your-project</div>
+<pre><span class="p">$ </span>invariant candidates list
+<span class="p">$ </span>invariant candidates promote &lt;id&gt; --as &lt;name&gt;
+<span class="p">$ </span>invariant review approve &lt;id&gt; --as &lt;name&gt;
+<span class="c"># decisions are written to invariant.decisions.json, in git</span></pre>
+          <p class="panote">Commands shown, output omitted. Nothing is approved until a named person approves it.</p>
+        </div>
+        <div class="term" role="tabpanel" id="pan-enforce" aria-labelledby="tab-enforce">
+          <div class="term-bar">~/your-project</div>
+<pre><span class="p">$ </span>invariant validate src/
+<span class="w">!</span> Button.tsx:14 color rgb(104 86 224)
+<span class="c">  not the value of any token</span>
+<span class="b">&#10007;</span> Card.tsx:9 unknown prop "tone"
+<span class="c">  basis: discovered</span>
+<span class="b">&#10007;</span> Settings.tsx:12 one modal allowed, found 2
+<span class="c">  pattern page.settings, policy approved</span></pre>
+        </div>
+      </div>
     </div>
     <div class="facts" aria-label="Fact status labels" style="margin-top:22px">
       <span class="fact d">discovered</span>
@@ -334,10 +440,55 @@ footer a:hover{color:var(--text)}
   </div>
 </section>
 
+<section id="facts">
+  <div class="wrap">
+    <div class="label">Fact status</div>
+    <h2>Each fact in the contract is labeled with how Invariant knows it.</h2>
+    <p class="sub">Sample rows from Invariant's own <code>acme-ui</code> test fixture, copied from its compiled contract and evidence files. Filter by status to see what each one means.</p>
+    <div class="filters" id="factfilters" role="group" aria-label="Filter by status">
+      <button type="button" class="flt" data-s="all" aria-pressed="true">all</button>
+      <button type="button" class="flt fact d" data-s="discovered" aria-pressed="false">discovered</button>
+      <button type="button" class="flt fact m" data-s="documented" aria-pressed="false">documented</button>
+      <button type="button" class="flt fact i" data-s="inferred" aria-pressed="false">inferred</button>
+      <button type="button" class="flt fact a" data-s="approved" aria-pressed="false">approved</button>
+    </div>
+    <div class="tablewrap">
+    <table class="facttable" id="facttable">
+      <thead><tr><th>Status</th><th>Fact</th><th>Value or reason</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr data-s="discovered"><td><span class="fact d">discovered</span></td><td>Badge prop <code>tone</code></td><td><code>"info" | "warn"</code></td><td><code>src/Badge.tsx:3</code><br><span class="c">compiler-api</span></td></tr>
+        <tr data-s="discovered"><td><span class="fact d">discovered</span></td><td>Button export</td><td><code>Button = forwardRef&lt;HTMLButtonElement, ButtonProps&gt;</code></td><td><code>src/Button.tsx:28</code><br><span class="c">compiler-api</span></td></tr>
+        <tr data-s="documented"><td><span class="fact m">documented</span></td><td>Button description</td><td>Triggers an action.</td><td><code>src/Button.tsx:28</code><br><span class="c">compiler-api</span></td></tr>
+        <tr data-s="inferred"><td><span class="fact i">inferred</span> <span class="c">0.8</span></td><td>Guideline applies to Button</td><td>The file name "Button" is the component name "Button"</td><td><code>src/Button.mdx:1</code><br><span class="c">document-parse</span></td></tr>
+        <tr data-s="inferred"><td><span class="fact i">inferred</span> <span class="c">0.4</span></td><td>Guideline kind</td><td>No keyword in the title or file name identifies a more specific kind of page</td><td><code>src/Button.mdx:1</code><br><span class="c">document-parse</span></td></tr>
+        <tr data-s="approved" class="none"><td><span class="fact a">approved</span></td><td colspan="3">No sample in this fixture. Approval is a named person's decision, recorded in <code>invariant.decisions.json</code>. It is never set automatically.</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="c tnote">The number beside <span class="fact i">inferred</span> is a confidence. Inferred facts are guesses with their reasoning shown. Nothing inferred becomes approved without a person.</p>
+  </div>
+</section>
+
+<section id="explorer">
+  <div class="wrap">
+    <div class="label">Explore the contract</div>
+    <h2>Browse a compiled contract. Each prop links back to the line it was read from.</h2>
+    <p class="sub">Read-only view of the compiled <code>acme-ui</code> test fixture. Every prop shows its status and the source file and line it was read from.</p>
+    <div class="explorer" id="explorer-ui">
+      <noscript><p class="c">The explorer needs JavaScript. The compiled contract is plain JSON.</p></noscript>
+      <div class="extree" id="extree" role="tablist" aria-label="Components" aria-orientation="vertical"></div>
+      <div class="expane" id="expane" role="tabpanel" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+<!-- explorer:data:start -->
+<script type="application/json" id="explorer-data">{"fixture":"acme-ui","components":[{"name":"Badge","description":null,"descriptionFact":null,"props":[{"name":"tone","type":"\"info\" | \"warn\"","required":false,"status":"discovered","confidence":null,"at":"src/Badge.tsx:3","method":"compiler-api","original":"tone?: \"info\" | \"warn\""}]},{"name":"Button","description":"Triggers an action.","descriptionFact":{"status":"documented","at":"src/Button.tsx:28","method":"compiler-api","original":"Button = forwardRef\u003cHTMLButtonElement, ButtonProps>(function Button("},"props":[{"name":"children","type":"React.ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Button.tsx:17","method":"compiler-api","original":"children: React.ReactNode"},{"name":"data-testid","type":"string","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:6","method":"compiler-api","original":"\"data-testid\"?: string"},{"name":"icon","type":"React.ReactElement","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:19","method":"compiler-api","original":"icon?: React.ReactElement"},{"name":"loading","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:15","method":"compiler-api","original":"loading?: boolean"},{"name":"onPress","type":"(event: React.MouseEvent\u003cHTMLButtonElement>) => void","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:16","method":"compiler-api","original":"onPress?: (event: React.MouseEvent\u003cHTMLButtonElement>) => void"},{"name":"plain","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:14","method":"compiler-api","original":"plain?: boolean"},{"name":"size","type":"\"sm\" | \"md\" | \"lg\"","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:12","method":"compiler-api","original":"size?: \"sm\" | \"md\" | \"lg\""},{"name":"variant","type":"\"primary\" | \"secondary\" | \"ghost\"","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:11","method":"compiler-api","original":"variant?: \"primary\" | \"secondary\" | \"ghost\""}]},{"name":"Card","description":null,"descriptionFact":null,"props":[{"name":"children","type":"ReactNode","required":false,"status":"discovered","confidence":null,"at":"src/Card.tsx:7","method":"compiler-api","original":"children?: ReactNode"},{"name":"elevated","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Card.tsx:6","method":"compiler-api","original":"elevated?: boolean"}]},{"name":"Card.Body","description":null,"descriptionFact":null,"props":[{"name":"children","type":"ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Card.tsx:22","method":"compiler-api","original":"children: ReactNode"}]},{"name":"Card.Header","description":null,"descriptionFact":null,"props":[{"name":"title","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/Card.tsx:18","method":"compiler-api","original":"title: string"}]},{"name":"Icon","description":null,"descriptionFact":null,"props":[{"name":"name","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/Icon.tsx:1","method":"compiler-api","original":"name: string;"},{"name":"size","type":"number","required":false,"status":"discovered","confidence":null,"at":"src/Icon.tsx:1","method":"compiler-api","original":"size?: number"}]},{"name":"IconButton","description":null,"descriptionFact":null,"props":[{"name":"data-testid","type":"string","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:6","method":"compiler-api","original":"\"data-testid\"?: string"},{"name":"label","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/IconButton.tsx:5","method":"compiler-api","original":"label: string"},{"name":"loading","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:15","method":"compiler-api","original":"loading?: boolean"},{"name":"name","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/IconButton.tsx:5","method":"compiler-api","original":"name: string;"},{"name":"onPress","type":"(event: React.MouseEvent\u003cHTMLButtonElement>) => void","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:16","method":"compiler-api","original":"onPress?: (event: React.MouseEvent\u003cHTMLButtonElement>) => void"},{"name":"plain","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:14","method":"compiler-api","original":"plain?: boolean"},{"name":"size","type":"\"sm\" | \"md\" | \"lg\"","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:12","method":"compiler-api","original":"size?: \"sm\" | \"md\" | \"lg\""},{"name":"variant","type":"\"primary\" | \"secondary\" | \"ghost\"","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:11","method":"compiler-api","original":"variant?: \"primary\" | \"secondary\" | \"ghost\""}]},{"name":"LazyChart","description":null,"descriptionFact":null,"props":[]},{"name":"Link","description":null,"descriptionFact":null,"props":[{"name":"children","type":"React.ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Link.tsx:1","method":"compiler-api","original":"children: React.ReactNode"},{"name":"href","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/Link.tsx:1","method":"compiler-api","original":"href: string;"}]},{"name":"Modal","description":"Blocks the page until dismissed.","descriptionFact":{"status":"documented","at":"src/Modal.tsx:12","method":"compiler-api","original":"export class Modal extends Component\u003cModalProps> {"},"props":[{"name":"children","type":"React.ReactNode","required":false,"status":"discovered","confidence":null,"at":"src/Modal.tsx:8","method":"compiler-api","original":"children?: React.ReactNode"},{"name":"onClose","type":"() => void","required":false,"status":"discovered","confidence":null,"at":"src/Modal.tsx:7","method":"compiler-api","original":"onClose?: () => void"},{"name":"open","type":"boolean","required":true,"status":"discovered","confidence":null,"at":"src/Modal.tsx:4","method":"compiler-api","original":"open: boolean"},{"name":"size","type":"\"sm\" | \"lg\"","required":false,"status":"discovered","confidence":null,"at":"src/Modal.tsx:6","method":"compiler-api","original":"size?: \"sm\" | \"lg\""},{"name":"title","type":"string","required":false,"status":"discovered","confidence":null,"at":"src/Modal.tsx:5","method":"compiler-api","original":"title?: string"}]},{"name":"Select","description":null,"descriptionFact":null,"props":[{"name":"getKey","type":"(option: T) => string","required":true,"status":"discovered","confidence":null,"at":"src/Select.tsx:6","method":"compiler-api","original":"getKey: (option: T) => string"},{"name":"onChange","type":"(value: T) => void","required":false,"status":"discovered","confidence":null,"at":"src/Select.tsx:4","method":"compiler-api","original":"onChange?: (value: T) => void"},{"name":"options","type":"T[]","required":true,"status":"discovered","confidence":null,"at":"src/Select.tsx:2","method":"compiler-api","original":"options: T[]"},{"name":"placeholder","type":"string","required":false,"status":"discovered","confidence":null,"at":"src/Select.tsx:7","method":"compiler-api","original":"placeholder?: string"},{"name":"renderOption","type":"(option: T) => React.ReactNode","required":false,"status":"discovered","confidence":null,"at":"src/Select.tsx:5","method":"compiler-api","original":"renderOption?: (option: T) => React.ReactNode"},{"name":"value","type":"T","required":false,"status":"discovered","confidence":null,"at":"src/Select.tsx:3","method":"compiler-api","original":"value?: T"}]},{"name":"Stack","description":null,"descriptionFact":null,"props":[{"name":"children","type":"React.ReactNode","required":false,"status":"discovered","confidence":null,"at":"src/layout/Stack.tsx:3","method":"compiler-api","original":"children?: React.ReactNode"},{"name":"gap","type":"\"sm\" | \"md\" | \"lg\"","required":false,"status":"discovered","confidence":null,"at":"src/layout/Stack.tsx:2","method":"compiler-api","original":"gap?: \"sm\" | \"md\" | \"lg\""}]},{"name":"Text","description":null,"descriptionFact":null,"props":[{"name":"as","type":"\"p\" | \"span\"","required":false,"status":"discovered","confidence":null,"at":"src/Text.tsx:12","method":"compiler-api","original":"as?: \"p\" | \"span\""},{"name":"children","type":"React.ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Text.tsx:13","method":"compiler-api","original":"children: React.ReactNode"}]},{"name":"Tooltip","description":null,"descriptionFact":null,"props":[{"name":"children","type":"React.ReactElement","required":true,"status":"discovered","confidence":null,"at":"src/Tooltip.tsx:1","method":"compiler-api","original":"children: React.ReactElement;"},{"name":"content","type":"React.ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Tooltip.tsx:1","method":"compiler-api","original":"content: React.ReactNode;"},{"name":"open","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Tooltip.tsx:1","method":"compiler-api","original":"open?: boolean"}]}]}</script>
+<!-- explorer:data:end -->
+
 <section id="patterns">
   <div class="wrap">
     <div class="label">UX patterns &amp; layouts</div>
-    <h2>The part no component library captures: how your pages are put together.</h2>
+    <h2>Component libraries don't record how your pages are laid out. Invariant does.</h2>
     <p class="sub">Knowing which components exist is not enough. Invariant records your page archetypes, layout regions, interaction states and the rules between them as plain JSON. You approve them, and it checks real code against them.</p>
     <div class="grid g2">
       <div class="code"><pre><span class="c">// invariant.patterns.json</span>
@@ -374,7 +525,7 @@ footer a:hover{color:var(--text)}
 <section id="proof">
   <div class="wrap">
     <div class="label">Proof</div>
-    <h2>Catch it before it merges. Confirm it in a browser.</h2>
+    <h2>Static checks run on every pull request. Browser checks are optional.</h2>
     <p class="sub">Static checks run in CI on every change. When you need to know it actually works, opt in to browser checks for focus, keyboard order and responsive layout.</p>
     <div class="grid g2">
       <div class="code"><pre><span class="p">$</span> invariant validate src/
@@ -391,7 +542,7 @@ chromium 1.2.3: 4 passed, 1 failed, 0 could not run
 <span class="c">  &lt;input#name&gt;</span></pre></div>
     </div>
     <div class="grid g3" style="margin-top:16px">
-      <div class="card"><h3>Honest results</h3><p>Pass, fail, warning, not verifiable, skipped. What it can't establish is said out loud and never counted as a pass.</p></div>
+      <div class="card"><h3>Pass, fail, or not verifiable</h3><p>Pass, fail, warning, not verifiable, skipped. What it can't establish is said out loud and never counted as a pass.</p></div>
       <div class="card"><h3>Static and runtime, labeled</h3><p>Browser results record the browser, version, viewport and URL, and stay apart from static ones.</p></div>
       <div class="card"><h3>Opt-in and contained</h3><p>Playwright is yours to install. Fresh context per scenario, requests limited to origins you list, specs are data with no code.</p></div>
     </div>
@@ -402,7 +553,7 @@ chromium 1.2.3: 4 passed, 1 failed, 0 could not run
 <section id="ci">
   <div class="wrap">
     <div class="label">Every pull request</div>
-    <h2>Setup adds the check to your repo. Every commit gets verified.</h2>
+    <h2>Setup can add a GitHub Action that checks each pull request against your contract.</h2>
     <p class="sub">Say yes when <code>setup</code> asks and it writes a GitHub Action for you. From then on, each commit on an open pull request is checked against your contract, with annotations on the lines that break it.</p>
     <div class="grid g2">
       <div class="code"><pre><span class="p">$</span> npx @invariant-ui/cli setup
@@ -420,6 +571,13 @@ chromium 1.2.3: 4 passed, 1 failed, 0 could not run
       - <span class="k">run</span>: npx @invariant-ui/cli@0.3.0 verify --fresh
       - <span class="k">run</span>: npx @invariant-ui/cli@0.3.0 validate 'src' --format github</pre></div>
     </div>
+    <div class="prcheck" aria-label="Illustrative pull request check">
+      <div class="prhead"><span class="fact b">failed</span> <b>invariant</b> <span class="c">validate src --format github &middot; exit 1</span><span class="c prtag">illustrative</span></div>
+      <div class="prchips"><span class="sev e">2 errors</span><span class="sev w2">1 warning</span><span class="sev mute">existing violations baselined, not counted</span></div>
+      <pre><span class="b">&#10007;</span> Card.tsx:9 unknown prop "tone"
+<span class="b">&#10007;</span> Settings.tsx:12 one modal allowed, found 2
+<span class="w">!</span> Button.tsx:14 color rgb(104 86 224) <span class="c">not the value of any token</span></pre>
+    </div>
     <div class="grid g3" style="margin-top:16px">
       <div class="card"><h3>New problems only</h3><p>Existing violations are baselined, so a pull request is checked on what it adds, not on history.</p></div>
       <div class="card"><h3>Stale contract caught</h3><p><code>verify --fresh</code> fails when the committed contract no longer matches your sources, or was edited by hand.</p></div>
@@ -431,7 +589,7 @@ chromium 1.2.3: 4 passed, 1 failed, 0 could not run
 <section id="discover">
   <div class="wrap">
     <div class="label">Adopt</div>
-    <h2>Don't start from a blank page. Start from what your apps already do.</h2>
+    <h2>Point it at your app code and it lists the layouts and structures you already repeat.</h2>
     <p class="sub">Point Invariant at your application code. It finds the structures that recur, shows the files and lines, and explains why it flagged them. You accept, reject or defer each one, and promote the good ones into your patterns.</p>
     <div class="grid g3">
       <div class="card"><h3>Candidates only</h3><p>Nothing discovered is approved or enforced. Promotion adds an unapproved definition with its provenance, and no rules.</p></div>
@@ -444,11 +602,11 @@ chromium 1.2.3: 4 passed, 1 failed, 0 could not run
 <section id="trust">
   <div class="wrap">
     <div class="label">Trust</div>
-    <h2>Built so you can trust the answer, not just the tone.</h2>
+    <h2>What Invariant checks, and what it won't claim.</h2>
     <p class="sub">An agent that sounds sure and is wrong is worse than no agent. Everything here is designed to be checkable.</p>
     <div class="grid g3">
       <div class="card"><h3>Evidence for every fact</h3><p>Each fact links to the file and line it came from, so you can always ask "why does the contract say this?"</p></div>
-      <div class="card"><h3>Humans decide</h3><p>Conflicts and inferred facts go to a review queue. Approvals live in git and expire when the evidence changes.</p></div>
+      <div class="card"><h3>A person approves</h3><p>Conflicts and inferred facts go to a review queue. Approvals live in git and expire when the evidence changes.</p></div>
       <div class="card"><h3>Deterministic</h3><p>Recompiling unchanged sources gives identical bytes. <code>verify --fresh</code> tells you what drifted, so you can run it in CI.</p></div>
       <div class="card"><h3>Local and inspectable</h3><p>No account, no cloud, no network. Plain JSON in your repo, and source you can read.</p></div>
       <div class="card"><h3>Framework-neutral</h3><p>React, Vue, Angular, Storybook and tokens compile into one contract that doesn't depend on a framework or on MCP.</p></div>
@@ -460,11 +618,19 @@ chromium 1.2.3: 4 passed, 1 failed, 0 could not run
 <section id="connect">
   <div class="wrap">
     <div class="label">Connect</div>
-    <h2>One command wires up your agent.</h2>
+    <h2>Connect Claude Code, Cursor, Codex or Windsurf.</h2>
     <p class="sub">A read-only MCP server gives agents your components, tokens and approved patterns. A skill walks them from task to archetype to validated code, and has them report what is still unresolved.</p>
-    <div class="code"><pre><span class="p">$</span> invariant agent init claude-code <span class="c">  # also: cursor, codex, windsurf, all</span></pre></div>
+    <div class="filters" id="clients" role="group" aria-label="Choose your AI tool">
+      <button type="button" class="flt" data-c="claude-code" aria-pressed="true">claude-code</button>
+      <button type="button" class="flt" data-c="cursor" aria-pressed="false">cursor</button>
+      <button type="button" class="flt" data-c="codex" aria-pressed="false">codex</button>
+      <button type="button" class="flt" data-c="windsurf" aria-pressed="false">windsurf</button>
+      <button type="button" class="flt" data-c="all" aria-pressed="false">all</button>
+    </div>
+    <div class="code"><pre><span class="p">$</span> invariant agent init <span id="clientname">claude-code</span>
+<span class="c"># writes MCP config and skills for the tool you picked. See supported tools: invariant agent list</span></pre></div>
     <div class="grid g3">
-      <div class="card"><h3>Scoped, not dumped</h3><p>Agents fetch the one archetype and the few patterns a task needs, never the whole contract.</p></div>
+      <div class="card"><h3>Agents get one pattern at a time</h3><p>Agents fetch the one archetype and the few patterns a task needs, never the whole contract.</p></div>
       <div class="card"><h3>Approved vs proposed</h3><p>Agents follow approved patterns, treat the rest as proposals to confirm, and say which they used.</p></div>
       <div class="card"><h3>Always current</h3><p>The server reloads when you recompile. A missing or tampered contract is never partly served.</p></div>
     </div>
@@ -529,59 +695,97 @@ invariant --help</pre></div>
 
 <script>
 (() => {
-  var S = 'class="icon" viewBox="0 0 42 42" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
-  var A = 'stroke="#7c8cff"', B = 'stroke="#5eead4"';
-  var ic = {
-    check: '<svg ' + S + '><rect x="6" y="6" width="30" height="30" rx="6" ' + A + '/><path d="M14 21l5 5 9-10" ' + B + '/></svg>',
-    search: '<svg ' + S + '><circle cx="18" cy="18" r="10" ' + A + '/><path d="M26 26l9 9" ' + B + '/></svg>',
-    cube: '<svg ' + S + '><path d="M21 5l14 8v16l-14 8-14-8V13z" ' + A + '/><path d="M21 21l14-8M21 21L7 13M21 21v16" ' + B + '/></svg>',
-    cross: '<svg ' + S + '><path d="M7 10h10l6 22h12" ' + A + '/><path d="M7 32h10l6-22h12" ' + B + '/></svg>',
-    dash: '<svg ' + S + '><path d="M6 21h6M30 21h6" ' + A + '/><circle cx="21" cy="21" r="8" stroke-dasharray="3 4" ' + B + '/></svg>',
-    git: '<svg ' + S + '><circle cx="12" cy="9" r="4" ' + A + '/><circle cx="12" cy="33" r="4" ' + A + '/><circle cx="31" cy="21" r="4" ' + B + '/><path d="M12 13v16M12 21h15" ' + A + '/></svg>',
-    grid: '<svg ' + S + '><rect x="6" y="6" width="13" height="13" rx="3" ' + A + '/><rect x="23" y="6" width="13" height="13" rx="3" ' + B + '/><rect x="6" y="23" width="13" height="13" rx="3" ' + B + '/><rect x="23" y="23" width="13" height="13" rx="3" ' + A + '/></svg>',
-    cycle: '<svg ' + S + '><path d="M34 21a13 13 0 1 1-4-9.4" ' + A + '/><path d="M34 6v8h-8" ' + B + '/></svg>',
-    shield: '<svg ' + S + '><path d="M21 5l13 5v10c0 8-6 14-13 17C14 34 8 28 8 20V10z" ' + A + '/><path d="M16 21l4 4 7-8" ' + B + '/></svg>'
-  };
-  var icons = {
-    'Invented APIs': ic.cross, 'Hard-coded values': ic.dash, 'Off-pattern pages': ic.grid, 'Review is the bottleneck': ic.git,
-    '1. Compile': ic.search, '2. Approve': ic.shield, '3. Enforce': ic.check,
-    'Page archetypes': ic.grid, 'Layout and interaction rules': ic.cube, 'Enforced, not just documented': ic.check,
-    'Honest results': ic.check, 'Static and runtime, labeled': ic.cross, 'Opt-in and contained': ic.shield,
-    'Candidates only': ic.dash, 'Similar is not the same': ic.cross, 'Deterministic': ic.check,
-    'Evidence for every fact': ic.search, 'Humans decide': ic.git, 'Local and inspectable': ic.cube,
-    'Framework-neutral': ic.cube, 'Treats your text as untrusted': ic.shield,
-    'New problems only': ic.dash, 'Stale contract caught': ic.cycle, 'Pinned and read-only': ic.shield,
-    'Scoped, not dumped': ic.grid, 'Approved vs proposed': ic.shield, 'Always current': ic.cycle
-  };
-
-  document.querySelectorAll('.card').forEach((c) => {
-    var h = c.querySelector('h3');
-    if (h && icons[h.textContent.trim()]) c.insertAdjacentHTML('afterbegin', icons[h.textContent.trim()]);
-    c.addEventListener('mousemove', (e) => {
-      var r = c.getBoundingClientRect();
-      c.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-      c.style.setProperty('--my', (e.clientY - r.top) + 'px');
-    });
+  var cb = document.getElementById('copybtn');
+  cb.addEventListener('click', () => {
+    var done = (t) => { cb.textContent = t; setTimeout(() => { cb.textContent = 'Copy'; }, 1600); };
+    try {
+      navigator.clipboard.writeText(document.getElementById('installcmd').textContent).then(() => done('Copied'), () => done('Press Ctrl+C'));
+    } catch (e) { done('Press Ctrl+C'); }
   });
 
-  var targets = document.querySelectorAll('section .label, section h2, section .sub, .card, .node, .code, .step, .facts, section .btn');
-  targets.forEach((el, i) => {
-    el.classList.add('reveal');
-    el.style.setProperty('--d', ((i % 4) * 0.08) + 's');
-  });
-  var io = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  var tabs = Array.from(document.querySelectorAll('#howtabs .tab'));
+  var show = (i, focus) => {
+    tabs.forEach((t, j) => {
+      var on = i === j;
+      t.setAttribute('aria-selected', on);
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
     });
-  }, { threshold: 0.15 });
-  targets.forEach((el) => { io.observe(el); });
-  document.querySelectorAll('.checks').forEach((el) => { io.observe(el); });
+    if (focus) tabs[i].focus();
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => show(i));
+    t.addEventListener('keydown', (e) => {
+      var d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+      if (d) { e.preventDefault(); show((i + d + tabs.length) % tabs.length, true); }
+    });
+  });
+  show(0);
 
-  var bar = document.getElementById('progress');
-  addEventListener('scroll', () => {
-    var h = document.documentElement;
-    bar.style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
-  }, { passive: true });
+  (() => {
+    var data;
+    try { data = JSON.parse(document.getElementById('explorer-data').textContent); } catch (e) { return; }
+    if (!data.components) return;
+    var tree = document.getElementById('extree'), pane = document.getElementById('expane');
+    var cls = { discovered: 'd', documented: 'm', inferred: 'i', approved: 'a' };
+    var el = (tag, text, c) => { var n = document.createElement(tag); if (text != null) n.textContent = text; if (c) n.className = c; return n; };
+    var badge = (s, conf) => {
+      var b = el('span', s || 'no status', s ? 'fact ' + cls[s] : 'fact');
+      if (conf != null) b.appendChild(el('span', ' ' + conf, 'c'));
+      return b;
+    };
+    var btns = [];
+    var select = (i, focus) => {
+      var c = data.components[i];
+      btns.forEach((b, j) => { b.setAttribute('aria-selected', i === j); b.tabIndex = i === j ? 0 : -1; });
+      if (focus) btns[i].focus();
+      pane.replaceChildren();
+      pane.appendChild(el('h3', c.name));
+      var d = el('p', c.description || 'No description in the contract.', 'desc');
+      if (c.descriptionFact) { d.appendChild(document.createTextNode(' ')); d.appendChild(badge(c.descriptionFact.status)); d.appendChild(el('span', ' ' + c.descriptionFact.at, 'c')); }
+      pane.appendChild(d);
+      if (!c.props.length) { pane.appendChild(el('p', 'No props in the contract.', 'c')); return; }
+      var wrap = el('div', null, 'tablewrap'), t = el('table', null, 'proptable');
+      var hr = el('tr'); ['Prop', 'Type', 'Status', 'Source'].forEach((h) => hr.appendChild(el('th', h)));
+      t.appendChild(el('thead')).appendChild(hr);
+      var tb = el('tbody');
+      c.props.forEach((p) => {
+        var r = el('tr'), n = el('td'), ty = el('td'), st = el('td'), so = el('td');
+        n.appendChild(el('code', p.name)); if (p.required) n.appendChild(el('span', ' required', 'req'));
+        ty.appendChild(el('code', p.type));
+        st.appendChild(badge(p.status, p.confidence));
+        if (p.at) { so.appendChild(el('code', p.at)); so.appendChild(el('br')); so.appendChild(el('span', p.method + (p.original ? ': ' + p.original : ''), 'c')); }
+        [n, ty, st, so].forEach((x) => r.appendChild(x)); tb.appendChild(r);
+      });
+      t.appendChild(tb); wrap.appendChild(t); pane.appendChild(wrap);
+    };
+    tree.appendChild(el('div', 'components/', 'dir'));
+    data.components.forEach((c, i) => {
+      var b = el('button', c.name); b.type = 'button'; b.setAttribute('role', 'tab');
+      b.addEventListener('click', () => select(i));
+      b.addEventListener('keydown', (e) => {
+        var d = { ArrowDown: 1, ArrowUp: -1 }[e.key];
+        if (d) { e.preventDefault(); select((i + d + btns.length) % btns.length, true); }
+      });
+      btns.push(b); tree.appendChild(b);
+    });
+    select(Math.max(0, data.components.findIndex((c) => c.name === 'Button')));
+  })();
+
+  var cl = Array.from(document.querySelectorAll('#clients .flt'));
+  cl.forEach((b) => b.addEventListener('click', () => {
+    cl.forEach((g) => g.setAttribute('aria-pressed', g === b));
+    document.getElementById('clientname').textContent = b.dataset.c;
+  }));
+
+  var flts = Array.from(document.querySelectorAll('#factfilters .flt'));
+  flts.forEach((f) => f.addEventListener('click', () => {
+    flts.forEach((g) => g.setAttribute('aria-pressed', g === f));
+    document.querySelectorAll('#facttable tbody tr').forEach((r) => {
+      r.hidden = f.dataset.s !== 'all' && r.dataset.s !== f.dataset.s;
+    });
+  }));
+
 })();
 </script>
 </body>
