@@ -1,6 +1,6 @@
 # Invariant logo assets
 
-A constraint-frame mark (an accent square held inside an outlined square) beside the word `invariant` in a semibold system serif (Iowan Old Style, Palatino, Georgia). Redrawn 2026-11-17 to match the editorial site and docs; the earlier version was bold system sans. Shared by the landing page and the docs. Reference them with a relative path (`assets/...` from the site root, `../assets/...` from `docs/`).
+A constraint-frame mark (an accent square held inside an outlined square) beside the word `invariant` in semibold system sans (system-ui, SF on Mac). Wordmark set in sans 2026-11-17 (option G in docs/design/logo-options-3.html); headings elsewhere stay serif. Shared by the landing page and the docs. Reference them with a relative path (`assets/...` from the site root, `../assets/...` from `docs/`).
 
 | File | Use |
 |---|---|
@@ -22,7 +22,7 @@ A constraint-frame mark (an accent square held inside an outlined square) beside
 
 ## Notes
 
-- The SVGs use live text in the system serif stack, pinned to a fixed width with `textLength`, so they look close to the site on any machine but not identical to the PNGs, which were exported on macOS. For exact results, use the PNGs.
+- The SVGs use live text in the system sans stack, so they look close to the site on any machine but not identical to the PNGs, which were exported on macOS. For exact results, use the PNGs.
 - The mark's inner square is always Accent. Do not recolor it, and do not place the light-ink wordmark on a light background.
 - Keep clear space around the wordmark of at least the height of the `i` dot.
 - The PNGs are exported from the SVGs with headless Chrome. Re-export them if an SVG changes.
