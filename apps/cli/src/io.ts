@@ -1,5 +1,6 @@
 import type { Readable, Writable } from "node:stream"
 import type { BrowserDriver, BrowserName } from "@invariant/browser-verify"
+import type { Choice } from "./select.js"
 
 export interface Io {
   cwd: string
@@ -17,5 +18,7 @@ export interface Io {
   /** Builds the browser for `browser run`. Absent means Playwright, loaded from the project. Tests inject a fake. */
   /** Asks the person a question and returns what they typed. Absent when there is no one to ask (CI, pipes). */
   prompt?: (question: string) => Promise<string | undefined>
+  /** An arrow-key menu; resolves the picked value, or undefined when cancelled. Absent without a terminal. */
+  select?: <T extends string>(question: string, choices: ReadonlyArray<Choice<T>>) => Promise<T | undefined>
   browserDriver?: (browser: BrowserName, projectRoot: string) => Promise<BrowserDriver>
 }

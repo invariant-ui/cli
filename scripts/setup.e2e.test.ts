@@ -83,6 +83,8 @@ describe("invariant setup", () => {
     expect(r.out).toMatch(/patterns {3}3 approved by ana/)
     expect(r.out).toMatch(/rules {6}\d+ starter rule\(s\), as warnings/)
     expect(r.out).toMatch(/See it work/)
+    expect(r.out).toMatch(/^┌ {2}invariant setup/m)
+    expect(r.out.trimEnd().split("\n").at(-1)).toMatch(/^└ {2}done in \ds$/)
     for (const p of patterns(dir).patterns) {
       expect(p.approval?.approvedBy).toBe("ana")
       expect(p.approval?.reference).toMatch(/contract confirmed by ana/)
@@ -120,7 +122,7 @@ describe("invariant setup", () => {
     expect(r.code).toBe(0)
     expect(r.out).toMatch(/patterns {3}2 approved by ana/)
     expect(patterns(dir).patterns).toHaveLength(2)
-    expect(r.out).toMatch(/enforcement.*never blocked.*enforcement\.hooks = warn/)
+    expect(r.out).toMatch(/enforcement[\s\S]*never blocked[\s\S]*enforcement\.hooks[\s│]*= warn/)
     const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8"))
     expect(config.enforcement).toEqual({ hooks: "warn" })
     expect(config.sources.length).toBeGreaterThan(0)

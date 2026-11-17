@@ -1,3 +1,4 @@
+import { DEFAULT_OUTPUT } from "./config.js"
 import { CLI_VERSION, NPM_PACKAGE } from "./version.js"
 
 export const WORKFLOW_PATH = ".github/workflows/invariant.yml"
@@ -19,8 +20,13 @@ export function installStepsFor(has: (file: string) => boolean): string[] {
  * written for so a later release cannot change what CI does, and needs only Node: npx fetches the package. Paths are
  * quoted, since they come from the project's folder names.
  */
-export function workflowYaml(paths: readonly string[], installSteps: readonly string[] = []): string {
-  const targets = (paths.length > 0 ? paths : ["src"]).map((p) => `'${p.replace(/'/g, "''")}'`).join(" ")
+export function workflowYaml(
+  paths: readonly string[],
+  installSteps: readonly string[] = [],
+  outputDir = DEFAULT_OUTPUT
+): string {
+  const quote = (p: string): string => `'${p.replace(/'/g, "''")}'`
+  const targets = (paths.length > 0 ? paths : ["src"]).map(quote).join(" ")
   const run = `npx ${NPM_PACKAGE}@${CLI_VERSION}`
   return `# Added by \`invariant setup\`. Checks every commit on a pull request against your design system contract.
 name: Invariant
@@ -48,5 +54,19 @@ ${installSteps.length > 0 ? `${installSteps.join("\n")}\n` : ""}      # Fails if
       # Annotates the pull request. Violations listed in invariant.baseline.json are hidden; new ones fail the check.
       - name: Validate code against the contract
         run: ${run} validate ${targets} --format github
+      # Keeps the report of this run. The link to it is on the run summary, and the step runs even when a check above failed.
+      - name: Upload the Invariant report
+        id: report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: invariant-report
+          path: ${quote(`${outputDir}/invariant.report.html`)}
+          if-no-files-found: ignore
+      - name: Link the Invariant report from the run summary
+        if: always() && steps.report.outputs.artifact-url != ''
+        env:
+          REPORT_URL: \${{ steps.report.outputs.artifact-url }}
+        run: echo "[Invariant report]($REPORT_URL)" >> "$GITHUB_STEP_SUMMARY"
 `
 }

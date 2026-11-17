@@ -149,6 +149,7 @@ describe("workflow: init, compile, inspect, validate, export", () => {
     const compiled = await cli(dir, "compile")
     expect(compiled.code).toBe(0)
     expect(compiled.out).toMatch(/components 14/)
+    expect(compiled.out).toMatch(/\n│ {2}report {2}invariant\/invariant\.report\.html\n└ {2}compiled\n$/)
     expect(readdirSync(path.join(dir, "invariant")).sort()).toEqual([
       "invariant.contract.json",
       "invariant.diagnostics.json",
@@ -177,7 +178,7 @@ describe("workflow: init, compile, inspect, validate, export", () => {
 
     const valid = await cli(dir, "verify", "--fresh")
     expect(valid.code).toBe(0)
-    expect(valid.out).toMatch(/^valid:/)
+    expect(valid.out).toMatch(/^◇ {2}valid:/m)
 
     const exported = await cli(dir, "export", "--to", "bundle")
     expect(exported.code).toBe(0)

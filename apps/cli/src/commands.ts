@@ -24,7 +24,8 @@ import {
 } from "./config.js"
 import { type CollectionDiff, diffContracts, formatDiff } from "./diff.js"
 import { CliError } from "./errors.js"
-import { countBySeverity, formatDiagnostic, shortValue, table } from "./format.js"
+import { countBySeverity, fileLink, formatDiagnostic, paint, shortValue, table } from "./format.js"
+import { done, fail, gap, intro, line, outro } from "./frame.js"
 import type { Io } from "./io.js"
 import { adaptersFor, type PipelineOutput, runLayeredPipeline, runPipeline } from "./pipeline.js"
 import { checkOutput, loadCompiled } from "./store.js"
@@ -211,30 +212,48 @@ async function compileOnce(c: Context): Promise<number> {
   const out = await outputDir(c)
   await writeArtifacts(out, result.artifacts)
   const contract = result.final.contract
-  print(c, `compiled ${contract.metadata.name}`)
+  print(c, intro("invariant compile"))
+  print(c, gap())
+  print(c, done(`compiled ${contract.metadata.name}`))
   for (const m of result.mapping.slice(0, 12)) {
     const shown = m.sources.slice(0, 4).join(", ") || "nothing"
     const more = m.sources.length > 4 ? `, +${m.sources.length - 4} more` : ""
-    print(c, `  ${m.configId} (${m.type}${m.path ? ` ${m.path}` : ""}) -> ${shown}${more}`)
+    print(c, line(`${m.configId} (${m.type}${m.path ? ` ${m.path}` : ""}) -> ${shown}${more}`))
   }
-  if (result.mapping.length > 12) print(c, `  … ${result.mapping.length - 12} more`)
+  if (result.mapping.length > 12) print(c, line(`… ${result.mapping.length - 12} more`))
   print(
     c,
-    `components ${contract.components.length}, tokens ${contract.tokens.length}, themes ${contract.themes.length}, guidelines ${contract.guidelines.length}`
+    line(
+      `components ${contract.components.length}, tokens ${contract.tokens.length}, themes ${contract.themes.length}, guidelines ${contract.guidelines.length}`
+    )
   )
-  print(c, `conflicts ${contract.conflicts.length}, needs review ${result.review.length}`)
+  print(c, line(`conflicts ${contract.conflicts.length}, needs review ${result.review.length}`))
   print(
     c,
-    `patterns ${result.governance.patterns}${result.governance.patternsSkipped > 0 ? ` (${result.governance.patternsSkipped} skipped)` : ""}${result.governance.patternsAwaitingApproval > 0 ? `, ${result.governance.patternsAwaitingApproval} awaiting approval` : ""}, policies ${result.governance.policies}, decisions applied ${result.governance.decisionsApplied}${result.governance.decisionsStale > 0 ? ` (${result.governance.decisionsStale} stale)` : ""}`
+    line(
+      `patterns ${result.governance.patterns}${result.governance.patternsSkipped > 0 ? ` (${result.governance.patternsSkipped} skipped)` : ""}${result.governance.patternsAwaitingApproval > 0 ? `, ${result.governance.patternsAwaitingApproval} awaiting approval` : ""}, policies ${result.governance.policies}, decisions applied ${result.governance.decisionsApplied}${result.governance.decisionsStale > 0 ? ` (${result.governance.decisionsStale} stale)` : ""}`
+    )
   )
-  print(c, `diagnostics: ${countBySeverity(result.diagnostics)}`)
+  print(c, line(`diagnostics: ${countBySeverity(result.diagnostics)}`))
   for (const d of result.diagnostics.filter((x) => x.severity === "error").slice(0, 10))
-    print(c, `  ${formatDiagnostic(d)}`)
-  print(c, `wrote ${path.relative(c.cwd, out) || "."}/ (${result.artifacts.length} files)`)
+    print(c, fail(formatDiagnostic(d)))
+  print(c, line(`wrote ${path.relative(c.cwd, out) || "."}/ (${result.artifacts.length} files)`))
+  printReportLink(c, out)
+  print(c, outro(result.ok ? "compiled" : "compiled with errors", result.ok))
   return result.ok ? 0 : 1
 }
 
 const WATCH_LIST = 3
+
+/** The one line that takes a person from the terminal to the report. Clickable at a terminal, plain path in CI. */
+function printReportLink(c: Context, out: string): void {
+  const file = path.join(out, "invariant.report.html")
+  if (!existsSync(file)) return
+  print(
+    c,
+    line(`${paint("muted", "report")}  ${fileLink(file, paint("accent", path.relative(c.cwd, file)))}`)
+  )
+}
 
 /** `compile`, or with `--watch` compile now and again after every settled change until stopped. */
 export async function compileCommand(c: Context): Promise<number> {
@@ -490,14 +509,21 @@ export async function verify(c: Context): Promise<number> {
   }
   if (c.args.values.json) json(c, { ok: !hasErrors(all), diagnostics: all, ...(changes ? { changes } : {}) })
   else {
-    for (const d of all) print(c, formatDiagnostic(d))
-    if (changes) for (const line of formatDiff(changes)) print(c, line)
+    const failed = hasErrors(all)
+    print(c, intro("invariant verify"))
+    print(c, gap())
+    for (const d of all) print(c, (d.severity === "error" ? fail : line)(formatDiagnostic(d)))
+    if (changes) for (const row of formatDiff(changes)) print(c, line(row))
     print(
       c,
-      hasErrors(all)
-        ? `invalid: ${countBySeverity(all)}`
-        : `valid: contract ${compiled.contract.integrity.contentHash.slice(0, 12)}, ${countBySeverity(all)}`
+      failed
+        ? fail(`invalid: ${countBySeverity(all)}`)
+        : done(
+            `valid: contract ${compiled.contract.integrity.contentHash.slice(0, 12)}, ${countBySeverity(all)}`
+          )
     )
+    printReportLink(c, dir)
+    print(c, outro(failed ? "verify failed" : "verified", !failed))
   }
   return hasErrors(all) ? 1 : 0
 }

@@ -4,6 +4,7 @@ import type { Context } from "./commands.js"
 import { readEvents } from "./enforcement-log.js"
 import { renderHtml, renderText, summarize } from "./enforcement-report.js"
 import { CliError } from "./errors.js"
+import { terminalStyle } from "./format.js"
 
 /**
  * `invariant enforcement report`: the session timeline from the enforcement log, as text (default) or one
@@ -23,8 +24,8 @@ export async function enforcement(c: Context): Promise<number> {
   const session = c.args.values.all ? "all" : (c.args.values.session ?? last?.session ?? "none")
   const chosen = c.args.values.all ? events : events.filter((e) => e.session === session)
   const summary = summarize(session, chosen)
-  const out = format === "html" ? renderHtml(summary) : renderText(summary)
   const to = c.args.values.to
+  const out = format === "html" ? renderHtml(summary) : renderText(summary, to ? undefined : terminalStyle)
   if (to) {
     const file = path.resolve(c.cwd, to)
     mkdirSync(path.dirname(file), { recursive: true })

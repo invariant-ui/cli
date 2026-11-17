@@ -1,6 +1,6 @@
 # Invariant site and docs design system
 
-Status: locked 2026-11-17. Applies to `site/index.html` (marketing), `site/docs/index.html` (docs) and `site/assets/`. Change a decision here first, then in the code. Related: `docs/design/site-and-docs-design-plan.md`, `docs/decisions/0006-site-and-docs-stack.md` (Proposed).
+Status: locked 2026-11-17. Amended 2026-11-17: CLI terminal output uses the clack-style frame; hero terminal generated from real output. Applies to `site/index.html` (marketing), `site/docs/index.html` (docs) and `site/assets/`. Change a decision here first, then in the code. Related: `docs/design/site-and-docs-design-plan.md`, `docs/decisions/0006-site-and-docs-stack.md` (Proposed).
 
 ## Intent
 
@@ -56,12 +56,14 @@ The marketing site and docs are dark only. A light theme for docs is a decided f
 ## Components
 
 - **Install pill:** a square bordered box with `$`, the command in mono and a Copy button. Copy confirms with "Copied" or falls back to "Press Ctrl+C". Needs a visible focus ring.
+- **Command blocks:** the command blocks in Get started and the agent setup block in Connect each have a Copy button in the top-right corner, with the same confirmation and fallback as the install pill. Copy the whole block as shown, including the client name chosen in the selector.
 - **Tabs (How it works):** accessible `tablist`, arrow-key navigation, one terminal panel per tab, all panels visible without JavaScript.
 - **Fact table and filters:** status badges with confidence for inferred facts, filter buttons using `aria-pressed`. The `approved` row says there is no sample and that approval is a named person's decision in `invariant.decisions.json`.
 - **Contract explorer:** read-only view of the `acme-ui` golden fixture. Its data is generated into `site/index.html` between the `explorer:data` markers by `node site/build/explorer.mjs` run from the repo root. Never hand-edit that JSON.
 - **Agent selector and PR-check mock:** the selector rewrites `invariant agent init <client>`. The PR-check panel is labeled "illustrative" and uses only findings already shown elsewhere on the page.
-- **Terminal and code blocks:** `--panel` background, 1px `--line` border, mono 13 to 13.5px, colored spans use `.p .c .ok .w .b .k`.
-- **Hero demo:** the animated terminal and contract panels come from a generated block marked `demo:start (generated)` in `site/index.html`. The generator is not in the repo. Do not edit that block by hand. Only its border color animates.
+- **Terminal and code blocks:** `--panel` background, 1px `--line` border, mono 13 to 13.5px, colored spans use `.p` (prompt, teal), `.c` (muted), `.ok`, `.w` (warning), `.b` (error red) and `.k` (accent).
+- **CLI output in a terminal block:** uses the clack-style frame that `invariant compile` and `invariant verify` print (drawn in `apps/cli/src/frame.ts`, no dependency). `┌` opens the frame with the command name in bold (`<b>`). Every line sits behind a `.c` bar `│`. `◇` (`.ok`) marks a completed step, `▲` (`.w`) a warning and `■` (`.bad`) an error. `└` closes it: `.ok` text when it passed, error color when it failed. The `report` line gives the path to `invariant.report.html`. Blocks copy real output from a run of the CLI on a fixture.
+- **Hero demo:** the animated terminal's output comes from real CLI output. `site/build/hero.mjs` runs `invariant init` and `invariant compile` on a scratch copy of `fixtures/react/design-system` and rewrites two regions of `site/index.html`: the keyframe block between `demo:start (generated)` and `demo:end`, and the terminal between `demo:tty:start` and `demo:tty:end`. Regenerate with `pnpm build && node site/build/hero.mjs`. Do not edit either region by hand. The contract panel is illustrative and stays hand-written.
 - **Motion:** allowed only for the hero demo typing, the tab/filter state changes and copy feedback. Everything respects `prefers-reduced-motion`.
 
 ## Logo
@@ -72,6 +74,14 @@ Constraint-frame mark: an outlined 26-unit square (2.4 stroke, 2 radius) holding
 - In the nav it is inline SVG using `currentColor`, 22px, with the sans word at 22px and a 9px gap.
 - Files in `site/assets/`: `logo-wordmark.svg` (light ink for dark backgrounds), `logo-wordmark-light.svg` (dark ink), `logo-icon.svg` and `favicon.svg` (mark on a dark 6px-radius tile), `og-image.svg`. PNG exports are made from the SVGs with headless Chrome: `logo-wordmark.png`, `logo-icon-512.png`, `favicon-32.png`, `apple-touch-icon.png`, `og-image.png`. Re-export them whenever an SVG changes. See `site/assets/README.md`.
 - Options considered and rejected are kept in `docs/design/logo-options.html` and `logo-options-2.html`.
+
+## CLI examples
+
+- **Real output only.** Every example of CLI output on the site, in the docs and in `README.md` (terminal blocks, the PR-check mock's annotation text, the enforcement story and excerpt) copies what the CLI prints today, from a real run on a named fixture: `fixtures/react/design-system` for compile, validate and setup, `fixtures/pattern-validation` for pattern findings, and `pnpm demo` for the enforcement loop. When the CLI's output changes, the examples change in the same commit.
+- **Commands are current.** Command names, flags and options in examples on the site, in the docs and in `README.md` must exist in `invariant --help` and in the command's own usage text. Dev scripts named in `README.md` must exist in `package.json`.
+- **Formatting is for illustration only.** The site may wrap lines with a hanging indent, color words, and cut a long run with `…` to show an excerpt. It must not change words, codes, numbers, paths or order. Anything that can't be produced from this repository is shown as the command alone (for example `browser run`, which needs Playwright), or labeled "illustrative" in the UI (for example the GitHub check panel).
+- **Check before merging.** Every real output line used in an example must appear in the page's text (for the README, in the file itself). The hero terminal is generated by `site/build/hero.mjs` from real output, so regenerate it after any change to what `setup`, `init` or `compile` print.
+- **Do not** write example output by hand, copy it from an older version, or keep a sample after the CLI's output for it has changed.
 
 ## Copy rules
 

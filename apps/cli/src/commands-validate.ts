@@ -22,7 +22,7 @@ import { applyBaseline, BASELINE_FILE, makeBaseline, readBaseline, writeBaseline
 import { type Context, json, outputDir, print } from "./commands.js"
 import { loadConfig } from "./config.js"
 import { CliError } from "./errors.js"
-import { table } from "./format.js"
+import { table, terminalStyle } from "./format.js"
 import { loadCompiled } from "./store.js"
 import { CLI_NAME, CLI_VERSION } from "./version.js"
 
@@ -159,7 +159,7 @@ export async function validate(c: Context): Promise<number> {
       c,
       `${summary.errors} errors, ${summary.warnings} warnings, ${summary.info} info in ${summary.files} files`
     )
-  } else print(c, formatText(shown, summary, evaluations))
+  } else print(c, formatText(shown, summary, evaluations, terminalStyle))
   return shouldFail(summary, failOn as FailOn) ? 1 : 0
 }
 

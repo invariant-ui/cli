@@ -32,14 +32,28 @@ nav{position:sticky;top:0;z-index:10;background:rgba(14,14,13,.9);backdrop-filte
 nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
 .logo{font-weight:700;letter-spacing:-.02em;text-decoration:none;font-size:20px}
 .logo span{color:var(--accent)}
-nav ul{display:flex;gap:24px;list-style:none;margin:0;padding:0;font-size:14px;color:var(--muted)}
+nav ul{display:flex;gap:24px;list-style:none;margin:0;padding:0;font:14px var(--mono);color:var(--muted);letter-spacing: -1px;}
 nav ul a{text-decoration:none}
+.navtoggle{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.navburger{display:none;cursor:pointer;font:14px var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:6px 12px}
+.navburger:hover{color:var(--text);border-color:var(--muted)}
+.navtoggle:focus-visible + .navburger{outline:2px solid var(--accent);outline-offset:2px}
+/* Below 960px the links open from a Menu button in the bar, as a panel under it. */
+@media(max-width:960px){
+  nav .wrap{position:relative}
+  .navburger{display:inline-block;margin-left:18px}
+  .navright{margin-left:auto}
+  nav ul{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0;margin:0;padding:8px 16px 12px;background:#0e0e0d;border-bottom:1px solid var(--line)}
+  nav ul a{display:block;padding:14px 8px;font-size:17px;border-bottom:1px solid var(--line)}
+  nav ul li:last-child a{border-bottom:0}
+  .navtoggle:checked ~ ul{display:flex}
+}
 nav ul a:hover{color:var(--text)}
 .btn{display:inline-block;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;border:1px solid var(--line)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#0b0d12}
 .btn.primary:hover{filter:brightness(1.1)}
 .navright{display:flex;align-items:center;gap:18px}
-.doclink{font-size:14px;color:var(--muted);text-decoration:none}
+.doclink{font:14px var(--mono);color:var(--muted);text-decoration:none}
 .doclink:hover{color:var(--text)}
 .toplink{display:inline-flex;color:var(--muted);text-decoration:none}
 .toplink:hover{color:var(--text)}
@@ -61,13 +75,14 @@ h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--acc
 .expane h3{margin:0 0 4px;font:600 18px var(--mono)}
 .expane .desc{color:var(--muted);margin:0 0 16px;font-size:14px}
 .proptable{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
-.proptable th{text-align:left;font:12px var(--mono);color:var(--muted);padding:6px 10px 6px 0;border-bottom:1px solid var(--line)}
-.proptable td{padding:8px 10px 8px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.proptable th{text-align:left;font:12px var(--mono);color:var(--muted);padding:6px 10px 6px 14px;border-bottom:1px solid var(--line)}
+.proptable td{padding:8px 10px 8px 14px;border-bottom:1px solid var(--line);vertical-align:top}
 .proptable td:first-child{white-space:nowrap}
 .proptable td:nth-child(2),.facttable td:nth-child(4){min-width:130px}
 .proptable .fact{animation:none;white-space:nowrap}
 .proptable .req{color:var(--warn)}
 @media(max-width:720px){.explorer{grid-template-columns:minmax(0,1fr)}.extree{border-right:0;border-bottom:1px solid var(--line);max-height:180px}}
+@media(max-width:720px){.proptable{min-width:0}.proptable thead{display:none}.proptable tr{display:block;padding:10px 0;border-bottom:1px solid var(--line)}.proptable td{display:block;border:0;padding:2px 0;white-space:normal}.proptable td:first-child{white-space:nowrap}}
 .prcheck{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .prhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
 .prhead .fact{animation:none}
@@ -87,6 +102,7 @@ h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--acc
 .facttable td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
 .facttable tr:last-child td{border-bottom:0}
 .facttable td .fact{animation:none;white-space:nowrap}
+.facttable td:first-child{white-space:nowrap}
 .facttable tr.none td{color:var(--muted)}
 .tnote{margin:14px 0 0;font-size:14px}
 .tnote .fact{animation:none}
@@ -101,9 +117,14 @@ h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--acc
 .tabpanels .term{max-width:none;animation:none}
 .panote{margin:0;padding:0 18px 14px;font:12px var(--mono);color:var(--muted)}
 @media(max-width:720px){.tabs{grid-template-columns:minmax(0,1fr)}}
-.install{display:flex;align-items:center;gap:12px;max-width:100%;margin:0 auto 20px;padding:8px 8px 8px 18px;width:fit-content;background:var(--panel);border:1px solid var(--line);border-radius:99px;font:14px var(--mono)}
+.install{display:flex;align-items:center;gap:14px;max-width:100%;margin:0 auto 20px;padding:12px 12px 12px 24px;width:fit-content;background:var(--panel);border:1px solid var(--line);border-radius:99px;font:18px var(--mono)}
 .install code{white-space:nowrap;overflow-x:auto}
-.install .copy{flex:none;font:600 12px var(--mono);color:var(--text);background:transparent;border:1px solid var(--line);border-radius:99px;padding:6px 14px;cursor:pointer}
+.install .copy{flex:none;font:600 14px var(--mono);color:var(--text);background:transparent;border:1px solid var(--line);border-radius:99px;padding:9px 18px;cursor:pointer}
+@media(max-width:720px){.install{gap:12px;padding:8px 8px 8px 18px;font:14px var(--mono)}.install .copy{font:600 12px var(--mono);padding:6px 14px}}
+.code .copy{position:absolute;top:10px;right:10px;font:600 12px var(--mono);color:var(--text);background:transparent;border:1px solid var(--line);border-radius:3px;padding:4px 10px;cursor:pointer}
+.code .copy:hover{border-color:var(--muted)}
+.code .copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.steps .code,.connect-code{padding-right:96px}
 .install .copy:hover{border-color:var(--muted)}
 .install .copy:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .installnote{margin:0 0 28px;font:12px var(--mono);color:var(--muted)}
@@ -130,14 +151,22 @@ h2{font-size:clamp(26px,4vw,38px);letter-spacing:-.02em;line-height:1.15;margin:
 .node span{color:var(--muted);font-size:13px}
 .node.hl{border-color:var(--accent)}
 .arrow{color:var(--muted);font-size:20px}
-@media(max-width:720px){.flow{grid-template-columns:minmax(0,1fr)}.arrow{transform:rotate(90deg);text-align:center}nav ul{display:none}}
+@media(max-width:720px){.flow{grid-template-columns:minmax(0,1fr)}.arrow{transform:rotate(90deg);text-align:center}}
 .facts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .fact{font:12px var(--mono);padding:4px 10px;border-radius:6px;background:#0e1118;border:1px solid var(--line)}
 .fact.d{color:var(--st-discovered)} .fact.m{color:var(--st-documented)} .fact.i{color:var(--st-inferred)} .fact.a{color:var(--st-approved)}
 .code{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px;overflow-x:auto}
 .code pre{margin:0;font-size:13.5px;line-height:1.7}
+.code pre,.term pre{white-space:pre-wrap;overflow-wrap:anywhere}
+#pan-compile pre{white-space:pre;font-size:12px}
+pre.out{white-space:pre-wrap;overflow-wrap:anywhere}
+pre.out .ln{display:block}
+pre.out .ln.ind{padding-left:2ch}
+pre.out .ln.hang{padding-left:3ch;text-indent:-3ch}
+pre.out .ln.nowrap{white-space:pre}
+pre.out.wide{white-space:pre;overflow-x:auto}
 .steps{counter-reset:s;display:grid;gap:14px}
-.step{display:grid;grid-template-columns:36px minmax(0,1fr);gap:14px}
+.step{display:grid;grid-template-columns:36px minmax(0,1fr);gap:14px;align-items:baseline}
 .step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);font:600 14px var(--mono);color:var(--accent)}
 .step h3{margin:4px 0 6px;font-size:16px}
 footer{border-top:1px solid var(--line);padding:40px 0;color:var(--muted);font-size:14px}
@@ -178,75 +207,82 @@ footer a:hover{color:var(--text)}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse2{0%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}100%{box-shadow:0 0 0 8px rgba(74,222,128,0)}}
 /* demo:start (generated) */
-@keyframes ty1{0%{width:0}3.89%{width:0ch;animation-timing-function:steps(3)}5.56%{width:3ch;animation-timing-function:linear}7.22%{width:3ch;animation-timing-function:steps(6)}9.72%{width:9ch;animation-timing-function:linear}11.11%{width:9ch;animation-timing-function:steps(5)}13.06%,98.5%{width:14ch}98.6%,100%{width:0}}
+@keyframes ty1{0%{width:0}3.89%{width:0ch;animation-timing-function:steps(14)}12.78%,98.5%{width:14ch}98.6%,100%{width:0}}
 .t1{animation:ty1 18s infinite}
-@keyframes ty2{0%{width:0}22.78%{width:0ch;animation-timing-function:steps(3)}24.44%{width:3ch;animation-timing-function:linear}26.94%{width:3ch;animation-timing-function:steps(6)}29.17%{width:9ch;animation-timing-function:linear}30.83%{width:9ch;animation-timing-function:steps(8)}33.89%,98.5%{width:17ch}98.6%,100%{width:0}}
+@keyframes ty2{0%{width:0}22.78%{width:0ch;animation-timing-function:steps(17)}33.89%,98.5%{width:17ch}98.6%,100%{width:0}}
 .t2{animation:ty2 18s infinite}
-@keyframes w1{0%,0%{opacity:0}0.30%,13.89%{opacity:1}14.19%,100%{opacity:0}}
+@keyframes w1{0%,0.00%{opacity:0}1.67%,13.89%{opacity:1}15.56%,100%{opacity:0}}
 .cw1{opacity:0;animation:w1 18s infinite}
-@keyframes w2{0%,21.67%{opacity:0}21.97%,35%{opacity:1}35.30%,100%{opacity:0}}
+@keyframes w2{0%,21.67%{opacity:0}23.33%,34.44%{opacity:1}36.11%,100%{opacity:0}}
 .cw2{opacity:0;animation:w2 18s infinite}
-@keyframes w3{0%,55%{opacity:0}55.30%,96.67%{opacity:1}96.97%,100%{opacity:0}}
+@keyframes w3{0%,64.11%{opacity:0}65.78%,98.50%{opacity:1}100.17%,100%{opacity:0}}
 .cw3{opacity:0;animation:w3 18s infinite}
-@keyframes ko1{0%,15%{opacity:0}15.30%,98.5%{opacity:1}98.6%,100%{opacity:0}}
-.o1{opacity:0;animation:ko1 18s infinite}
-@keyframes ko2{0%,16.11%{opacity:0}16.41%,98.5%{opacity:1}98.6%,100%{opacity:0}}
-.o2{opacity:0;animation:ko2 18s infinite}
-@keyframes ko3{0%,16.67%{opacity:0}16.97%,98.5%{opacity:1}98.6%,100%{opacity:0}}
-.o3{opacity:0;animation:ko3 18s infinite}
-@keyframes ko4{0%,17.22%{opacity:0}17.52%,98.5%{opacity:1}98.6%,100%{opacity:0}}
-.o4{opacity:0;animation:ko4 18s infinite}
-@keyframes ko6{0%,48.33%{opacity:0}48.63%,98.5%{opacity:1}98.6%,100%{opacity:0}}
-.o6{opacity:0;animation:ko6 18s infinite}
-@keyframes ko7{0%,49.17%{opacity:0}49.47%,98.5%{opacity:1}98.6%,100%{opacity:0}}
-.o7{opacity:0;animation:ko7 18s infinite}
-@keyframes ko8{0%,50.56%{opacity:0}50.86%,98.5%{opacity:1}98.6%,100%{opacity:0}}
-.o8{opacity:0;animation:ko8 18s infinite}
-@keyframes ko9{0%,51.39%{opacity:0}51.69%,98.5%{opacity:1}98.6%,100%{opacity:0}}
-.o9{opacity:0;animation:ko9 18s infinite}
-@keyframes ko10{0%,52.78%{opacity:0}53.08%,98.5%{opacity:1}98.6%,100%{opacity:0}}
-.o10{opacity:0;animation:ko10 18s infinite}
-@keyframes kpl2{0%,21.67%{opacity:0}21.97%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+@keyframes kh0{0%,15.00%{opacity:0}16.67%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.h0{opacity:0;animation:kh0 18s infinite}
+@keyframes kh1{0%,16.67%{opacity:0}18.33%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.h1{opacity:0;animation:kh1 18s infinite}
+@keyframes kh2{0%,18.33%{opacity:0}20.00%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.h2{opacity:0;animation:kh2 18s infinite}
+@keyframes kpl2{0%,21.67%{opacity:0}23.33%,98.5%{opacity:1}98.6%,100%{opacity:0}}
 .pl2{opacity:0;animation:kpl2 18s infinite}
-@keyframes kpl3{0%,55%{opacity:0}55.30%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+@keyframes kpl3{0%,64.11%{opacity:0}65.78%,98.5%{opacity:1}98.6%,100%{opacity:0}}
 .pl3{opacity:0;animation:kpl3 18s infinite}
-@keyframes kdn{0%,47.22%{opacity:0}47.52%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+@keyframes kdn{0%,47.22%{opacity:0}48.89%,98.5%{opacity:1}98.6%,100%{opacity:0}}
 .dn{opacity:0;animation:kdn 18s infinite}
-@keyframes kspin{0%,35.56%{opacity:0}35.86%,47.22%{opacity:1}47.52%,100%{opacity:0}}
+@keyframes kspin{0%,35.56%{opacity:0}37.22%,47.22%{opacity:1}48.89%,100%{opacity:0}}
 .spin{opacity:0;animation:kspin 18s infinite}
+@keyframes kc1{0%,48.44%{opacity:0}50.11%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c1{opacity:0;animation:kc1 18s infinite}
+@keyframes kc2{0%,49.67%{opacity:0}51.33%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c2{opacity:0;animation:kc2 18s infinite}
+@keyframes kc3{0%,50.89%{opacity:0}52.56%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c3{opacity:0;animation:kc3 18s infinite}
+@keyframes kc4{0%,52.11%{opacity:0}53.78%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c4{opacity:0;animation:kc4 18s infinite}
+@keyframes kc5{0%,53.33%{opacity:0}55.00%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c5{opacity:0;animation:kc5 18s infinite}
+@keyframes kc6{0%,54.56%{opacity:0}56.22%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c6{opacity:0;animation:kc6 18s infinite}
+@keyframes kc7{0%,55.78%{opacity:0}57.44%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c7{opacity:0;animation:kc7 18s infinite}
+@keyframes kc8{0%,57.00%{opacity:0}58.67%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c8{opacity:0;animation:kc8 18s infinite}
+@keyframes kc9{0%,58.22%{opacity:0}59.89%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c9{opacity:0;animation:kc9 18s infinite}
+@keyframes kc10{0%,59.44%{opacity:0}61.11%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c10{opacity:0;animation:kc10 18s infinite}
+@keyframes kc11{0%,60.67%{opacity:0}62.33%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.c11{opacity:0;animation:kc11 18s infinite}
+@keyframes ks1{0%,0.00%{opacity:0}1.67%,35.56%{opacity:1}37.22%,100%{opacity:0}}
+@keyframes ks2{0%,35.56%{opacity:0}37.22%,47.22%{opacity:1}48.89%,100%{opacity:0}}
+@keyframes ks3{0%,47.22%{opacity:0}48.89%,98.5%{opacity:1}98.6%,100%{opacity:0}}
+.st .s1{opacity:0;animation:ks1 18s infinite}
+.st .s2{opacity:0;animation:ks2 18s infinite}
+.st .s3{opacity:0;animation:ks3 18s infinite}
+@keyframes tglow{0%,3.33%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}4.44%,35.56%{border-color:var(--accent2);box-shadow:0 0 0 1px rgba(94,234,212,.35),0 30px 80px -30px rgba(94,234,212,.5)}36.67%,100%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}}
+@keyframes cglow{0%,34.44%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}35.56%,77.78%{border-color:var(--accent);box-shadow:0 0 0 1px rgba(124,140,255,.5),0 30px 90px -25px rgba(124,140,255,.7)}88.89%,100%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}}
+.stage .term{animation:tglow 18s infinite}.stage .contract{animation:cglow 18s infinite}
 @keyframes tfade{0%,96.5%{opacity:1}97.8%,99%{opacity:0}100%{opacity:1}}
 .tty{animation:tfade 18s infinite}
-@keyframes c0{0%,47.78%{opacity:.12;background:transparent}48.08%{opacity:1;background:rgba(124,140,255,.35)}53.78%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c0{0%,47.78%{opacity:.12;background:transparent}49.44%{opacity:1;background:rgba(124,140,255,.35)}53.33%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(1){animation:c0 18s infinite}
-@keyframes c1{0%,48.72%{opacity:.12;background:transparent}49.02%{opacity:1;background:rgba(124,140,255,.35)}54.72%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c1{0%,48.89%{opacity:.12;background:transparent}50.56%{opacity:1;background:rgba(124,140,255,.35)}54.44%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(2){animation:c1 18s infinite}
-@keyframes c2{0%,49.67%{opacity:.12;background:transparent}49.97%{opacity:1;background:rgba(124,140,255,.35)}55.67%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c2{0%,50.00%{opacity:.12;background:transparent}51.67%{opacity:1;background:rgba(124,140,255,.35)}55.56%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(3){animation:c2 18s infinite}
-@keyframes c3{0%,50.61%{opacity:.12;background:transparent}50.91%{opacity:1;background:rgba(124,140,255,.35)}56.61%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c3{0%,51.11%{opacity:.12;background:transparent}52.78%{opacity:1;background:rgba(124,140,255,.35)}56.67%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(4){animation:c3 18s infinite}
-@keyframes c4{0%,51.56%{opacity:.12;background:transparent}51.86%{opacity:1;background:rgba(124,140,255,.35)}57.56%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c4{0%,52.22%{opacity:.12;background:transparent}53.89%{opacity:1;background:rgba(124,140,255,.35)}57.78%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(5){animation:c4 18s infinite}
-@keyframes c5{0%,52.5%{opacity:.12;background:transparent}52.80%{opacity:1;background:rgba(124,140,255,.35)}58.50%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c5{0%,53.33%{opacity:.12;background:transparent}55.00%{opacity:1;background:rgba(124,140,255,.35)}58.89%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(6){animation:c5 18s infinite}
-@keyframes c6{0%,53.44%{opacity:.12;background:transparent}53.74%{opacity:1;background:rgba(124,140,255,.35)}59.44%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c6{0%,54.44%{opacity:.12;background:transparent}56.11%{opacity:1;background:rgba(124,140,255,.35)}60.00%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(7){animation:c6 18s infinite}
-@keyframes c7{0%,54.39%{opacity:.12;background:transparent}54.69%{opacity:1;background:rgba(94,234,212,.4)}60.39%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c7{0%,55.56%{opacity:.12;background:transparent}57.22%{opacity:1;background:rgba(124,140,255,.35)}61.11%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(8){animation:c7 18s infinite}
-@keyframes c8{0%,55.33%{opacity:.12;background:transparent}55.63%{opacity:1;background:rgba(124,140,255,.35)}61.33%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c8{0%,56.67%{opacity:.12;background:transparent}58.33%{opacity:1;background:rgba(124,140,255,.35)}62.22%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(9){animation:c8 18s infinite}
-@keyframes ks1{0%,0%{opacity:0}0.30%,35.56%{opacity:1}35.86%,100%{opacity:0}}
-.st .s1{opacity:0;animation:ks1 18s infinite}
-@keyframes ks2{0%,35.56%{opacity:0}35.86%,47.22%{opacity:1}47.52%,100%{opacity:0}}
-.st .s2{opacity:0;animation:ks2 18s infinite}
-@keyframes ks3{0%,47.22%{opacity:0}47.52%,96.67%{opacity:1}96.97%,100%{opacity:0}}
-.st .s3{opacity:0;animation:ks3 18s infinite}
-.st .s1{animation-name:ks1b}
-@keyframes ks1b{0%,35.56%{opacity:1}35.86%,96.67%{opacity:0}96.97%,100%{opacity:1}}
-.st .s1{opacity:1}
-@keyframes tglow{0%,3.33%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}4.44%,34.44%{border-color:var(--accent2);box-shadow:0 0 0 1px rgba(94,234,212,.35),0 30px 80px -30px rgba(94,234,212,.5)}36.67%,100%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}}
-@keyframes cglow{0%,35%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}36.67%,77.78%{border-color:var(--accent);box-shadow:0 0 0 1px rgba(124,140,255,.5),0 30px 90px -25px rgba(124,140,255,.7)}88.89%,100%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}}
-.stage .term{animation:tglow 18s infinite}.stage .contract{animation:cglow 18s infinite}
-@keyframes c9{0%,56.28%{opacity:.12;background:transparent}56.58%{opacity:1;background:rgba(124,140,255,.35)}62.28%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
+@keyframes c9{0%,57.78%{opacity:.12;background:transparent}59.44%{opacity:1;background:rgba(124,140,255,.35)}63.33%{background:transparent}98.5%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}
 .cl:nth-child(10){animation:c9 18s infinite}
 /* demo:end */
 .cursor{display:inline-block;width:8px;height:15px;background:var(--accent2);vertical-align:-2px;animation:blink 1s steps(1) infinite}
@@ -310,7 +346,8 @@ h2{font-size:clamp(26px,3.6vw,36px);line-height:1.18}
 section .wrap{display:grid;grid-template-columns:120px minmax(0,1fr);column-gap:28px}
 section .wrap>*{grid-column:2;min-width:0}
 section .wrap>.explorer,section .wrap>.tablewrap,section .wrap>.prcheck{grid-column:1/-1}
-section .wrap>.label{grid-column:1;grid-row:1;padding-top:.75em}
+section .wrap>.label{grid-column:1;grid-row:1;align-self:start;padding-top:15px}
+section .wrap>h2{align-self:start}
 .card{background:none;border:0;border-top:1px solid var(--line);border-radius:0;padding:16px 0 0;transition:none}
 .card:hover{transform:none;box-shadow:none;border-color:var(--muted)}
 .card h3{font-size:16px}
@@ -332,6 +369,8 @@ section .wrap>.label{grid-column:1;grid-row:1;padding-top:.75em}
 <nav>
   <div class="wrap">
     <a class="logo" href="#top"><svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="2" fill="none" stroke="currentColor" stroke-width="2.4"/><rect x="8" y="15" width="9" height="9" fill="#7c8cff"/></svg>invariant</a>
+    <input class="navtoggle" id="navtoggle" type="checkbox" aria-label="Show sections">
+    <label class="navburger" for="navtoggle">Menu</label>
     <ul>
       <li><a href="#problem">Problem</a></li>
       <li><a href="#how">How it works</a></li>
@@ -351,7 +390,7 @@ section .wrap>.label{grid-column:1;grid-row:1;padding-top:.75em}
 <header class="hero" id="top">
   <div class="wrap">
     <!-- <span class="eyebrow">source-available &middot; runs locally &middot; no account</span> -->
-    <h1>Make AI agents build with<br><em>your design system</em></h1>
+    <h1>The AI governance layer for<br><em>your design system</em></h1>
     <p class="lead">Invariant turns your design system components, tokens and approved UX patterns into a contract that AI agents read and enforce.</p>
     <div class="install">
       <span class="p" aria-hidden="true">$</span><code id="installcmd">npx @invariant-ui/cli setup</code>
@@ -365,13 +404,13 @@ section .wrap>.label{grid-column:1;grid-row:1;padding-top:.75em}
     <div class="stage">
       <div class="term">
         <div class="term-bar">~/your-project</div>
-<pre class="tty" aria-label="Terminal demo: invariant init, then invariant compile"><span class="tl "><span class="p">$ </span><span class="ty t1">invariant init</span><span class="cw cw1"><span class="cursor"></span></span></span><span class="tl o o1"><span class="c">wrote invariant.config.json with 3 source(s):</span></span><span class="tl o o2"><span class="c">  ui-library  react  packages/ui</span></span><span class="tl o o3"><span class="c">  ui-stories  storybook  packages/ui</span></span><span class="tl o o4"><span class="c">  design-tokens  tokens</span></span><span class="tl pl2"><span class="p">$ </span><span class="ty t2">invariant compile</span><span class="cw cw2"><span class="cursor"></span></span></span><span class="tl sw"><span class="spin"><span class="spn"></span> compiling&hellip;</span><span class="dn"><span class="ok">&#10003; </span>compiled Acme Design System</span></span><span class="tl o o6"><span class="c">  ui-library (react packages/ui) -&gt; ui-library</span></span><span class="tl o o7"><span class="c">  ui-stories (storybook packages/ui) -&gt; ui-stories</span></span><span class="tl o o8">components 42, tokens 318, themes 2, guidelines 6</span><span class="tl o o9"><span class="w">conflicts 2, needs review 5</span></span><span class="tl o o10">wrote invariant/ (6 files)</span><span class="tl pl3"><span class="p">$ </span><span class="cw cw3"><span class="cursor"></span></span></span></pre>
+<!-- demo:tty:start --><pre class="tty" aria-label="Terminal demo: invariant init, then invariant compile"><span class="tl"><span class="p">$ </span><span class="ty t1">invariant init</span><span class="cw cw1"><span class="cursor"></span></span></span><span class="tl o h0"><span class="c">wrote invariant.config.json with 2 source(s):</span></span><span class="tl o h1"><span class="c">  acme-ui-react  react</span></span><span class="tl o h2"><span class="c">  tokens  tokens</span></span><span class="tl pl2"><span class="p">$ </span><span class="ty t2">invariant compile</span><span class="cw cw2"><span class="cursor"></span></span></span><span class="tl sw"><span class="spin"><span class="spn"></span> compiling&hellip;</span><span class="dn"><span class="c">┌</span>  <b>invariant compile</b></span></span><span class="tl o c1"><span class="c">│</span></span><span class="tl o c2"><span class="ok">◇</span>  compiled @acme/ui</span><span class="tl o c3"><span class="c">│</span>  acme-ui-react (react) -&gt; react-acme-ui</span><span class="tl o c4"><span class="c">│</span>  tokens (tokens) -&gt; design-tokens-acme-ui, tokens-acme-ui</span><span class="tl o c5"><span class="c">│</span>  components 14, tokens 3, themes 1, guidelines 0</span><span class="tl o c6"><span class="c">│</span>  conflicts 0, needs review 4</span><span class="tl o c7"><span class="c">│</span>  patterns 0, policies 0, decisions applied 0</span><span class="tl o c8"><span class="c">│</span>  diagnostics: 0 errors, <span class="w">1 warnings</span>, 1 info</span><span class="tl o c9"><span class="c">│</span>  wrote invariant/ (6 files)</span><span class="tl o c10"><span class="c">│</span>  <span class="c">report</span>  invariant/invariant.report.html</span><span class="tl o c11"><span class="c">└</span>  <span class="ok">compiled</span></span><span class="tl pl3"><span class="p">$ </span><span class="cw cw3"><span class="cursor"></span></span></span></pre><!-- demo:tty:end -->
       </div>
       <div class="contract" id="contract">
         <div class="term-bar"><span>invariant.contract.json</span><span class="status st"><span class="s1"><i></i>waiting</span><span class="s2 busy"><i></i>compiling</span><span class="s3 done"><i></i>compiled</span></span></div>
 <pre><span class="cl c">// illustrative shape</span><span class="cl">{</span><span class="cl">  <span class="k">"component"</span>: <span class="ok">"Button"</span>,</span><span class="cl">  <span class="k">"props"</span>: [{</span><span class="cl">    <span class="k">"name"</span>: <span class="ok">"variant"</span>,</span><span class="cl">    <span class="k">"values"</span>: [<span class="ok">"solid"</span>, <span class="ok">"ghost"</span>],</span><span class="cl">    <span class="k">"status"</span>: <span class="ok">"discovered"</span>,</span><span class="cl hot">    <span class="k">"evidence"</span>: <span class="ok">"Button.tsx:14"</span></span><span class="cl">  }]</span><span class="cl">}</span></pre>
+        </div>
       </div>
-    </div>
   </div>
 </header>
 
@@ -403,30 +442,27 @@ section .wrap>.label{grid-column:1;grid-row:1;padding-top:.75em}
         <div class="term" role="tabpanel" id="pan-compile" aria-labelledby="tab-compile">
           <div class="term-bar">~/your-project</div>
 <pre><span class="p">$ </span>invariant compile
-<span class="ok">&#10003; </span>compiled Acme Design System
-<span class="c">  ui-library (react packages/ui) -&gt; ui-library</span>
-<span class="c">  ui-stories (storybook packages/ui) -&gt; ui-stories</span>
-components 42, tokens 318, themes 2, guidelines 6
-<span class="w">conflicts 2, needs review 5</span>
-wrote invariant/ (6 files)</pre>
+<span class="c">┌</span>  <b>invariant compile</b>
+<span class="c">│</span>
+<span class="ok">◇</span>  compiled @acme/ui
+<span class="c">│</span>  acme-ui-react (react) -&gt; react-acme-ui
+<span class="c">│</span>  tokens (tokens) -&gt; design-tokens-acme-ui, tokens-acme-ui
+<span class="c">│</span>  components 14, tokens 3, themes 1, guidelines 0
+<span class="c">│</span>  conflicts 0, needs review 4
+<span class="c">│</span>  patterns 0, policies 0, decisions applied 0
+<span class="c">│</span>  diagnostics: 0 errors, <span class="w">1 warnings</span>, 1 info
+<span class="c">│</span>  wrote invariant/ (6 files)
+<span class="c">│</span>  <span class="c">report</span>  invariant/invariant.report.html
+<span class="c">└</span>  <span class="ok">compiled</span></pre>
         </div>
         <div class="term" role="tabpanel" id="pan-approve" aria-labelledby="tab-approve">
           <div class="term-bar">~/your-project</div>
-<pre><span class="p">$ </span>invariant candidates list
-<span class="p">$ </span>invariant candidates promote &lt;id&gt; --as &lt;name&gt;
-<span class="p">$ </span>invariant review approve &lt;id&gt; --as &lt;name&gt;
-<span class="c"># decisions are written to invariant.decisions.json, in git</span></pre>
+<pre class="out"><span class="ln"><span class="p">$ </span>invariant candidates list</span><span class="ln"><span class="p">$ </span>invariant candidates promote &lt;id&gt; --as &lt;name&gt;</span><span class="ln"><span class="p">$ </span>invariant review approve &lt;id&gt; --as &lt;name&gt;</span><span class="ln"><span class="c"># decisions are written to invariant.decisions.json, in git</span></span></pre>
           <p class="panote">Commands shown, output omitted. Nothing is approved until a named person approves it.</p>
         </div>
         <div class="term" role="tabpanel" id="pan-enforce" aria-labelledby="tab-enforce">
           <div class="term-bar">~/your-project</div>
-<pre><span class="p">$ </span>invariant validate src/
-<span class="w">!</span> Button.tsx:14 color rgb(104 86 224)
-<span class="c">  not the value of any token</span>
-<span class="b">&#10007;</span> Card.tsx:9 unknown prop "tone"
-<span class="c">  basis: discovered</span>
-<span class="b">&#10007;</span> Settings.tsx:12 one modal allowed, found 2
-<span class="c">  pattern page.settings, policy approved</span></pre>
+<pre class="out"><span class="ln"><span class="p">$ </span>invariant validate app/</span><span class="ln">app/Settings.tsx:8:29 <span class="w">warning</span> color-not-in-tokens</span><span class="ln ind">#ff0000 is a literal color that is not the value of any token</span><span class="ln ind c">fix: Use a color token from get_design_tokens, or add this color to the design system.</span><span class="ln ind c">basis discovered</span><span class="ln"> </span><span class="ln">0 errors, <span class="w">1 warnings</span>, 0 info in 1 files (0 components checked)</span></pre>
         </div>
       </div>
     </div>
@@ -506,13 +542,7 @@ wrote invariant/ (6 files)</pre>
                 <span class="k">"state"</span>: <span class="ok">"error"</span> }
   }]
 }</pre></div>
-      <div class="code"><pre><span class="p">$</span> invariant validate src/pages
-<span class="b">&#10007;</span> Settings.tsx:12 <span class="c">pattern-cardinality-violated</span>
-<span class="c">  a settings page has at most one modal</span>
-<span class="w">?</span> Settings.tsx:1 <span class="c">pattern-region-missing: not verifiable</span>
-<span class="c">  Actions comes from another file; not passed</span>
-<span class="ok">&#10003;</span> Settings.tsx:20 <span class="c">form shows an error state</span>
-<span class="c">  structural, line 31</span></pre></div>
+      <div class="code"><pre class="out"><span class="ln"><span class="p">$ </span>invariant validate app/pages/Bad.tsx</span><span class="ln">app/pages/Bad.tsx:5:5 <span class="b">error</span> pattern-order-violated</span><span class="ln ind">Card at line 4: Card.Body (line 5) comes before Card.Header (line 8); Card.Header must come first (pattern pattern:page.settings)</span><span class="ln ind c">fix: Move Card.Header before Card.Body.</span><span class="ln ind c">evidence invariant.patterns.json (approved); policy policy:page.settings.header-first; subject pattern:page.settings</span><span class="ln"> </span><span class="ln c">…</span><span class="ln"> </span><span class="ln">7 errors, <span class="w">1 warnings</span>, 0 info in 1 files (6 components checked)</span></pre></div>
     </div>
     <div class="grid g3" style="margin-top:16px">
       <div class="card"><h3>Page archetypes</h3><p>A data page, a detail page, an edit form. Each composes shared patterns, names its regions and lists the variations it allows.</p></div>
@@ -528,18 +558,8 @@ wrote invariant/ (6 files)</pre>
     <h2>Static checks run on every pull request. Browser checks are optional.</h2>
     <p class="sub">Static checks run in CI on every change. When you need to know it actually works, opt in to browser checks for focus, keyboard order and responsive layout.</p>
     <div class="grid g2">
-      <div class="code"><pre><span class="p">$</span> invariant validate src/
-<span class="w">!</span> Button.tsx:14 color rgb(104 86 224)
-<span class="c">  not the value of any token</span>
-<span class="b">&#10007;</span> Card.tsx:9 unknown prop "tone"
-<span class="c">  basis: discovered</span>
-<span class="b">&#10007;</span> Settings.tsx:12 one modal allowed, found 2
-<span class="c">  pattern page.settings, policy approved</span></pre></div>
-      <div class="code"><pre><span class="p">$</span> invariant browser run
-chromium 1.2.3: 4 passed, 1 failed, 0 could not run
-<span class="b">&#10007;</span> edit-form-saves  expect 2  375x700
-<span class="c">  Tab 1 should reach #save, but focus is on</span>
-<span class="c">  &lt;input#name&gt;</span></pre></div>
+      <div class="code"><pre class="out"><span class="ln"><span class="p">$ </span>invariant validate app/pages/Empty.tsx</span><span class="ln"><span class="c">app/pages/Empty.tsx:1:1</span> <span class="b">error</span> <b>pattern-region-missing</b></span><span class="ln ind">region content is missing (pattern pattern:page.settings)</span><span class="ln ind c">fix: Add the components that make up region content.</span><span class="ln ind c">evidence invariant.patterns.json (approved); policy policy:page.settings.needs-content; subject pattern:page.settings</span><span class="ln"> </span><span class="ln">pattern rules: <span class="ok">1 passed</span>, <span class="b">1 failed</span>, <span class="c">0 warnings, 0 not verifiable, 0 skipped</span></span><span class="ln"> </span><span class="ln"><span class="b">1 errors</span>, <span class="c">0 warnings, 0 info in 1 files (2 components checked)</span></span></pre></div>
+      <div class="code"><pre class="out"><span class="ln"><span class="p">$ </span>invariant browser run</span><span class="ln">chromium 159.0.8154.6: <span class="ok">2 passed</span>, <span class="b">2 failed</span>, 0 could not run (runtime results; static results are from validate)</span><span class="ln c">note: edit-form-saves: pattern pattern:page.edit-form is not in the contract</span><span class="ln c">note: edit-form-saves: constraint constraint:form.shows-success is not in the contract</span><span class="ln"> </span><span class="ln c">…</span><span class="ln"> </span><span class="ln nowrap">scenario         check     status  viewport  why</span><span class="ln nowrap">edit-form-saves  expect 2  <span class="b">fail</span>    375x700   Tab 1 should reach #save, but focus is on nothing (the page body)</span><span class="ln nowrap">edit-form-saves  expect 2  <span class="b">fail</span>    1280x800  Tab 1 should reach #save, but focus is on nothing (the page body)</span><span class="ln"> </span><span class="ln c">…</span><span class="ln"> </span><span class="ln">written to invariant.browser-results.json</span></pre></div>
     </div>
     <div class="grid g3" style="margin-top:16px">
       <div class="card"><h3>Pass, fail, or not verifiable</h3><p>Pass, fail, warning, not verifiable, skipped. What it can't establish is said out loud and never counted as a pass.</p></div>
@@ -554,29 +574,15 @@ chromium 1.2.3: 4 passed, 1 failed, 0 could not run
   <div class="wrap">
     <div class="label">Every pull request</div>
     <h2>Setup can add a GitHub Action that checks each pull request against your contract.</h2>
-    <p class="sub">Say yes when <code>setup</code> asks and it writes a GitHub Action for you. From then on, each commit on an open pull request is checked against your contract, with annotations on the lines that break it.</p>
+    <p class="sub">Answer yes to the <code>setup</code> plan and it writes a GitHub Action for you. From then on, each commit on an open pull request is checked against your contract, with annotations on the lines that break it.</p>
     <div class="grid g2">
-      <div class="code"><pre><span class="p">$</span> npx @invariant-ui/cli setup
-<span class="c">...</span>
-7. Add a GitHub Action that checks every
-   commit on pull requests? [Y/n] y
-7. wrote .github/workflows/invariant.yml</pre></div>
-      <div class="code"><pre><span class="c"># .github/workflows/invariant.yml</span>
-<span class="k">on</span>:
-  <span class="k">pull_request</span>:
-    <span class="k">types</span>: [opened, synchronize, reopened]
-<span class="k">jobs</span>:
-  <span class="k">invariant</span>:
-    <span class="k">steps</span>:
-      - <span class="k">run</span>: npx @invariant-ui/cli@0.3.0 verify --fresh
-      - <span class="k">run</span>: npx @invariant-ui/cli@0.3.0 validate 'src' --format github</pre></div>
+      <div class="code"><pre class="out"><span class="ln"><span class="p">$</span> npx @invariant-ui/cli setup --ci</span><span class="ln"><span class="c">...</span></span><span class="ln"><span class="k">◆</span>  Looks right?  <span class="ok">Yes, apply this setup</span></span><span class="ln"><span class="ok">◇</span>  set up</span><span class="ln hang"><span class="c">│</span>  CI         wrote .github/workflows/invariant.yml. Commit it with the invariant/ folder, so CI has</span><span class="ln hang"><span class="c">│</span>  a contract to check against.</span><span class="ln hang"><span class="c">└</span>  <span class="ok">done in 1s</span></span></pre></div>
+      <div class="code"><pre class="out wide"><span class="ln c"># Added by `invariant setup`. Checks every commit on a pull request against your design system contract.</span><span class="ln" style="padding-left:6ch;text-indent:-6ch"><span class="k">name</span>: Invariant</span><span class="ln"><span class="k">on</span>:</span><span class="ln">  <span class="k">pull_request</span>:</span><span class="ln" style="padding-left:11ch;text-indent:-7ch"><span class="k">types</span>: [opened, synchronize, reopened]</span><span class="ln"><span class="k">jobs</span>:</span><span class="ln">  <span class="k">invariant</span>:</span><span class="ln" style="padding-left:13ch;text-indent:-9ch"><span class="k">runs-on</span>: ubuntu-latest</span><span class="ln">    <span class="k">steps</span>:</span><span class="ln" style="padding-left:14ch;text-indent:-8ch">- <span class="k">name</span>: Verify the contract is current</span><span class="ln" style="padding-left:13ch;text-indent:-5ch"><span class="k">run</span>: npx @invariant-ui/cli@0.4.0 verify --fresh</span><span class="ln" style="padding-left:14ch;text-indent:-8ch">- <span class="k">name</span>: Validate code against the contract</span><span class="ln" style="padding-left:13ch;text-indent:-5ch"><span class="k">run</span>: npx @invariant-ui/cli@0.4.0 validate 'app' --format github</span><span class="ln" style="padding-left:14ch;text-indent:-8ch">- <span class="k">name</span>: Upload the Invariant report</span><span class="ln" style="padding-left:12ch;text-indent:-4ch"><span class="k">if</span>: always()</span><span class="ln" style="padding-left:14ch;text-indent:-6ch"><span class="k">uses</span>: actions/upload-artifact@v4</span><span class="ln">        <span class="k">with</span>:</span><span class="ln" style="padding-left:16ch;text-indent:-6ch"><span class="k">name</span>: invariant-report</span><span class="ln" style="padding-left:16ch;text-indent:-6ch"><span class="k">path</span>: 'invariant/invariant.report.html'</span><span class="ln c">      ...</span></pre></div>
     </div>
     <div class="prcheck" aria-label="Illustrative pull request check">
-      <div class="prhead"><span class="fact b">failed</span> <b>invariant</b> <span class="c">validate src --format github &middot; exit 1</span><span class="c prtag">illustrative</span></div>
-      <div class="prchips"><span class="sev e">2 errors</span><span class="sev w2">1 warning</span><span class="sev mute">existing violations baselined, not counted</span></div>
-      <pre><span class="b">&#10007;</span> Card.tsx:9 unknown prop "tone"
-<span class="b">&#10007;</span> Settings.tsx:12 one modal allowed, found 2
-<span class="w">!</span> Button.tsx:14 color rgb(104 86 224) <span class="c">not the value of any token</span></pre>
+      <div class="prhead"><span class="fact b">failed</span> <b>invariant</b> <span class="c">validate app/pages/Bad.tsx --format github &middot; exit 1</span><span class="c prtag">illustrative</span></div>
+      <div class="prchips"><span class="sev e">7 errors</span><span class="sev w2">1 warning</span></div>
+      <pre class="out"><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:5 <span class="c">pattern-order-violated</span></span><span class="ln ind c">Card at line 4: Card.Body (line 5) comes before Card.Header (line 8); Card.Header must come first (pattern pattern:page.settings). Fix: Move Card.Header before Card.Body.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">pattern-parent-required</span></span><span class="ln ind c">IconButton at line 6 must be inside Stack, but sits inside Card.Body instead (pattern pattern:page.settings). Fix: Wrap it in Stack.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">required-prop-missing</span></span><span class="ln ind c">IconButton requires the prop "label". Fix: Add label (string).</span></pre>
     </div>
     <div class="grid g3" style="margin-top:16px">
       <div class="card"><h3>New problems only</h3><p>Existing violations are baselined, so a pull request is checked on what it adds, not on history.</p></div>
@@ -627,7 +633,7 @@ chromium 1.2.3: 4 passed, 1 failed, 0 could not run
       <button type="button" class="flt" data-c="windsurf" aria-pressed="false">windsurf</button>
       <button type="button" class="flt" data-c="all" aria-pressed="false">all</button>
     </div>
-    <div class="code"><pre><span class="p">$</span> invariant agent init <span id="clientname">claude-code</span>
+    <div class="code connect-code"><button class="copy" type="button" aria-label="Copy command">Copy</button><pre><span class="p">$</span> invariant agent init <span id="clientname">claude-code</span>
 <span class="c"># writes MCP config and skills for the tool you picked. See supported tools: invariant agent list</span></pre></div>
     <div class="grid g3">
       <div class="card"><h3>Agents get one pattern at a time</h3><p>Agents fetch the one archetype and the few patterns a task needs, never the whole contract.</p></div>
@@ -640,23 +646,23 @@ chromium 1.2.3: 4 passed, 1 failed, 0 could not run
 <section id="start">
   <div class="wrap">
     <div class="label">Get started</div>
-    <h2>One command. Nothing to install first.</h2>
+    <h2>Set up Invariant in your project.</h2>
     <p class="sub">Needs Node 20 or newer. Run it in the project that holds your design system.</p>
     <div class="steps">
       <div class="step"><div>
         <h3>Prefer a plugin? Install it in Claude Code or Cursor</h3>
-        <div class="code"><pre>/plugin marketplace add invariant-ui/cli
+        <div class="code"><button class="copy" type="button" aria-label="Copy command">Copy</button><pre>/plugin marketplace add invariant-ui/cli
 /plugin install invariant@invariant</pre></div>
         <p class="c" style="margin:10px 0 0">Then ask your AI tool to run <code>/invariant:setup</code>. It finds your design system, shows what it found and asks you to approve it. <a href="docs/#plugin">Install steps, and the Cursor download</a>.</p>
       </div></div>
       <div class="step"><div>
         <h3>Run setup</h3>
-        <div class="code"><pre>npx @invariant-ui/cli setup</pre></div>
+        <div class="code"><button class="copy" type="button" aria-label="Copy command">Copy</button><pre>npx @invariant-ui/cli setup</pre></div>
         <p class="c" style="margin:10px 0 0">Compiles your design system, finds the patterns your apps already repeat, and shows one plan. Answer yes once and it approves them, turns on starter rules, connects your AI tool, baselines old violations and adds the CI check. Nothing is approved until you say so.</p>
       </div></div>
       <div class="step"><div>
         <h3>Enforce it</h3>
-        <div class="code"><pre>npx @invariant-ui/cli validate src/
+        <div class="code"><button class="copy" type="button" aria-label="Copy command">Copy</button><pre>npx @invariant-ui/cli validate src/
 npx @invariant-ui/cli verify --fresh   # put both in CI</pre></div>
       </div></div>
       <div class="step"><div>
@@ -665,7 +671,7 @@ npx @invariant-ui/cli verify --fresh   # put both in CI</pre></div>
       </div></div>
       <div class="step"><div>
         <h3>Keep the command</h3>
-        <div class="code"><pre>npm install -g @invariant-ui/cli
+        <div class="code"><button class="copy" type="button" aria-label="Copy command">Copy</button><pre>npm install -g @invariant-ui/cli
 invariant --help</pre></div>
       </div></div>
     </div>
@@ -695,12 +701,26 @@ invariant --help</pre></div>
 
 <script>
 (() => {
+  document.querySelectorAll('nav ul a').forEach((a) => a.addEventListener('click', () => { document.getElementById('navtoggle').checked = false; }));
   var cb = document.getElementById('copybtn');
   cb.addEventListener('click', () => {
     var done = (t) => { cb.textContent = t; setTimeout(() => { cb.textContent = 'Copy'; }, 1600); };
     try {
       navigator.clipboard.writeText(document.getElementById('installcmd').textContent).then(() => done('Copied'), () => done('Press Ctrl+C'));
     } catch (e) { done('Press Ctrl+C'); }
+  });
+
+  document.querySelectorAll('.code > .copy').forEach((b) => {
+    b.addEventListener('click', () => {
+      var done = (t) => { b.textContent = t; setTimeout(() => { b.textContent = 'Copy'; }, 1600); };
+      // Only the command: drop comment lines, the $ prompt, and trailing # comments.
+      var text = b.parentElement.querySelector('pre').textContent.split('\n')
+        .map((l) => l.replace(/^\s*\$ /, '').replace(/\s{2,}#.*$/, '').trim())
+        .filter((l) => l !== '' && !l.startsWith('#')).join('\n');
+      try {
+        navigator.clipboard.writeText(text).then(() => done('Copied'), () => done('Press Ctrl+C'));
+      } catch (e) { done('Press Ctrl+C'); }
+    });
   });
 
   var tabs = Array.from(document.querySelectorAll('#howtabs .tab'));
