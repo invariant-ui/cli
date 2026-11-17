@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/invariant-ui/cli/compare/v0.3.0...v0.4.0) (2026-11-17)
+
+
+### Features
+
+* **site:** redesign the marketing page and docs, with a new logo  ([#11](https://github.com/invariant-ui/cli/issues/11)) ([ffaf65e](https://github.com/invariant-ui/cli/commit/ffaf65e44b806f59679d3ca223c83faa825c88f7))
+
 ## [0.3.0](https://github.com/invariant-ui/cli/compare/v0.2.0...v0.3.0) (2026-11-14)
 
 
