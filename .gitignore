@@ -4,3 +4,4 @@ dist
 coverage
 dist-npm
 dist-plugins
+.DS_Store
