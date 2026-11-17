@@ -9,6 +9,8 @@ import { type Context, outputDir, print } from "./commands.js"
 import { POSTURES } from "./commands-hook.js"
 import { CONFIG_FILE, detectConfig, type InvariantConfig, loadConfig, writeConfig } from "./config.js"
 import { CliError } from "./errors.js"
+import { paint } from "./format.js"
+import { columns, done, fail, gap, intro, line, outro, spin, warn, wrap } from "./frame.js"
 import { applyPublish, planPublish } from "./publish.js"
 import { type StarterRule, starterRules } from "./starter-rules.js"
 import { loadCompiled } from "./store.js"
@@ -77,7 +79,23 @@ function shippedContracts(cwd: string): string[] {
  */
 export async function setup(c: Context): Promise<number> {
   const started = Date.now()
-  const say = (m = ""): void => print(c, m)
+  // Every line sits in the clack frame: say is a detail line, step a completed one, flag a warning.
+  const fit = (m: string): string[] => m.split("\n").flatMap((l) => wrap(l, columns() - 3))
+  const say = (m = ""): void => {
+    for (const l of fit(m)) print(c, l === "" ? gap() : line(l))
+  }
+  const step = (m: string): void => {
+    const [first = "", ...rest] = fit(m)
+    print(c, done(first))
+    for (const l of rest) print(c, line(l))
+  }
+  const flag = (m: string): void => {
+    const [first = "", ...rest] = fit(m)
+    print(c, warn(first))
+    for (const l of rest) print(c, line(l))
+  }
+  const busy = <T>(label: string, work: () => Promise<T>): Promise<T> =>
+    spin((t) => c.io.stdout(t), label, work)
   const yes = c.args.values.yes === true
   const carry = [
     ...(c.args.values.config ? ["--config", c.args.values.config] : []),
@@ -102,7 +120,9 @@ export async function setup(c: Context): Promise<number> {
   /** true or false when someone answered or --yes decided; undefined when there is no one to ask. */
   const ask = async (question: string, byDefault: boolean): Promise<boolean | undefined> => {
     if (!c.io.prompt) return undefined
-    const a = (await c.io.prompt(`${question} ${byDefault ? "[Y/n]" : "[y/N]"} `))?.trim().toLowerCase()
+    const a = (await c.io.prompt(`${paint("accent", "◆")}  ${question} ${byDefault ? "[Y/n]" : "[y/N]"} `))
+      ?.trim()
+      .toLowerCase()
     if (a === undefined || a === "") return byDefault
     return a.startsWith("y")
   }
@@ -114,7 +134,8 @@ export async function setup(c: Context): Promise<number> {
   if (only !== undefined && only !== "none" && !/^\d+(\s*,\s*\d+)*$/.test(only))
     throw new CliError("--only takes the numbers of the patterns to add (like 1,3), or none")
 
-  say(`${CLI_NAME} setup`)
+  print(c, intro(`${CLI_NAME} setup`))
+  say()
 
   // 1. Detect and compile. A project with no design-system sources of its own uses the contract its library ships.
   const configPath = path.resolve(c.cwd, c.args.values.config ?? CONFIG_FILE)
@@ -124,7 +145,8 @@ export async function setup(c: Context): Promise<number> {
     if (detected && detected.sources.length > 0) {
       const r = await sub("init")
       if (r.code !== 0) throw new CliError(r.err.trim() || "init failed", r.code)
-      say(`1. detected sources\n${r.out.trim().split("\n").slice(1).join("\n")}`)
+      step("detected sources")
+      say(r.out.trim().split("\n").slice(1).join("\n"))
     } else {
       consumer = true
       let from = c.args.values.contract?.replace(/\\/g, "/").replace(/\/+$/, "")
@@ -136,11 +158,11 @@ export async function setup(c: Context): Promise<number> {
           )
         if (found.length === 1) from = found[0]
         else {
-          const list = found.map((f, i) => `   ${i + 1}. ${f}`).join("\n")
+          const list = found.map((f, i) => `${i + 1}. ${f}`).join("\n")
           const pick = c.io.prompt
             ? Number(
                 (await c.io.prompt(
-                  `1. Several contracts are installed:\n${list}\n   Which one? [1-${found.length}] `
+                  `${paint("accent", "◆")}  Several contracts are installed:\n${list}\n${paint("accent", "◆")}  Which one? [1-${found.length}] `
                 )) ?? ""
               )
             : Number.NaN
@@ -159,8 +181,8 @@ export async function setup(c: Context): Promise<number> {
         extends: { contract: from }
       }
       writeConfig(configPath, config)
-      say(
-        `1. no design system source here. Using the contract shipped in ${from} (${base.contract.metadata.name}, ${base.contract.components.length} components) and wrote ${path.basename(configPath)}.`
+      step(
+        `no design system source here. Using the contract shipped in ${from} (${base.contract.metadata.name}, ${base.contract.components.length} components) and wrote ${path.basename(configPath)}`
       )
     }
   } else {
@@ -172,17 +194,18 @@ export async function setup(c: Context): Promise<number> {
       })
     )?.config
     consumer = existing?.extends !== undefined
-    say(`1. using ${path.basename(configPath)}${consumer ? ` (extends ${existing?.extends?.contract})` : ""}`)
+    step(`using ${path.basename(configPath)}${consumer ? ` (extends ${existing?.extends?.contract})` : ""}`)
   }
-  const compiled = await sub("compile")
+  const compiled = await busy("compiling", () => sub("compile"))
   const dir = await outputDir(c)
   if (!existsSync(path.join(dir, "invariant.contract.json")))
     throw new CliError(`compile did not produce a contract.\n${(compiled.err || compiled.out).trim()}`, 1)
   const { contract } = loadCompiled(dir)
   const names = contract.components.map((x) => x.name)
-  say(
-    `2. ${consumer ? "compiled with your own patterns on top" : "compiled"}: ${contract.components.length} components${names.length > 0 ? ` (${names.slice(0, 6).join(", ")}${names.length > 6 ? `, +${names.length - 6} more` : ""})` : ""}, ${contract.tokens.length} tokens, ${contract.conflicts.length} conflicts${compiled.code === 1 ? "\n   compile reported errors; see invariant/invariant.diagnostics.json" : ""}`
+  step(
+    `${consumer ? "compiled with your own patterns on top" : "compiled"}: ${contract.components.length} components${names.length > 0 ? ` (${names.slice(0, 6).join(", ")}${names.length > 6 ? `, +${names.length - 6} more` : ""})` : ""}, ${contract.tokens.length} tokens, ${contract.conflicts.length} conflicts`
   )
+  if (compiled.code === 1) flag("compile reported errors; see invariant/invariant.diagnostics.json")
 
   // 2. Gather everything the plan needs. Nothing here changes the project except the compile output and the candidates file.
   const by = whoIs(c)
@@ -218,16 +241,14 @@ export async function setup(c: Context): Promise<number> {
         skipped.push(d)
         return false
       })
-  if (skipped.length > 0) say(`   skipped ${skipped.join(", ")}: it holds the design system's own components`)
+  if (skipped.length > 0) say(`skipped ${skipped.join(", ")}: it holds the design system's own components`)
 
   type Cand = CandidatesFile["candidates"][number]
   let top: Cand[] = []
   if (appPaths.length === 0)
-    say(
-      "3. no application folder found (looked for src, app, pages, apps). Pass --paths a,b to look elsewhere."
-    )
+    flag("no application folder found (looked for src, app, pages, apps). Pass --paths a,b to look elsewhere")
   else {
-    const found = await sub("discover", ...appPaths, "--json")
+    const found = await busy("looking for recurring structures", () => sub("discover", ...appPaths, "--json"))
     if (found.code === 0) {
       const file = JSON.parse(found.out) as CandidatesFile
       top = file.candidates
@@ -235,14 +256,12 @@ export async function setup(c: Context): Promise<number> {
         .sort((a, b) => b.support.files - a.support.files || (a.id < b.id ? -1 : 1))
         .slice(0, TOP)
       if (top.length === 0)
-        say(
-          `3. looked in ${appPaths.join(", ")}: no structure recurs often enough to propose (needs 3 files).`
-        )
+        step(`looked in ${appPaths.join(", ")}: no structure recurs often enough to propose (needs 3 files)`)
       else {
-        say(`3. found ${top.length} recurring structure(s) in ${appPaths.join(", ")}:`)
-        for (const [i, x] of top.entries()) say(`   ${i + 1}. ${x.suggestedName}  (${x.support.files} files)`)
+        step(`found ${top.length} recurring structure(s) in ${appPaths.join(", ")}`)
+        for (const [i, x] of top.entries()) say(`${i + 1}. ${x.suggestedName}  (${x.support.files} files)`)
       }
-    } else say(`3. discovery failed: ${found.err.trim()}`)
+    } else print(c, fail(`discovery failed: ${found.err.trim()}`))
   }
   const rulesFor = (x: Cand): StarterRule[] => starterRules(x.structure.tree)
   const countViolations = async (): Promise<number> => {
@@ -268,14 +287,14 @@ export async function setup(c: Context): Promise<number> {
     !existsSync(workflowFile) &&
     (wantsCi || existsSync(path.join(c.cwd, ".git")) || existsSync(path.join(c.cwd, ".github")))
   if (existsSync(workflowFile) && c.args.values["no-ci"] !== true)
-    say(`   ${WORKFLOW_PATH} already exists, so it will be left alone.`)
+    say(`${WORKFLOW_PATH} already exists, so it will be left alone.`)
   const publishFinding =
     consumer || c.args.values["no-publish"] === true || !config
       ? undefined
       : planPublish(c.cwd, config, path.relative(c.cwd, dir) || "invariant")
   const publish = publishFinding?.ok ? publishFinding.plan : undefined
   const publishNeeded = publish !== undefined && !(publish.hasFiles && publish.hasPrepack)
-  if (publishFinding && !publishFinding.ok) say(`   not wiring publishing: ${publishFinding.reason}.`)
+  if (publishFinding && !publishFinding.ok) flag(`not wiring publishing: ${publishFinding.reason}`)
 
   // 3. One plan, one question.
   const noRules = c.args.values["no-rules"] === true
@@ -316,28 +335,42 @@ export async function setup(c: Context): Promise<number> {
     say("Plan. Yes confirms the contract above is right, and does all of this:")
     if (lines.length === 0) say("  (nothing else to do)")
     for (const l of lines) say(`  - ${l}`)
-    const a = ((await c.io.prompt("Looks right? [Y/n, or c to choose each step] ")) ?? "")
-      .trim()
-      .toLowerCase()
-    if (a === "c") mode = "custom"
-    else if (a === "" || a.startsWith("y")) {
+    // A terminal gets the arrow menu. Esc or Ctrl+C counts as no. Without arrows, the typed answer still works.
+    let picked: "yes" | "custom" | "no"
+    if (c.io.select)
+      picked =
+        (await c.io.select("Looks right?", [
+          { value: "yes", label: "Yes, apply this setup", key: "y" },
+          { value: "custom", label: "Choose each step", key: "c" },
+          { value: "no", label: "No, stop", key: "n" }
+        ])) ?? "no"
+    else {
+      const a = (
+        (await c.io.prompt(`${paint("accent", "◆")}  Looks right? [Y/n, or c to choose each step] `)) ?? ""
+      )
+        .trim()
+        .toLowerCase()
+      picked = a === "c" ? "custom" : a === "" || a.startsWith("y") ? "yes" : "no"
+    }
+    if (picked === "custom") mode = "custom"
+    else if (picked === "yes") {
       mode = "quick"
       confirmed = true
     } else mode = "stop"
   } else mode = "none"
 
   if (mode === "stop") {
-    say()
     say(
       `Stopped. Nothing was approved or added. The contract is compiled in ${path.relative(c.cwd, dir) || "."}/. If it looks wrong, check ${path.basename(configPath)} (or pass --paths, --contract) and run ${CLI_NAME} setup again.`
     )
+    print(c, outro("stopped", true))
     return 0
   }
   if (mode === "none") {
-    say()
     say(
       `not asking (no terminal). Nothing was added. Re-run with --yes to add proposals, or --confirm-contract --as <name> once you have checked the contract above.`
     )
+    print(c, outro("not asked", true))
     return 0
   }
 
@@ -358,11 +391,12 @@ export async function setup(c: Context): Promise<number> {
     approve = confirmed
     withRules = confirmed && !noRules
   } else {
-    confirmed = (await ask("   Does this look like your design system?", false)) === true
+    confirmed = (await ask("Does this look like your design system?", false)) === true
     if (top.length > 0 && c.io.prompt) {
       const a = (
-        (await c.io.prompt("   Add the patterns? Enter for all, numbers to skip (like 2,3), n for none: ")) ??
-        ""
+        (await c.io.prompt(
+          `${paint("accent", "◆")}  Add the patterns? Enter for all, numbers to skip (like 2,3), n for none: `
+        )) ?? ""
       )
         .trim()
         .toLowerCase()
@@ -373,23 +407,23 @@ export async function setup(c: Context): Promise<number> {
       }
     }
     if (chosen.length > 0 && confirmed)
-      approve = (await ask(`   Approve ${chosen.length} pattern(s) as ${by}?`, true)) === true
+      approve = (await ask(`Approve ${chosen.length} pattern(s) as ${by}?`, true)) === true
     const n = chosen.reduce((m, x) => m + rulesFor(x).length, 0)
     if (approve && n > 0 && !noRules)
-      withRules = (await ask(`   Turn on ${n} starter rule(s) as warnings?`, true)) === true
-    if (clients.length > 0) wantAgents = (await ask(`   Connect ${clients.join(", ")}?`, true)) === true
+      withRules = (await ask(`Turn on ${n} starter rule(s) as warnings?`, true)) === true
+    if (clients.length > 0) wantAgents = (await ask(`Connect ${clients.join(", ")}?`, true)) === true
     if (existingViolations > 0)
       wantBaseline =
         (await ask(
-          `   Hide ${existingViolations} existing violation(s) so only new ones are flagged?`,
+          `Hide ${existingViolations} existing violation(s) so only new ones are flagged?`,
           true
         )) === true
     if (ciPossible)
       wantCi =
         wantsCi ||
-        (await ask("   Add a GitHub Action that checks every commit on pull requests?", true)) === true
+        (await ask("Add a GitHub Action that checks every commit on pull requests?", true)) === true
     if (publishNeeded && publish)
-      wantPublish = (await ask(`   Add the contract to what ${publish.name} publishes?`, true)) === true
+      wantPublish = (await ask(`Add the contract to what ${publish.name} publishes?`, true)) === true
   }
   if ((confirmed || chosen.length > 0) && !by)
     throw new CliError(
@@ -397,8 +431,8 @@ export async function setup(c: Context): Promise<number> {
     )
   say(
     confirmed
-      ? `   contract confirmed by ${by}.`
-      : "   contract not confirmed, so nothing is approved and no rule is turned on."
+      ? paint("ok", `contract confirmed by ${by}.`)
+      : "contract not confirmed, so nothing is approved and no rule is turned on."
   )
 
   // 4. Do it.
@@ -421,7 +455,7 @@ export async function setup(c: Context): Promise<number> {
       const a = await sub("candidates", "accept", x.id, "--as", by, "--note", "added by invariant setup")
       const p = a.code === 0 ? await sub("candidates", "promote", x.id, "--id", id, "--as", by) : a
       if (p.code === 0) promoted.push({ id, cand: x })
-      else say(`   skipped ${x.suggestedName}: ${(p.err || p.out).trim().split("\n")[0]}`)
+      else flag(`skipped ${x.suggestedName}: ${(p.err || p.out).trim().split("\n")[0]}`)
     }
   }
   let approved = 0
@@ -450,7 +484,7 @@ export async function setup(c: Context): Promise<number> {
     writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`)
     const r = await sub("compile")
     if (r.code === 1)
-      say("   compile reported errors after adding patterns; see invariant/invariant.diagnostics.json")
+      flag("compile reported errors after adding patterns; see invariant/invariant.diagnostics.json")
     did.push(
       approved > 0
         ? `patterns   ${approved} approved by ${by}. They guide agents.`
@@ -503,7 +537,11 @@ export async function setup(c: Context): Promise<number> {
     mkdirSync(path.dirname(workflowFile), { recursive: true })
     writeFileSync(
       workflowFile,
-      workflowYaml(appPaths, consumer ? installStepsFor((f) => existsSync(path.join(c.cwd, f))) : [])
+      workflowYaml(
+        appPaths,
+        consumer ? installStepsFor((f) => existsSync(path.join(c.cwd, f))) : [],
+        path.relative(c.cwd, dir).split(path.sep).join("/") || "."
+      )
     )
     ciAdded = true
     did.push(
@@ -525,22 +563,22 @@ export async function setup(c: Context): Promise<number> {
   }
 
   say()
-  say("Set up:")
+  step("set up")
   say(
-    `  contract   ${contract.components.length} components, ${contract.tokens.length} tokens (${path.relative(c.cwd, dir) || "."}/)`
+    `contract   ${contract.components.length} components, ${contract.tokens.length} tokens (${path.relative(c.cwd, dir) || "."}/)`
   )
-  for (const l of did) say(`  ${l}`)
+  for (const l of did) say(l)
   const first =
     promoted.length > 0 && withRules ? rulesFor((promoted[0] as { cand: Cand }).cand)[0] : undefined
   if (first && appPaths.length > 0)
     say(
       `\nSee it work: break this, then run ${CLI_NAME} validate ${appPaths.join(" ")}\n  "${first.description}"`
     )
-  say(`\ndone in ${Math.max(1, Math.round((Date.now() - started) / 1000))}s.`)
   if (!hasCi)
     say(
       `Add this to CI: ${CLI_NAME} verify --fresh && ${CLI_NAME} validate ${appPaths.length > 0 ? appPaths.join(" ") : "src/"}`
     )
   say(`Review: ${CLI_NAME} patterns list`)
+  print(c, outro(`done in ${Math.max(1, Math.round((Date.now() - started) / 1000))}s`, true))
   return 0
 }

@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 import { createInterface } from "node:readline/promises"
 import { run } from "./cli.js"
+import { setColor, setLinks } from "./format.js"
+import { setLive } from "./frame.js"
+import { arrowSelect } from "./select.js"
+
+// Color only for a person at a terminal: pipes, CI and NO_COLOR get plain text (https://no-color.org).
+const interactive = Boolean(process.stdout.isTTY) && process.env.TERM !== "dumb"
+setColor(interactive && !process.env.NO_COLOR)
+setLinks(interactive)
+setLive(interactive)
 
 const stop = new AbortController()
 for (const sig of ["SIGINT", "SIGTERM"] as const) process.once(sig, () => stop.abort())
@@ -23,7 +32,9 @@ const code = await run(process.argv.slice(2), {
           } finally {
             rl.close()
           }
-        }
+        },
+        select: <T extends string>(question: string, choices: Parameters<typeof arrowSelect<T>>[3]) =>
+          arrowSelect(process.stdin, process.stdout, question, choices)
       }
     : {})
 })

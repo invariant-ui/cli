@@ -67,7 +67,21 @@ export function headline(s: Summary): string {
 
 const MARK = { error: "✗", warning: "⚠", info: "ℹ" } as const
 
-export function renderText(s: Summary): string {
+/** Terminal output paints warning text; a file (`--to`) gets the plain text. */
+export interface TextStyle {
+  error(text: string): string
+  warning(text: string): string
+  info(text: string): string
+  success(text: string): string
+}
+const PLAIN_TEXT: TextStyle = {
+  error: (text) => text,
+  warning: (text) => text,
+  info: (text) => text,
+  success: (text) => text
+}
+
+export function renderText(s: Summary, style: TextStyle = PLAIN_TEXT): string {
   const lines = [`Invariant enforcement: ${headline(s)}`, `session ${s.session}`, ""]
   for (const step of s.steps) {
     const uses = plural(step.checked, "component use")
@@ -77,12 +91,13 @@ export function renderText(s: Summary): string {
         : step.outcome === "passed"
           ? `passed (${uses} checked)`
           : `${step.outcome} (${plural(step.findings.length + step.omitted, "finding")})`
-    lines.push(`${step.time}  ${step.file}  ${state}`)
+    const stateTone =
+      step.outcome === "blocked" ? style.error : step.outcome === "warned" ? style.warning : (t: string) => t
+    lines.push(stateTone(`${step.time}  ${step.file}  ${state}`))
     for (const f of step.findings) {
-      lines.push(
-        `    ${MARK[f.severity]} ${f.code}: ${f.message}${f.line !== undefined ? ` (line ${f.line})` : ""}`
-      )
-      if (f.fix) lines.push(`        fix: ${f.fix}`)
+      const found = `    ${MARK[f.severity]} ${f.code}: ${f.message}${f.line !== undefined ? ` (line ${f.line})` : ""}`
+      lines.push(style[f.severity](found))
+      if (f.fix) lines.push(style[f.severity](`        fix: ${f.fix}`))
     }
     if (step.omitted > 0) lines.push(`    …and ${step.omitted} more`)
   }

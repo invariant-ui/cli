@@ -22,3 +22,5 @@ Sleep 600ms
 Enter
 Sleep 9s
 Sleep 5s
+# The submission screenshot is the final frame of the same run.
+Screenshot docs/submission/enforcement-loop.png

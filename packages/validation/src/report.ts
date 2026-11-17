@@ -96,22 +96,34 @@ export function shouldFail(summary: RunSummary, failOn: FailOn): boolean {
       : summary.errors > 0
 }
 
+/** How warning text is shown. The CLI passes terminal color; the default leaves the text as it is. */
+export interface TextStyle {
+  error(text: string): string
+  warning(text: string): string
+  info(text: string): string
+}
+const PLAIN_TEXT: TextStyle = { error: (text) => text, warning: (text) => text, info: (text) => text }
+
 export function formatText(
   violations: readonly Violation[],
   summary: RunSummary,
-  evaluations: readonly Evaluation[] = []
+  evaluations: readonly Evaluation[] = [],
+  style: TextStyle = PLAIN_TEXT
 ): string {
   const lines: string[] = []
   for (const v of sortViolations(violations)) {
-    lines.push(`${v.file}:${v.line ?? 1}:${v.column ?? 1} ${v.severity} ${v.code}`)
-    lines.push(`  ${v.message}`)
-    if (v.suggestion) lines.push(`  fix: ${v.suggestion}`)
     const refs = [
       v.source ? `evidence ${v.source} (${v.basis})` : `basis ${v.basis}`,
       v.policy ? `policy ${v.policy}` : undefined,
       v.subject ? `subject ${v.subject}` : undefined
     ].filter(Boolean)
-    lines.push(`  ${refs.join("; ")}`)
+    const block = [
+      `${v.file}:${v.line ?? 1}:${v.column ?? 1} ${v.severity} ${v.code}`,
+      `  ${v.message}`,
+      ...(v.suggestion ? [`  fix: ${v.suggestion}`] : []),
+      `  ${refs.join("; ")}`
+    ]
+    lines.push(...block.map((l) => style[v.severity](l)))
     lines.push("")
   }
   const unestablished = sortEvaluations(evaluations).filter(
@@ -129,7 +141,7 @@ export function formatText(
     lines.push("")
   }
   lines.push(
-    `${summary.errors} errors, ${summary.warnings} warnings, ${summary.info} info in ${summary.files} files (${summary.componentsChecked} components checked)`
+    `${style.error(`${summary.errors} errors`)}, ${style.warning(`${summary.warnings} warnings`)}, ${style.info(`${summary.info} info`)} in ${summary.files} files (${summary.componentsChecked} components checked)`
   )
   return lines.join("\n")
 }

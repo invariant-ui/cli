@@ -34,6 +34,7 @@ export {
   sortEvaluations,
   sortViolations,
   summarize,
+  type TextStyle,
   toJson,
   toSarif,
   type Violation

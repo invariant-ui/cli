@@ -103,6 +103,9 @@ hr{border:0;border-top:1px solid var(--line);margin:28px 0}
 /* code blocks */
 .code{position:relative;margin:0 0 18px}
 .code pre{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:13.5px;line-height:1.65}
+.code pre.out{white-space:pre-wrap;overflow-wrap:anywhere}
+.code pre.out .ln{display:block}
+.code pre.out .ln.ind{padding-left:2ch}
 .code .lang{position:absolute;top:8px;right:62px;font:11px var(--mono);color:var(--muted)}
 .copy{position:absolute;top:6px;right:8px;background:#1f1f1c;border:1px solid var(--line);color:var(--muted);border-radius:6px;font:11px var(--mono);padding:3px 9px;cursor:pointer;opacity:0;transition:opacity .15s}
 .code:hover .copy,.copy:focus{opacity:1}
@@ -115,7 +118,7 @@ table{border-collapse:collapse;width:100%;font-size:14.5px}
 th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
 th{background:#131312;font:12px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
 tr:last-child td{border-bottom:0}
-td code{white-space:nowrap}
+td code{white-space:normal}
 
 /* callouts & cards */
 .note{border:1px solid var(--line);border-left:3px solid var(--accent);background:#131312;border-radius:8px;padding:12px 16px;margin:0 0 18px;font-size:15px}
@@ -282,15 +285,8 @@ pnpm invariant --help   # same as: node apps/cli/dist/main.js</pre></div>
   <h3>Fastest path: one command</h3>
   <div class="code"><span class="lang">bash</span><pre>invariant setup</pre></div>
   <p>It detects your sources, compiles the contract and looks at your app code. Then it shows one plan and asks one question:</p>
-  <div class="code"><span class="lang">text</span><pre>Plan. Yes confirms the contract above is right, and does all of this:
-  - add 3 recurring pattern(s) from app, approved by Ana
-  - turn on 7 starter rule(s) as warnings: they flag new code, and existing code is hidden by the baseline
-  - hide 5 existing violation(s) so only new ones are flagged
-  - connect cursor
-  - add .github/workflows/invariant.yml, which checks every pull request commit
-  - publish the contract with @acme/ui (adds "invariant" to files and a prepack script)
-Looks right? [Y/n, or c to choose each step]</pre></div>
-  <p>Enter or <code>y</code> does it all. <code>n</code> stops with nothing added. <code>c</code> asks about each step. The plan only lists what applies: the publish line appears in a design system repository, the CI line in a git project.</p>
+  <div class="code"><span class="lang">text</span><pre class="out"><span class="ln">Plan. Yes confirms the contract above is right, and does all of this:</span><span class="ln ind">- add .github/workflows/invariant.yml, which checks every pull request commit</span><span class="ln ind">- publish the contract with @acme/ui (adds "invariant" to files and a prepack script)</span><span class="ln">◆  Looks right?</span><span class="ln ind">● Yes, apply this setup</span><span class="ln ind">○ Choose each step</span><span class="ln ind">○ No, stop</span><span class="ln ind">↑/↓ move · enter choose · esc stop</span></pre></div>
+  <p>On a terminal, arrow keys pick a choice and Enter confirms; Esc stops. Enter or <code>y</code> does it all, <code>n</code> stops with nothing added, and <code>c</code> asks about each step. Without a terminal the question is <code>Looks right? [Y/n, or c to choose each step]</code>. The plan only lists what applies: the publish line appears in a design system repository, the CI line in a git project.</p>
   <ul>
     <li><b>Starter rules</b> restate what a recurring arrangement did every time: a <code>Modal</code> always contained a <code>Button</code>, a <code>Card.Header</code> always came before the <code>Card.Body</code>. They are checked across your app folders as warnings, so they annotate new code and do not fail a build until you raise them. Skip them with <code>--no-rules</code>.</li>
     <li><b>Publishing</b> (design system repository): adds <code>invariant</code> to the package's <code>files</code> and a <code>prepack</code> script that compiles the contract, so the published package carries it. Skipped for a private package; <code>--no-publish</code> skips it.</li>
@@ -317,6 +313,7 @@ invariant verify --fresh                # is the contract stale or tampered with
 invariant agent init claude-code        # give your AI tool the contract</pre></div>
   <p>Put <code>validate</code> and <code>verify --fresh</code> in CI. To start clean on an existing codebase, run <code>invariant validate src/ --update-baseline</code>: existing violations are hidden (with a note), and new ones still fail. <code>--no-baseline</code> shows everything. To check behavior in a browser, see <a href="#browser-verification">Browser verification</a>.</p>
   <div class="note"><b>Compile exit code</b><code>compile</code> exits 1 if any diagnostic is an error. The files are still written so you can inspect the problem. <code>compile --watch</code> recompiles after changes settle, so a connected agent always sees a current contract.</div>
+  <p><code>compile</code> and <code>verify</code> end with a <code>report</code> line that gives the path to <code>invariant.report.html</code>. In a terminal the path is a link that opens the report. In CI it is the plain path.</p>
 </section>
 
 <section class="doc" id="integrate">
@@ -351,10 +348,13 @@ invariant agent init claude-code        # give your AI tool the contract</pre></
   <div class="kicker">Concepts</div>
   <h2>How it works</h2>
   <p>Each stage has one job and a clear boundary.</p>
-  <div class="code"><span class="lang">text</span><pre>sources  ->  adapters  ->  IR  ->  reconcile  ->  enrich  ->  verify  ->  contract
-(code)       (extract)    (shared)  (merge,       (infer,      (check)      + evidence
-                                     conflicts)   with
-                                                  evidence)</pre></div>
+  <div class="code"><span class="lang">text</span><pre>sources (code)
+  -&gt; adapters (extract)
+  -&gt; IR (shared)
+  -&gt; reconcile (merge, conflicts)
+  -&gt; enrich (infer, with evidence)
+  -&gt; verify (check)
+  -&gt; contract + evidence</pre></div>
   <ol>
     <li><b>Discover.</b> Find packages, entry points, Storybook configuration, token files and docs.</li>
     <li><b>Extract.</b> Each adapter reads one kind of source and emits facts with evidence into an intermediate representation (IR). Adapters never merge or resolve, and do not know about each other.</li>
@@ -692,10 +692,7 @@ invariant validate src --format json|github|sarif      # machine-readable output
 invariant validate src --fail-on warning|never         # change the failing threshold</pre></div>
   <p>The framework comes from the file name, then <code>--framework</code>, then the contract's only framework, then React. Nothing is executed or imported. Only literal values are verified. Expressions and bindings are counted as unverified and never guessed.</p>
   <h3>What a violation says</h3>
-  <div class="code"><span class="lang">text</span><pre>app/App.tsx:4:5 error prop-value-not-allowed
-  Button.variant is "danger", which is not one of "primary", "secondary", "ghost"
-  fix: Use one of "primary", "secondary", "ghost" (closest: "primary").
-  evidence src/Button.tsx:28 (discovered); subject component:button</pre></div>
+  <div class="code"><span class="lang">text</span><pre class="out"><span class="ln"><span class="p">$ </span>invariant validate app/pages/Prop.tsx</span><span class="ln">app/pages/Prop.tsx:3:27 <span class="b">error</span> prop-value-not-allowed</span><span class="ln ind">Button.variant is "danger", which is not one of "primary", "secondary", "ghost"</span><span class="ln ind c">fix: Use one of "primary", "secondary", "ghost".</span><span class="ln ind c">evidence src/Button.tsx:11 (discovered); subject component:button</span><span class="ln"> </span><span class="ln c">…</span><span class="ln"> </span><span class="ln">2 errors, 0 warnings, 0 info in 1 files (1 components checked)</span></pre></div>
   <p>Every violation has file, line and column, a rule code, a subject, an explanation, a suggested fix, evidence (or the approved policy) and a <code>basis</code>: <code>discovered</code>, <code>documented</code>, <code>inferred</code>, <code>approved</code> or <code>heuristic</code>.</p>
   <h3>The eleven rules</h3>
   <div class="tbl"><table>
@@ -870,10 +867,10 @@ npx @invariant-ui/cli verify --fresh                # fails if stale or tampered
 npx @invariant-ui/cli validate src --format github  # annotate pull requests</pre></div>
   <p>Commit the <code>invariant/</code> folder, <code>invariant.config.json</code>, <code>invariant.policies.json</code> and <code>invariant.decisions.json</code>. Compiling unchanged sources gives identical bytes, so diffs are meaningful.</p>
   <h3>Let setup add it</h3>
-  <p>In a git project, <code>invariant setup</code> asks "Add a GitHub Action that checks every commit on pull requests?". Yes writes <code>.github/workflows/invariant.yml</code>:</p>
+  <p>In a git project, the <code>invariant setup</code> plan lists "add <code>.github/workflows/invariant.yml</code>, which checks every pull request commit". Yes writes it:</p>
   <ul>
     <li><b>When it runs:</b> on every commit to an open pull request (<code>opened</code>, <code>synchronize</code>, <code>reopened</code>) and on pushes to <code>main</code>. A newer push cancels the run before it.</li>
-    <li><b>What it runs:</b> <code>verify --fresh</code>, which fails if the committed <code>invariant/</code> folder is stale or was edited by hand, then <code>validate</code> on your application folders with <code>--format github</code>, which annotates the lines that break the contract. Violations in <code>invariant.baseline.json</code> are hidden. New ones are annotated, and any at error severity fail the check; starter rules are warnings, so they annotate without failing.</li>
+    <li><b>What it runs:</b> <code>verify --fresh</code>, which fails if the committed <code>invariant/</code> folder is stale or was edited by hand, then <code>validate</code> on your application folders with <code>--format github</code>, which annotates the lines that break the contract. Violations in <code>invariant.baseline.json</code> are hidden. New ones are annotated, and any at error severity fail the check; starter rules are warnings, so they annotate without failing. Then the job uploads <code>invariant/invariant.report.html</code> as the <code>invariant-report</code> artifact, even when a check failed, and links it from the run summary.</li>
     <li><b>Safe by default:</b> it pins the exact version it was written for, asks for <code>contents: read</code> only, and uses no secrets.</li>
     <li><b>Options:</b> <code>--ci</code> adds it without asking (and in a folder that is not a git project), <code>--no-ci</code> skips the question. An existing <code>invariant.yml</code> is never overwritten. <code>--yes</code> answers yes.</li>
   </ul>
@@ -881,9 +878,11 @@ npx @invariant-ui/cli validate src --format github  # annotate pull requests</pr
   <p>To write the job yourself, or to add it to a workflow you already have, it needs only Node, because <code>npx</code> fetches the package:</p>
   <div class="code"><span class="lang">yaml</span><pre>- uses: actions/setup-node@v4
   with: { node-version: 22 }
-- run: npx @invariant-ui/cli verify --fresh
-- run: npx @invariant-ui/cli validate src --format github</pre></div>
-  <p>Pin a version (<code>npx @invariant-ui/cli@0.3.0</code>) if you want builds that do not change underneath you.</p>
+- run: npx @invariant-ui/cli@0.4.0 verify --fresh
+- run: npx @invariant-ui/cli@0.4.0 validate app --format github
+- uses: actions/upload-artifact@v4   # the report, even when a check failed
+  with: { name: invariant-report, path: invariant/invariant.report.html }</pre></div>
+  <p>Pin a version (<code>npx @invariant-ui/cli@0.4.0</code>) if you want builds that do not change underneath you.</p>
   <div class="note"><b>No workflow file is generated</b>Invariant does not write files into <code>.github/</code>. Copy the job above into the workflow you already have.</div>
 </section>
 
@@ -1028,20 +1027,7 @@ invariant agent list</pre></div>
   <h2>See it working in your agent chat</h2>
   <p>You do not have to trust that an agent followed your design system, or ask it to check. With Claude Code, Invariant checks every file the agent writes, stops the ones that break the contract, and keeps a record you can forward.</p>
   <p>Ask an agent for a settings page with a delete button. This is what you watch happen, taken from the scripted demo (<code>pnpm demo</code> in a source checkout):</p>
-  <div class="code"><span class="lang">chat</span><pre>1. The agent writes a danger-styled delete button.
-   invariant blocked app/pages/Settings.tsx: 1 error against the @acme/ui contract
-   ✗ prop-value-not-allowed: Button.variant is "danger", which is not one of "primary", "secondary", "ghost" (line 8)
-       fix: Use one of "primary", "secondary", "ghost".
-
-2. It switches to primary and paints it red by hand.
-   ✗ color-not-in-tokens: #ff0000 is a literal color that is not the value of any token (line 8)
-
-3. It uses tokens, but the confirmation dialog has no button.
-   ✗ pattern-required-child-missing: Modal at line 11 has no Button (pattern pattern:page.settings) (line 11)
-       fix: Add Button inside Modal.
-
-4. It adds a confirm button.
-   invariant ✓ app/pages/Settings.tsx follows the @acme/ui contract (6 component uses checked)</pre></div>
+  <div class="code"><span class="lang">chat</span><pre class="out"><span class="ln">1. first try: a danger-styled delete button</span><span class="ln">   invariant blocked the write. The agent reads:</span><span class="ln"> </span><span class="ln ind">invariant blocked app/pages/Settings.tsx: 1 error against the @acme/ui contract</span><span class="ln ind"><span class="b">✗</span> prop-value-not-allowed: Button.variant is "danger", which is not one of "primary", "secondary", "ghost" (line 8)</span><span class="ln ind c">fix: Use one of "primary", "secondary", "ghost".</span><span class="ln"> </span><span class="ln ind c">Fix these, then write the file again. Facts and fixes come from the compiled contract, not guesses.</span><span class="ln"> </span><span class="ln c">…</span><span class="ln"> </span><span class="ln">4. fourth try: a confirm button inside the dialog</span><span class="ln">   the write landed. The agent reads:</span><span class="ln"> </span><span class="ln ind">invariant ✓ app/pages/Settings.tsx follows the @acme/ui contract (6 component uses checked)</span><span class="ln"> </span><span class="ln c">…</span><span class="ln"> </span><span class="ln">Invariant enforcement: 4 writes checked · 3 violations caught · 3 fixed · 0 outstanding</span></pre></div>
   <p>Each block happens before the file is written, so the bad code never lands. The agent reads the finding and the fix from your contract and tries again. You do not run anything.</p>
   <h3>The record</h3>
   <p>Every check the hook makes is appended to <code>.invariant/enforcement.jsonl</code>, a local file that ignores itself in git. It holds file paths and findings, never file contents.</p>
@@ -1071,7 +1057,7 @@ invariant enforcement report --format html --to report.html   # one self-contain
     <tr><td><code>invariant.evidence.json</code></td><td>Evidence cited by the contract.</td></tr>
     <tr><td><code>invariant.diagnostics.json</code></td><td>Every diagnostic from discovery, extraction, reconciliation, enrichment and verification.</td></tr>
     <tr><td><code>invariant.review.json</code></td><td>Open conflicts and inferred facts that need a decision.</td></tr>
-    <tr><td><code>invariant.report.html</code></td><td>A static summary for people.</td></tr>
+    <tr><td><code>invariant.report.html</code></td><td>A static summary for people. <code>compile</code> and <code>verify</code> print its path, and the CI job uploads it as the <code>invariant-report</code> artifact.</td></tr>
     <tr><td><code>invariant.manifest.json</code></td><td>Tool version, build time, compiled sources with input hashes, and the SHA-256 and size of every other file.</td></tr>
   </table></div>
   <p>Other commands write their own files: <code>discover</code> writes <code>invariant.candidates.json</code> to the output directory, <code>browser run</code> writes <code>invariant.browser-results.json</code>, and decisions about candidates are kept in <code>invariant.candidate-reviews.json</code> at the project root, next to <code>invariant.patterns.json</code>, <code>invariant.policies.json</code> and <code>invariant.decisions.json</code>.</p>
