@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/invariant-ui/cli/compare/v0.4.0...v0.5.0) (2026-11-17)
+
+
+### Features
+
+* **cli:** clack-style output, severity colors, report link and CI report upload ([#15](https://github.com/invariant-ui/cli/issues/15)) ([e56bfda](https://github.com/invariant-ui/cli/commit/e56bfda354fa49aa64ecf1bfedb69c51e2849a0f))
+
 ## [0.4.0](https://github.com/invariant-ui/cli/compare/v0.3.0...v0.4.0) (2026-11-17)
 
 
