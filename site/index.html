@@ -322,6 +322,30 @@ footer a:hover{color:var(--text)}
   .o,.pl3,.dn,.cl{opacity:1!important;transform:none!important}.ty{width:auto!important}.spin,.cw,.pl2{opacity:0!important}.t2,.pl2{opacity:1!important}.status .s1,.status .s2{opacity:0!important}.status .s3{opacity:1!important}
 }
 
+/* chat demo: hand-written, 16s loop, CSS only */
+.cx{opacity:0}
+@keyframes cu{0%,2%{opacity:0;transform:translateY(6px)}5%,96%{opacity:1;transform:none}98%,100%{opacity:0}}
+@keyframes ca{0%,9%{opacity:0}12%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cb{0%,16%{opacity:0}18%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cr1{0%,20%{opacity:0}22%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cr2{0%,27%{opacity:0}29%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cr3{0%,34%{opacity:0}36%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cwait{0%,16%{opacity:0}18%,40%{opacity:1}42%,100%{opacity:0}}
+@keyframes cdone{0%,41%{opacity:0}43%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes ct{0%,45%{opacity:0}47%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cf{0%,52%{opacity:0}55%,96%{opacity:1}98%,100%{opacity:0}}
+.cu{animation:cu 16s infinite}.ca{animation:ca 16s infinite}.cb{animation:cb 16s infinite}
+.cr1{animation:cr1 16s infinite}.cr2{animation:cr2 16s infinite}.cr3{animation:cr3 16s infinite}
+.cwait{animation:cwait 16s infinite}.cdone{animation:cdone 16s infinite}
+.ct{animation:ct 16s infinite}.cf{animation:cf 16s infinite}
+.ccchat{display:grid;gap:12px}
+.ccuser{justify-self:end;max-width:80%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:8px 12px;font-size:14px}
+.ccasst{font-size:14px;color:var(--text);line-height:1.6}
+.ccbox .ccstate{display:inline-block;position:relative}
+.ccbox .cdone{position:absolute;left:0;top:0;white-space:nowrap}
+.ccbox .cwait{color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.cx{opacity:1!important;transform:none!important}.cwait{opacity:0!important}}
+
 /* ---------- editorial restyle: flat, ruled, serif headings, no decoration ---------- */
 :root{--serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif}
 @keyframes tglow{0%,3.33%{border-color:var(--line)}4.44%,34.44%{border-color:var(--muted)}36.67%,100%{border-color:var(--line)}}
@@ -659,18 +683,21 @@ section .wrap>h2{align-self:start}
     <div class="label">In your chat</div>
     <h2>In Claude Code, each Invariant lookup and check shows up as a card in the chat.</h2>
     <p class="sub">The Claude Code plugin groups the agent's Invariant calls into one card, and keeps a running count above the prompt. Other tools show the same calls as plain text from the MCP server. The card adds no checks of its own: it lists what the agent called and whether each call succeeded.</p>
-    <div class="chatcard" aria-label="Illustrative chat card">
-      <div class="cchead"><span>claude code</span><span>build a login form using the Invariant tools</span><span class="c prtag">illustrative</span></div>
-      <div class="ccbody">
-        <div class="ccbox"><b>Invariant &middot; 3 contract checks <span class="ok">&#10003;</span></b>
-          <span class="ccrow"><b>get_design_system_overview</b></span>
-          <span class="ccrow"><b>search_design_system</b> input</span>
-          <span class="ccrow"><b>get_component_usage</b> Button</span>
+    <div class="chatcard" aria-label="Illustrative chat card, animated">
+      <div class="cchead"><span>claude code</span><span class="c prtag">illustrative</span></div>
+      <div class="ccbody ccchat">
+        <div class="ccuser cx cu">build a login form using the Invariant tools</div>
+        <div class="ccasst cx ca">I'll check the design system contract before writing anything.</div>
+        <div class="ccbox cx cb"><b>Invariant &middot; 3 contract checks <span class="ccstate"><span class="cwait cx">checking&hellip;</span><span class="cdone cx ok">&#10003;</span></span></b>
+          <span class="ccrow cx cr1"><b>get_design_system_overview</b></span>
+          <span class="ccrow cx cr2"><b>search_design_system</b> input</span>
+          <span class="ccrow cx cr3"><b>get_component_usage</b> Button</span>
         </div>
-        <div class="cctally"><b>Invariant</b> this turn: 3 contract checks</div>
+        <div class="cctally cx ct"><b>Invariant</b> this turn: 3 contract checks</div>
+        <div class="ccasst cx cf">The contract has a Button with sizes sm, md and lg, and no Input component, so I'm using Button for the actions and native inputs for the fields.</div>
       </div>
     </div>
-    <p class="sub" style="margin-top:12px">Illustrative: this is an HTML drawing of the card, not a screenshot. The three calls are the ones the agent made in a real run against <code>fixtures/monorepo/acme</code>. The plugin draws the real card with Claude Code's own interface elements. It needs Claude Code; Cursor and Windsurf show plain text.</p>
+    <p class="sub" style="margin-top:12px">Illustrative: this is an animated HTML drawing of a conversation, not a screenshot. The three calls and the Button and Input facts come from a real run against <code>fixtures/monorepo/acme</code>; the wording around them is written for the page. The plugin draws the real card with Claude Code's own interface elements. It needs Claude Code; Cursor and Windsurf show plain text.</p>
   </div>
 </section>
 
