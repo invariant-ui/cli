@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/invariant-ui/cli/compare/v0.5.0...v0.6.0) (2026-11-18)
+
+
+### Features
+
+* **plugin:** chat card for Claude Code, honest pass line, ADR 0007  ([#17](https://github.com/invariant-ui/cli/issues/17)) ([3adc5cc](https://github.com/invariant-ui/cli/commit/3adc5cc376a72af7c27bd880ccc947ad08d2a2a1))
+
 ## [0.5.0](https://github.com/invariant-ui/cli/compare/v0.4.0...v0.5.0) (2026-11-17)
 
 
