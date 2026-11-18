@@ -64,7 +64,7 @@ The marketing site and docs are dark only. A light theme for docs is a decided f
 - **Terminal and code blocks:** `--panel` background, 1px `--line` border, mono 13 to 13.5px, colored spans use `.p` (prompt, teal), `.c` (muted), `.ok`, `.w` (warning), `.b` (error red) and `.k` (accent).
 - **CLI output in a terminal block:** uses the clack-style frame that `invariant compile` and `invariant verify` print (drawn in `apps/cli/src/frame.ts`, no dependency). `┌` opens the frame with the command name in bold (`<b>`). Every line sits behind a `.c` bar `│`. `◇` (`.ok`) marks a completed step, `▲` (`.w`) a warning and `■` (`.bad`) an error. `└` closes it: `.ok` text when it passed, error color when it failed. The `report` line gives the path to `invariant.report.html`. Blocks copy real output from a run of the CLI on a fixture.
 - **Hero demo:** the animated terminal's output comes from real CLI output. `site/build/hero.mjs` runs `invariant init` and `invariant compile` on a scratch copy of `fixtures/react/design-system` and rewrites two regions of `site/index.html`: the keyframe block between `demo:start (generated)` and `demo:end`, and the terminal between `demo:tty:start` and `demo:tty:end`. Regenerate with `pnpm build && node site/build/hero.mjs`. Do not edit either region by hand. The contract panel is illustrative and stays hand-written.
-- **Motion:** allowed only for the hero demo typing, the tab/filter state changes and copy feedback. Everything respects `prefers-reduced-motion`.
+- **Motion:** allowed only for the hero demo typing, the chat demo in the "In your chat" section and the pull request demo in "Every pull request" (hand-written CSS loops, labeled illustrative), the tab/filter state changes and copy feedback. Everything respects `prefers-reduced-motion`.
 
 ## Logo
 
@@ -104,4 +104,4 @@ Constraint-frame mark: an outlined 26-unit square (2.4 stroke, 2 radius) holding
 
 - Mobile layouts and hover states were not checked in a real browser; headless screenshots only covered desktop.
 - Docs light theme, search-index changes and the Starlight migration are pending (ADR 0006).
-- Only the hero shows an animated demo; no other section is animated.
+- Only the hero, the "In your chat" demo and the pull request demo are animated; no other section is.

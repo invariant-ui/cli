@@ -1,5 +1,8 @@
 {
   "description": "Checks every file the agent writes against the design system contract.",
+  "modules": [
+    "./register.tsx"
+  ],
   "hooks": {
     "SessionStart": [
       {

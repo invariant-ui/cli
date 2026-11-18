@@ -322,6 +322,64 @@ footer a:hover{color:var(--text)}
   .o,.pl3,.dn,.cl{opacity:1!important;transform:none!important}.ty{width:auto!important}.spin,.cw,.pl2{opacity:0!important}.t2,.pl2{opacity:1!important}.status .s1,.status .s2{opacity:0!important}.status .s3{opacity:1!important}
 }
 
+/* chat demo: hand-written, 16s loop, CSS only */
+.cx{opacity:0}
+@keyframes cu{0%,2%{opacity:0;transform:translateY(6px)}5%,96%{opacity:1;transform:none}98%,100%{opacity:0}}
+@keyframes ca{0%,9%{opacity:0}12%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cb{0%,16%{opacity:0}18%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cr1{0%,20%{opacity:0}22%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cr2{0%,27%{opacity:0}29%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cr3{0%,34%{opacity:0}36%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cwait{0%,16%{opacity:0}18%,40%{opacity:1}42%,100%{opacity:0}}
+@keyframes cdone{0%,41%{opacity:0}43%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes ct{0%,45%{opacity:0}47%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cf{0%,52%{opacity:0}55%,96%{opacity:1}98%,100%{opacity:0}}
+.cu{animation:cu 16s infinite}.ca{animation:ca 16s infinite}.cb{animation:cb 16s infinite}
+.cr1{animation:cr1 16s infinite}.cr2{animation:cr2 16s infinite}.cr3{animation:cr3 16s infinite}
+.cwait{animation:cwait 16s infinite}.cdone{animation:cdone 16s infinite}
+.ct{animation:ct 16s infinite}.cf{animation:cf 16s infinite}
+.ccchat{display:grid;gap:12px}
+.ccuser{justify-self:end;max-width:80%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:8px 12px;font-size:14px}
+.ccasst{font-size:14px;color:var(--text);line-height:1.6}
+.ccbox .ccstate{display:inline-block;position:relative}
+.ccbox .cdone{position:absolute;left:0;top:0;white-space:nowrap}
+.ccbox .cwait{color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.cx{opacity:1!important;transform:none!important}.cwait{opacity:0!important}}
+
+/* pull request demo: hand-written, 20s loop, CSS only */
+.gx{opacity:0}
+@keyframes g1{0%,1%{opacity:0}3%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes grun{0%,5%{opacity:0}7%,30%{opacity:1}32%,100%{opacity:0}}
+@keyframes gfail{0%,31%{opacity:0}33%,58%{opacity:1}60%,100%{opacity:0}}
+@keyframes grun2{0%,61%{opacity:0}63%,76%{opacity:1}78%,100%{opacity:0}}
+@keyframes gpass{0%,77%{opacity:0}79%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes gan{0%,36%{opacity:0}39%,58%{opacity:1}60%,100%{opacity:0}}
+@keyframes gcm{0%,58%{opacity:0}61%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes gmerge{0%,78%{opacity:.35}81%,96%{opacity:1}98%,100%{opacity:.35}}
+.g1{animation:g1 20s infinite}.grun{animation:grun 20s infinite}.gfail{animation:gfail 20s infinite}
+.grun2{animation:grun2 20s infinite}.gpass{animation:gpass 20s infinite}.gan{animation:gan 20s infinite}
+.gcm{animation:gcm 20s infinite}.gmerge{opacity:.35;animation:gmerge 20s infinite}
+.pr{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.pr .prhead{padding:12px 16px}
+.pr .prtitle{font-size:15px}.pr .prtitle b{font-weight:600}.pr .prtitle span{color:var(--muted);font-family:var(--mono);font-size:13px}
+.prrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13.5px}
+.prrow .sl{position:relative;display:inline-block;min-width:11ch;height:1.4em;font:12px/1.4 var(--mono)}
+.prrow .sl>span{position:absolute;left:0;top:0;white-space:nowrap}
+.prrow .sl .b{color:var(--bad)}.prrow .sl .ok{color:var(--ok)}.prrow .sl .w{color:var(--warn)}
+.prrow .sum{font:12px var(--mono);color:var(--muted)}
+.prann{padding:8px 16px 12px;border-bottom:1px solid var(--line)}
+.prann pre{padding:4px 0 0}
+.prcommit{display:flex;gap:10px;align-items:baseline;padding:10px 16px;border-bottom:1px solid var(--line);font:13px var(--mono);color:var(--muted)}
+.prcommit b{color:var(--text);font-weight:400}
+.prmerge{padding:12px 16px;display:flex;gap:12px;align-items:center;font-size:13.5px}
+.prmerge .mbtn{font:12px var(--mono);padding:4px 12px;border:1px solid var(--ok);color:var(--ok);border-radius:3px}
+@keyframes gblk{0%,58%{opacity:1}60%,100%{opacity:0}}
+@keyframes gblk2{0%,77%{opacity:1}79%,96%{opacity:0}98%,100%{opacity:1}}
+@keyframes gnote{0%,77%{opacity:0}79%,96%{opacity:1}98%,100%{opacity:0}}
+.prann{display:grid}.prann>*{grid-area:1/1}.prann .gpassnote{font:12.5px var(--mono);align-self:center;animation:gnote 20s infinite}
+.gblk{animation:gblk2 20s infinite;opacity:1}.gok{animation:gpass 20s infinite}
+@media(prefers-reduced-motion:reduce){.gx{opacity:1!important}.grun,.grun2,.gpass,.gcm,.gok,.gpassnote{opacity:0!important}.gmerge{opacity:.35!important}.gblk{opacity:1!important}}
+
 /* ---------- editorial restyle: flat, ruled, serif headings, no decoration ---------- */
 :root{--serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif}
 @keyframes tglow{0%,3.33%{border-color:var(--line)}4.44%,34.44%{border-color:var(--muted)}36.67%,100%{border-color:var(--line)}}
@@ -362,6 +420,17 @@ section .wrap>h2{align-self:start}
   section .wrap>.label{padding:0 0 4px}
 }
 .logo{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:600;letter-spacing:-.035em;font-size:22px;display:inline-flex;align-items:center;gap:9px;color:var(--text)}
+
+.chatcard{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.chatcard .cchead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--line);font:12px var(--mono);color:var(--muted)}
+.chatcard .cchead .prtag{margin-left:auto}
+.chatcard .ccbody{padding:14px}
+.ccbox{border:1px solid var(--line);border-radius:3px;padding:10px 14px;font:13px/1.7 var(--mono)}
+.ccbox b{color:var(--text)}
+.ccbox .ccrow{display:block;color:var(--muted)}
+.ccbox .ccrow b{font-weight:400;color:var(--text)}
+.cctally{margin-top:12px;font:12.5px var(--mono);color:var(--muted)}
+.cctally b{color:var(--text)}
 </style>
 </head>
 <body>
@@ -579,10 +648,15 @@ section .wrap>h2{align-self:start}
       <div class="code"><pre class="out"><span class="ln"><span class="p">$</span> npx @invariant-ui/cli setup --ci</span><span class="ln"><span class="c">...</span></span><span class="ln"><span class="k">◆</span>  Looks right?  <span class="ok">Yes, apply this setup</span></span><span class="ln"><span class="ok">◇</span>  set up</span><span class="ln hang"><span class="c">│</span>  CI         wrote .github/workflows/invariant.yml. Commit it with the invariant/ folder, so CI has</span><span class="ln hang"><span class="c">│</span>  a contract to check against.</span><span class="ln hang"><span class="c">└</span>  <span class="ok">done in 1s</span></span></pre></div>
       <div class="code"><pre class="out wide"><span class="ln c"># Added by `invariant setup`. Checks every commit on a pull request against your design system contract.</span><span class="ln" style="padding-left:6ch;text-indent:-6ch"><span class="k">name</span>: Invariant</span><span class="ln"><span class="k">on</span>:</span><span class="ln">  <span class="k">pull_request</span>:</span><span class="ln" style="padding-left:11ch;text-indent:-7ch"><span class="k">types</span>: [opened, synchronize, reopened]</span><span class="ln"><span class="k">jobs</span>:</span><span class="ln">  <span class="k">invariant</span>:</span><span class="ln" style="padding-left:13ch;text-indent:-9ch"><span class="k">runs-on</span>: ubuntu-latest</span><span class="ln">    <span class="k">steps</span>:</span><span class="ln" style="padding-left:14ch;text-indent:-8ch">- <span class="k">name</span>: Verify the contract is current</span><span class="ln" style="padding-left:13ch;text-indent:-5ch"><span class="k">run</span>: npx @invariant-ui/cli@0.5.0 verify --fresh</span><span class="ln" style="padding-left:14ch;text-indent:-8ch">- <span class="k">name</span>: Validate code against the contract</span><span class="ln" style="padding-left:13ch;text-indent:-5ch"><span class="k">run</span>: npx @invariant-ui/cli@0.5.0 validate 'app' --format github</span><span class="ln" style="padding-left:14ch;text-indent:-8ch">- <span class="k">name</span>: Upload the Invariant report</span><span class="ln" style="padding-left:12ch;text-indent:-4ch"><span class="k">if</span>: always()</span><span class="ln" style="padding-left:14ch;text-indent:-6ch"><span class="k">uses</span>: actions/upload-artifact@v4</span><span class="ln">        <span class="k">with</span>:</span><span class="ln" style="padding-left:16ch;text-indent:-6ch"><span class="k">name</span>: invariant-report</span><span class="ln" style="padding-left:16ch;text-indent:-6ch"><span class="k">path</span>: 'invariant/invariant.report.html'</span><span class="ln c">      ...</span></pre></div>
     </div>
-    <div class="prcheck" aria-label="Illustrative pull request check">
-      <div class="prhead"><span class="fact b">failed</span> <b>invariant</b> <span class="c">validate app/pages/Bad.tsx --format github &middot; exit 1</span><span class="c prtag">illustrative</span></div>
-      <div class="prchips"><span class="sev e">7 errors</span><span class="sev w2">1 warning</span></div>
-      <pre class="out"><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:5 <span class="c">pattern-order-violated</span></span><span class="ln ind c">Card at line 4: Card.Body (line 5) comes before Card.Header (line 8); Card.Header must come first (pattern pattern:page.settings). Fix: Move Card.Header before Card.Body.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">pattern-parent-required</span></span><span class="ln ind c">IconButton at line 6 must be inside Stack, but sits inside Card.Body instead (pattern pattern:page.settings). Fix: Wrap it in Stack.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">required-prop-missing</span></span><span class="ln ind c">IconButton requires the prop "label". Fix: Add label (string).</span></pre>
+    <div class="pr" aria-label="Illustrative pull request with the Invariant check, animated">
+      <div class="prhead gx g1"><span class="prtitle"><b>Move Card.Header above Card.Body</b> <span>#42</span></span><span class="c prtag">illustrative</span></div>
+      <div class="prrow gx g1"><b>invariant</b>
+        <span class="sl"><span class="gx grun w">&#9679; running</span><span class="gx gfail b">&#10007; failed</span><span class="gx grun2 w">&#9679; running</span><span class="gx gpass ok">&#10003; passed</span></span>
+        <span class="sum"><span class="gx gfail" style="position:absolute">7 errors, 1 warning</span><span class="gx gpass">no violations</span></span>
+        <span class="c prtag">validate app --format github</span></div>
+      <div class="prann"><div class="gx gpassnote c">No new violations against the contract. The merge is no longer blocked.</div><pre class="out gx gan"><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:5 <span class="c">pattern-order-violated</span></span><span class="ln ind c">Card at line 4: Card.Body (line 5) comes before Card.Header (line 8); Card.Header must come first (pattern pattern:page.settings). Fix: Move Card.Header before Card.Body.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">pattern-parent-required</span></span><span class="ln ind c">IconButton at line 6 must be inside Stack, but sits inside Card.Body instead (pattern pattern:page.settings). Fix: Wrap it in Stack.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">required-prop-missing</span></span><span class="ln ind c">IconButton requires the prop "label". Fix: Add label (string).</span><span class="ln c">&hellip;and 5 more annotations</span></pre></div>
+      <div class="prcommit gx gcm"><b>new commit</b> Fix card order and add the label <span class="c prtag">pushed &middot; check runs again</span></div>
+      <div class="prmerge gmerge"><span class="mbtn">Merge pull request</span><span style="position:relative;display:inline-block;min-width:34ch;height:1.4em"><span class="c gx gblk" style="position:absolute">Blocked while a required check fails.</span><span class="c gx gok">Ready to merge.</span></span></div>
     </div>
     <div class="grid g3" style="margin-top:16px">
       <div class="card"><h3>New problems only</h3><p>Existing violations are baselined, so a pull request is checked on what it adds, not on history.</p></div>
@@ -640,6 +714,29 @@ section .wrap>h2{align-self:start}
       <div class="card"><h3>Approved vs proposed</h3><p>Agents follow approved patterns, treat the rest as proposals to confirm, and say which they used.</p></div>
       <div class="card"><h3>Always current</h3><p>The server reloads when you recompile. A missing or tampered contract is never partly served.</p></div>
     </div>
+  </div>
+</section>
+
+<section id="chat">
+  <div class="wrap">
+    <div class="label">In your chat</div>
+    <h2>In Claude Code, each Invariant lookup and check shows up as a card in the chat.</h2>
+    <p class="sub">The Claude Code plugin groups the agent's Invariant calls into one card, and keeps a running count above the prompt. Other tools show the same calls as plain text from the MCP server. The card adds no checks of its own: it lists what the agent called and whether each call succeeded.</p>
+    <div class="chatcard" aria-label="Illustrative chat card, animated">
+      <div class="cchead"><span>claude code</span><span class="c prtag">illustrative</span></div>
+      <div class="ccbody ccchat">
+        <div class="ccuser cx cu">build a login form using the Invariant tools</div>
+        <div class="ccasst cx ca">I'll check the design system contract before writing anything.</div>
+        <div class="ccbox cx cb"><b>Invariant &middot; 3 contract checks <span class="ccstate"><span class="cwait cx">checking&hellip;</span><span class="cdone cx ok">&#10003;</span></span></b>
+          <span class="ccrow cx cr1"><b>get_design_system_overview</b></span>
+          <span class="ccrow cx cr2"><b>search_design_system</b> input</span>
+          <span class="ccrow cx cr3"><b>get_component_usage</b> Button</span>
+        </div>
+        <div class="cctally cx ct"><b>Invariant</b> this turn: 3 contract checks</div>
+        <div class="ccasst cx cf">The contract has a Button with sizes sm, md and lg, and no Input component, so I'm using Button for the actions and native inputs for the fields.</div>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:12px">Illustrative: this is an animated HTML drawing of a conversation, not a screenshot. The three calls and the Button and Input facts come from a real run against <code>fixtures/monorepo/acme</code>; the wording around them is written for the page. The plugin draws the real card with Claude Code's own interface elements. It needs Claude Code; Cursor and Windsurf show plain text.</p>
   </div>
 </section>
 
