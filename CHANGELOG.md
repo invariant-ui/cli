@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/invariant-ui/cli/compare/v0.6.0...v0.6.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* regenerate goldens and pinned versions for release 0.6.0 ([1e09b82](https://github.com/invariant-ui/cli/commit/1e09b82aa038de84b21e40943d565b7a42735243))
+
 ## [0.6.0](https://github.com/invariant-ui/cli/compare/v0.5.0...v0.6.0) (2026-11-18)
 
 
