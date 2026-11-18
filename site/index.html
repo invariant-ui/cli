@@ -10,6 +10,16 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://invariant-ui.com/assets/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://invariant-ui.com/">
+<meta property="og:url" content="https://invariant-ui.com/">
+<meta property="og:site_name" content="Invariant">
+<meta name="twitter:title" content="Invariant: Make AI agents build with your design system">
+<meta name="twitter:description" content="Turn your components, tokens and approved UX patterns into a contract agents read and CI enforces.">
+<meta name="twitter:image" content="https://invariant-ui.com/assets/og-image.png">
+<link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "Invariant", "alternateName": "@invariant-ui/cli", "url": "https://invariant-ui.com/", "description": "Compiles a design system and approved UX patterns into a machine-readable contract that AI coding agents read over MCP, and checks code against it in CI.", "applicationCategory": "DeveloperApplication", "applicationSubCategory": "Design system governance", "operatingSystem": "macOS, Linux, Windows (Node.js 20+)", "softwareRequirements": "Node.js 20 or newer", "license": "https://github.com/invariant-ui/cli/blob/main/LICENSE", "codeRepository": "https://github.com/invariant-ui/cli", "sameAs": ["https://github.com/invariant-ui/cli", "https://www.npmjs.com/package/@invariant-ui/cli"], "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "Invariant", "url": "https://invariant-ui.com/"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Invariant?", "acceptedAnswer": {"@type": "Answer", "text": "Invariant is a source-available command-line tool that compiles a design system (components, props, tokens) and the UX patterns a team approves into one machine-readable JSON contract. AI coding agents read the contract before they write UI, and Invariant checks the resulting code against it in CI."}}, {"@type": "Question", "name": "How do I make an AI coding agent follow my design system?", "acceptedAnswer": {"@type": "Answer", "text": "Run npx @invariant-ui/cli setup in the project that holds your design system. Invariant compiles a contract, connects your AI tool (Claude Code, Cursor, Codex or Windsurf) through a read-only MCP server, and adds a CI check. The agent looks up real components, props and tokens instead of guessing, and invariant validate flags code that departs from them."}}, {"@type": "Question", "name": "Does Invariant use an LLM to read my design system?", "acceptedAnswer": {"@type": "Answer", "text": "No. Components, props, events, default values and token values are extracted statically from source code, so an LLM is never the authority for them. Anything inferred is labeled inferred with a confidence, and nothing becomes an approved rule until a person approves it."}}, {"@type": "Question", "name": "Which frameworks and design-system sources does it support?", "acceptedAnswer": {"@type": "Answer", "text": "React, Vue, Angular, Storybook and design token files. Figma and zeroheight are not supported yet. Pattern checks and pattern discovery read React only, and browser verification is early."}}, {"@type": "Question", "name": "Does Invariant send my code anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. It runs locally with no account and no network access. Source is parsed and never executed, unless you explicitly pass --trust-config for a code configuration."}}, {"@type": "Question", "name": "How is Invariant different from a Figma or Storybook MCP server?", "acceptedAnswer": {"@type": "Answer", "text": "Those servers expose one source. Invariant reconciles several sources (code, Storybook, tokens) into one contract, keeps the file and line behind every fact, reports conflicts between sources instead of choosing silently, and then enforces the contract on pull requests. It also holds the page layouts and interaction rules your team approves, which component libraries do not record."}}, {"@type": "Question", "name": "What does Invariant cost and what is the license?", "acceptedAnswer": {"@type": "Answer", "text": "It is free to run. The license is the Functional Source License (FSL-1.1-ALv2): you can read, run, modify and use it inside your company, but not use it to offer a competing product or service. Each version becomes Apache-2.0 two years after release."}}]}</script>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -454,6 +464,7 @@ section .wrap>h2{align-self:start}
 .ccbox .ccrow b{font-weight:400;color:var(--text)}
 .cctally{margin-top:0;font:12.5px var(--mono);color:var(--muted)}
 .cctally b{color:var(--text)}
+.faq h3{margin:28px 0 6px;font-size:17px}.faq h3:first-child{margin-top:0}.faq p{margin:0;color:var(--muted);max-width:680px}
 </style>
 </head>
 <body>
@@ -846,6 +857,29 @@ npx @invariant-ui/cli verify --fresh   # put both in CI</pre></div>
         <div class="code"><button class="copy" type="button" aria-label="Copy command">Copy</button><pre>npm install -g @invariant-ui/cli
 invariant --help</pre></div>
       </div></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="label">FAQ</div>
+    <h2>Questions people ask before installing.</h2>
+    <div class="faq">
+      <h3>What is Invariant?</h3>
+      <p>Invariant is a source-available command-line tool that compiles a design system (components, props, tokens) and the UX patterns a team approves into one machine-readable JSON contract. AI coding agents read the contract before they write UI, and Invariant checks the resulting code against it in CI.</p>
+      <h3>How do I make an AI coding agent follow my design system?</h3>
+      <p>Run npx @invariant-ui/cli setup in the project that holds your design system. Invariant compiles a contract, connects your AI tool (Claude Code, Cursor, Codex or Windsurf) through a read-only MCP server, and adds a CI check. The agent looks up real components, props and tokens instead of guessing, and invariant validate flags code that departs from them.</p>
+      <h3>Does Invariant use an LLM to read my design system?</h3>
+      <p>No. Components, props, events, default values and token values are extracted statically from source code, so an LLM is never the authority for them. Anything inferred is labeled inferred with a confidence, and nothing becomes an approved rule until a person approves it.</p>
+      <h3>Which frameworks and design-system sources does it support?</h3>
+      <p>React, Vue, Angular, Storybook and design token files. Figma and zeroheight are not supported yet. Pattern checks and pattern discovery read React only, and browser verification is early.</p>
+      <h3>Does Invariant send my code anywhere?</h3>
+      <p>No. It runs locally with no account and no network access. Source is parsed and never executed, unless you explicitly pass --trust-config for a code configuration.</p>
+      <h3>How is Invariant different from a Figma or Storybook MCP server?</h3>
+      <p>Those servers expose one source. Invariant reconciles several sources (code, Storybook, tokens) into one contract, keeps the file and line behind every fact, reports conflicts between sources instead of choosing silently, and then enforces the contract on pull requests. It also holds the page layouts and interaction rules your team approves, which component libraries do not record.</p>
+      <h3>What does Invariant cost and what is the license?</h3>
+      <p>It is free to run. The license is the Functional Source License (FSL-1.1-ALv2): you can read, run, modify and use it inside your company, but not use it to offer a competing product or service. Each version becomes Apache-2.0 two years after release.</p>
     </div>
   </div>
 </section>

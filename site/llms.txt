@@ -1,0 +1,17 @@
+# Invariant
+
+> Invariant is a source-available CLI that compiles a design system (React, Vue, Angular, Storybook, design tokens) and approved UX patterns into one machine-readable JSON contract. AI coding agents read the contract over MCP before they write UI, and Invariant checks the code they wrote against it in CI. It runs locally with no account and no network access.
+
+Install and set up: `npx @invariant-ui/cli setup` (Node 20+). Package: @invariant-ui/cli on npm. License: FSL-1.1-ALv2 (becomes Apache-2.0 two years after each release).
+
+Invariant extracts components, props, events and tokens statically from source. It does not use an LLM to decide, fix or approve anything. Every fact carries evidence (file and line) and a status: discovered, documented, inferred or approved. Conflicts between sources are reported, not hidden. Figma and zeroheight are not supported yet.
+
+## Documentation
+- [Full documentation, plain text](https://invariant-ui.com/llms-full.txt): every docs page in one file
+- [Documentation](https://invariant-ui.com/docs/): install, quick start, contract, patterns, validation, CI, MCP server, agent setup
+- [Known limitations](https://invariant-ui.com/docs/#limitations): what Invariant does not do today
+
+## Project
+- [Home page](https://invariant-ui.com/): overview, FAQ and a browsable sample contract
+- [Source code](https://github.com/invariant-ui/cli): repository, issues, specifications and decision records
+- [License](https://github.com/invariant-ui/cli/blob/main/LICENSE)
