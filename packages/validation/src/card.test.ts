@@ -107,9 +107,9 @@ describe("passCard", () => {
     ).toBe("invariant ✓ src/Page.tsx follows the @acme/ui contract (2 component uses checked)")
   })
 
-  it("says no component uses were checked, and the snippet, when there is no file", () => {
+  it("does not claim a pass when no component uses were checked, and names the snippet, when there is no file", () => {
     expect(passCard({ contractName: "@acme/ui", componentsChecked: [] })).toBe(
-      "invariant ✓ the snippet follows the @acme/ui contract (no component uses checked)"
+      "invariant · the snippet: no violations, but no component uses were found to check against the @acme/ui contract"
     )
   })
 })

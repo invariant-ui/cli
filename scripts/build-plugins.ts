@@ -69,13 +69,16 @@ function claude(v: Versions): Tree {
         repository: REPO,
         license: "FSL-1.1-ALv2",
         keywords: KEYWORDS,
-        icon: "./.claude-plugin/icon.png"
+        icon: "./.claude-plugin/icon.png",
+        types: "./types/index.d.ts"
       })
     ],
     [
       "hooks/hooks.json",
       json({
         description: "Checks every file the agent writes against the design system contract.",
+        // The chat card (ADR 0007): draws Invariant's MCP calls as a card in Claude Code. Claude Code only.
+        modules: ["./register.tsx"],
         hooks: {
           SessionStart: [
             {
@@ -103,6 +106,8 @@ function claude(v: Versions): Tree {
     ],
     [".claude-plugin/icon.png", asset("site/assets/logo-icon-512.png")],
     ["bin/invariant-launch.mjs", launcher(v)],
+    ["hooks/register.tsx", read("plugin-src/chat-card/register.tsx")],
+    ["types/index.d.ts", read("plugin-src/chat-card/types.d.ts")],
     ["LICENSE", read("LICENSE")],
     ["README.md", readme("Claude Code")]
   ])
@@ -158,7 +163,7 @@ After installing, ask your AI tool to run \`/invariant:setup\` (or say "set up I
 
 Needs Node.js 20 or newer. The first time it runs, it installs the Invariant command line tool into \`~/.invariant/\`. If you already have \`invariant\` on your PATH, that one is used.
 
-Source and documentation: ${REPO}
+${client === "Claude Code" ? 'In Claude Code, Invariant\'s lookups and checks also show as a card in the chat ("Invariant · N contract checks"), with a running count above the prompt. Other tools show the plain text result.\n\n' : ""}Source and documentation: ${REPO}
 `
 }
 

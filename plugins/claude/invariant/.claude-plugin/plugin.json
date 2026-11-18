@@ -1,6 +1,6 @@
 {
   "name": "invariant",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Make AI tools generate UI that follows your design system. Checks every file the agent writes against your design system's contract.",
   "author": {
     "name": "Invariant",
@@ -16,5 +16,6 @@
     "ui",
     "enforcement"
   ],
-  "icon": "./.claude-plugin/icon.png"
+  "icon": "./.claude-plugin/icon.png",
+  "types": "./types/index.d.ts"
 }

@@ -76,8 +76,13 @@ export interface PassCardInput {
   componentsChecked: readonly string[]
 }
 
-/** The one-line confirmation of a clean pass: what was checked, and that it follows the contract. */
+/**
+ * The one-line confirmation of a clean pass: what was checked, and that it follows the contract. When no
+ * component use was found it claims no more than that: a ✓ there would read as verified when it was not.
+ */
 export function passCard(input: PassCardInput): string {
   const n = input.componentsChecked.length
+  if (n === 0)
+    return `invariant · ${input.file ?? "the snippet"}: no violations, but no component uses were found to check against the ${input.contractName} contract`
   return `invariant ✓ ${input.file ?? "the snippet"} follows the ${input.contractName} contract (${n === 0 ? "no" : n} component use${n === 1 ? "" : "s"} checked)`
 }
