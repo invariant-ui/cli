@@ -59,9 +59,7 @@ nav ul a:hover{color:var(--text)}
 .toplink:hover{color:var(--text)}
 .btn:not(.primary):hover{border-color:var(--muted)}
 .hero{padding:96px 0 72px;text-align:center}
-.eyebrow{display:inline-block;font:12px var(--mono);color:var(--accent2);border:1px solid var(--line);padding:4px 12px;border-radius:99px;margin-bottom:24px}
 h1{font-size:clamp(34px,6vw,60px);line-height:1.08;letter-spacing:-.03em;margin:0 0 20px}
-h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .lead{max-width:640px;margin:0 auto 32px;color:var(--muted);font-size:18px}
 .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:40px}
 .explorer{display:grid;grid-template-columns:200px minmax(0,1fr);background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-height:340px}
@@ -82,15 +80,10 @@ h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--acc
 .proptable .fact{animation:none;white-space:nowrap}
 .proptable .req{color:var(--warn)}
 @media(max-width:720px){.explorer{grid-template-columns:minmax(0,1fr)}.extree{border-right:0;border-bottom:1px solid var(--line);max-height:180px}}
-@media(max-width:720px){.proptable{min-width:0}.proptable thead{display:none}.proptable tr{display:block;padding:10px 0;border-bottom:1px solid var(--line)}.proptable td{display:block;border:0;padding:2px 0;white-space:normal}.proptable td:first-child{white-space:nowrap}}
-.prcheck{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+@media(max-width:720px){.proptable{min-width:0}.proptable thead{display:none}.proptable tr{display:block;padding:12px 14px;border-bottom:1px solid var(--line)}.proptable td{display:block;border:0;padding:2px 0;white-space:normal}.proptable td:first-child{white-space:nowrap}}
 .prhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
 .prhead .fact{animation:none}
 .prtag{margin-left:auto;font:11px var(--mono)}
-.prchips{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 0}
-.sev{font:12px var(--mono);padding:3px 10px;border-radius:99px;border:1px solid var(--line)}
-.sev.e{color:var(--bad)} .sev.w2{color:var(--warn)} .sev.mute{color:var(--muted)}
-.prcheck pre{margin:0;padding:12px 16px 16px;font-size:13px;line-height:1.7;overflow-x:auto}
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .flt{font:12px var(--mono);cursor:pointer;color:var(--muted);background:#0e1118;border:1px solid var(--line);border-radius:6px;padding:4px 10px;animation:none}
 .flt[aria-pressed=true]{border-color:currentColor;background:var(--panel)}
@@ -121,6 +114,7 @@ h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),var(--acc
 .install code{white-space:nowrap;overflow-x:auto}
 .install .copy{flex:none;font:600 14px var(--mono);color:var(--text);background:transparent;border:1px solid var(--line);border-radius:99px;padding:9px 18px;cursor:pointer}
 @media(max-width:720px){.install{gap:12px;padding:8px 8px 8px 18px;font:14px var(--mono)}.install .copy{font:600 12px var(--mono);padding:6px 14px}}
+@media(max-width:420px){.install{gap:8px;padding:6px 6px 6px 12px;font:12.5px var(--mono)}.install .copy{padding:6px 10px}}
 .code .copy{position:absolute;top:10px;right:10px;font:600 12px var(--mono);color:var(--text);background:transparent;border:1px solid var(--line);border-radius:3px;padding:4px 10px;cursor:pointer}
 .code .copy:hover{border-color:var(--muted)}
 .code .copy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -135,7 +129,7 @@ code{overflow-wrap:anywhere}
 .term pre{margin:0;padding:16px 18px;font-size:13.5px;overflow-x:auto;line-height:1.7}
 .p{color:var(--accent2)} .c{color:var(--muted)} .ok{color:var(--ok)} .w{color:var(--warn)} .b{color:var(--bad)} .k{color:var(--accent)}
 section{padding:80px 0;border-top:1px solid var(--line)}
-.label{font:12px var(--mono);color:var(--accent);text-transform:uppercase;letter-spacing:.1em}
+.label{font:14px var(--mono);color:var(--accent);text-transform:uppercase;letter-spacing:.1em}
 h2{font-size:clamp(26px,4vw,38px);letter-spacing:-.02em;line-height:1.15;margin:8px 0 14px}
 .sub{color:var(--muted);max-width:640px;margin:0 0 36px}
 .grid{display:grid;gap:16px}
@@ -145,13 +139,6 @@ h2{font-size:clamp(26px,4vw,38px);letter-spacing:-.02em;line-height:1.15;margin:
 .card h3{margin:0 0 8px;font-size:17px}
 .card p{margin:0;color:var(--muted);font-size:15px}
 .tag{display:inline-block;font:11px var(--mono);padding:2px 8px;border-radius:99px;border:1px solid var(--line);margin-right:6px;color:var(--muted)}
-.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:center;margin-bottom:28px}
-.node{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;text-align:center;font-size:14px}
-.node b{display:block;margin-bottom:4px}
-.node span{color:var(--muted);font-size:13px}
-.node.hl{border-color:var(--accent)}
-.arrow{color:var(--muted);font-size:20px}
-@media(max-width:720px){.flow{grid-template-columns:minmax(0,1fr)}.arrow{transform:rotate(90deg);text-align:center}}
 .facts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .fact{font:12px var(--mono);padding:4px 10px;border-radius:6px;background:#0e1118;border:1px solid var(--line)}
 .fact.d{color:var(--st-discovered)} .fact.m{color:var(--st-documented)} .fact.i{color:var(--st-inferred)} .fact.a{color:var(--st-approved)}
@@ -259,8 +246,6 @@ footer a:hover{color:var(--text)}
 .st .s1{opacity:0;animation:ks1 18s infinite}
 .st .s2{opacity:0;animation:ks2 18s infinite}
 .st .s3{opacity:0;animation:ks3 18s infinite}
-@keyframes tglow{0%,3.33%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}4.44%,35.56%{border-color:var(--accent2);box-shadow:0 0 0 1px rgba(94,234,212,.35),0 30px 80px -30px rgba(94,234,212,.5)}36.67%,100%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}}
-@keyframes cglow{0%,34.44%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}35.56%,77.78%{border-color:var(--accent);box-shadow:0 0 0 1px rgba(124,140,255,.5),0 30px 90px -25px rgba(124,140,255,.7)}88.89%,100%{border-color:var(--line);box-shadow:0 30px 80px -30px rgba(124,140,255,.35)}}
 .stage .term{animation:tglow 18s infinite}.stage .contract{animation:cglow 18s infinite}
 @keyframes tfade{0%,96.5%{opacity:1}97.8%,99%{opacity:0}100%{opacity:1}}
 .tty{animation:tfade 18s infinite}
@@ -289,14 +274,7 @@ footer a:hover{color:var(--text)}
 @keyframes blink{50%{opacity:0}}
 
 .card{transition:opacity .7s ease,transform .25s ease,border-color .25s ease,box-shadow .25s ease;position:relative;overflow:hidden}
-.card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 18px 40px -20px rgba(124,140,255,.5)}
 
-.flow .arrow{position:relative;height:2px;background:var(--line);overflow:hidden;font-size:0;border-radius:2px}
-.flow .arrow::after{content:"";position:absolute;top:0;left:-40%;width:40%;height:100%;background:linear-gradient(90deg,transparent,var(--accent2),transparent);animation:travel 2s linear infinite}
-@keyframes travel{to{left:100%}}
-@media(max-width:720px){.flow .arrow{width:2px;height:36px;margin:0 auto;transform:none}.flow .arrow::after{width:100%;height:40%;top:-40%;left:0;background:linear-gradient(180deg,transparent,var(--accent2),transparent);animation:travelv 2s linear infinite}@keyframes travelv{to{top:100%}}}
-.node.hl{animation:glow 3s ease-in-out infinite}
-@keyframes glow{50%{box-shadow:0 0 30px -4px rgba(124,140,255,.55)}}
 
 
 .fact{animation:chip 4s ease-in-out infinite}
@@ -322,29 +300,29 @@ footer a:hover{color:var(--text)}
   .o,.pl3,.dn,.cl{opacity:1!important;transform:none!important}.ty{width:auto!important}.spin,.cw,.pl2{opacity:0!important}.t2,.pl2{opacity:1!important}.status .s1,.status .s2{opacity:0!important}.status .s3{opacity:1!important}
 }
 
-/* chat demo: hand-written, 16s loop, CSS only */
+/* chat demo: hand-written, plays once when scrolled into view (16s), then the scripted live turn unlocks */
 .cx{opacity:0}
-@keyframes cu{0%,2%{opacity:0;transform:translateY(6px)}5%,96%{opacity:1;transform:none}98%,100%{opacity:0}}
-@keyframes ca{0%,9%{opacity:0}12%,96%{opacity:1}98%,100%{opacity:0}}
-@keyframes cb{0%,16%{opacity:0}18%,96%{opacity:1}98%,100%{opacity:0}}
-@keyframes cr1{0%,20%{opacity:0}22%,96%{opacity:1}98%,100%{opacity:0}}
-@keyframes cr2{0%,27%{opacity:0}29%,96%{opacity:1}98%,100%{opacity:0}}
-@keyframes cr3{0%,34%{opacity:0}36%,96%{opacity:1}98%,100%{opacity:0}}
+@keyframes cu{0%,2%{opacity:0;transform:translateY(6px)}5%,96%,100%{opacity:1;transform:none}}
+@keyframes ca{0%,9%{opacity:0}12%,96%,100%{opacity:1}}
+@keyframes cb{0%,16%{opacity:0}18%,96%,100%{opacity:1}}
+@keyframes cr1{0%,20%{opacity:0}22%,96%,100%{opacity:1}}
+@keyframes cr2{0%,27%{opacity:0}29%,96%,100%{opacity:1}}
+@keyframes cr3{0%,34%{opacity:0}36%,96%,100%{opacity:1}}
 @keyframes cwait{0%,16%{opacity:0}18%,40%{opacity:1}42%,100%{opacity:0}}
-@keyframes cdone{0%,41%{opacity:0}43%,96%{opacity:1}98%,100%{opacity:0}}
-@keyframes ct{0%,45%{opacity:0}47%,96%{opacity:1}98%,100%{opacity:0}}
-@keyframes cf{0%,52%{opacity:0}55%,96%{opacity:1}98%,100%{opacity:0}}
-.cu{animation:cu 16s infinite}.ca{animation:ca 16s infinite}.cb{animation:cb 16s infinite}
-.cr1{animation:cr1 16s infinite}.cr2{animation:cr2 16s infinite}.cr3{animation:cr3 16s infinite}
-.cwait{animation:cwait 16s infinite}.cdone{animation:cdone 16s infinite}
-.ct{animation:ct 16s infinite}.cf{animation:cf 16s infinite}
-.ccchat{display:grid;gap:12px}
+@keyframes cdone{0%,41%{opacity:0}43%,96%,100%{opacity:1}}
+@keyframes ct{0%,45%{opacity:0}47%,96%,100%{opacity:1}}
+@keyframes cf{0%,52%{opacity:0}55%,96%,100%{opacity:1}}
+.cu{animation:cu 16s forwards}.ca{animation:ca 16s forwards}.cb{animation:cb 16s forwards}
+.cr1{animation:cr1 16s forwards}.cr2{animation:cr2 16s forwards}.cr3{animation:cr3 16s forwards}
+.cwait{animation:cwait 16s forwards}.cdone{animation:cdone 16s forwards}
+.ct{animation:ct 16s forwards}.cf{animation:cf 16s forwards}
+.ccchat{display:grid;gap:8px;align-content:start}
 .ccuser{justify-self:end;max-width:80%;background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:8px 12px;font-size:14px}
 .ccasst{font-size:14px;color:var(--text);line-height:1.6}
 .ccbox .ccstate{display:inline-block;position:relative}
 .ccbox .cdone{position:absolute;left:0;top:0;white-space:nowrap}
 .ccbox .cwait{color:var(--muted)}
-@media(prefers-reduced-motion:reduce){.cx{opacity:1!important;transform:none!important}.cwait{opacity:0!important}}
+@media(prefers-reduced-motion:reduce){.cx{opacity:1!important;transform:none!important}.cwait,.ccthink{opacity:0!important}.ccthink{display:none}.lin{animation:none}.ccform.nudge button{animation:none!important}}
 
 /* pull request demo: hand-written, 20s loop, CSS only */
 .gx{opacity:0}
@@ -359,6 +337,26 @@ footer a:hover{color:var(--text)}
 .g1{animation:g1 20s infinite}.grun{animation:grun 20s infinite}.gfail{animation:gfail 20s infinite}
 .grun2{animation:grun2 20s infinite}.gpass{animation:gpass 20s infinite}.gan{animation:gan 20s infinite}
 .gcm{animation:gcm 20s infinite}.gmerge{opacity:.35;animation:gmerge 20s infinite}
+.gen{margin:26px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.gen .term-bar{display:flex;justify-content:space-between;gap:12px}
+.gen pre{margin:0;padding:14px 16px;font:13px/1.8 var(--mono);overflow-x:auto}
+.gen .ln{display:block;white-space:pre}
+.gen .miss{display:block;white-space:pre;color:var(--bad)}
+.gen .miss i{font-style:normal;color:var(--muted)}
+.gennote{padding:10px 16px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+.dgrid{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.7fr);gap:16px;margin:0 0 36px;align-items:stretch}
+.dgrid .term{max-width:none;margin:0}
+.dgrid .term pre.nowrap{white-space:pre;overflow-wrap:normal;font-size:11px}
+.dpanel{background:var(--panel);border:1px solid var(--line);border-radius:3px;display:flex;flex-direction:column}
+.dpanel .term-bar{display:flex;justify-content:space-between;gap:12px}
+.drow{padding:10px 16px;border-bottom:1px solid var(--line);font:13px/1.6 var(--mono)}
+.drow:last-child{border-bottom:0}
+.drow small{display:block;color:var(--muted);font:12px var(--mono)}
+.dconv{padding:10px 16px;font:12.5px var(--mono);color:var(--muted);border-bottom:1px solid var(--line)}
+.dstat{display:inline-block;font:12px var(--mono);padding:2px 8px;border:1px solid var(--line);border-radius:3px;margin-left:8px}
+.dpanel .dfoot{margin-top:auto;padding:10px 16px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+.dline{display:block;white-space:pre-wrap}.dline.del{color:var(--bad)}.dline.add{color:var(--ok)}
+@media(max-width:760px){.dgrid{grid-template-columns:minmax(0,1fr)}}
 .pr{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:3px}
 .pr .prhead{padding:12px 16px}
 .pr .prtitle{font-size:15px}.pr .prtitle b{font-weight:600}.pr .prtitle span{color:var(--muted);font-family:var(--mono);font-size:13px}
@@ -371,9 +369,8 @@ footer a:hover{color:var(--text)}
 .prann pre{padding:4px 0 0}
 .prcommit{display:flex;gap:10px;align-items:baseline;padding:10px 16px;border-bottom:1px solid var(--line);font:13px var(--mono);color:var(--muted)}
 .prcommit b{color:var(--text);font-weight:400}
-.prmerge{padding:12px 16px;display:flex;gap:12px;align-items:center;font-size:13.5px}
+.prmerge{padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:13.5px}
 .prmerge .mbtn{font:12px var(--mono);padding:4px 12px;border:1px solid var(--ok);color:var(--ok);border-radius:3px}
-@keyframes gblk{0%,58%{opacity:1}60%,100%{opacity:0}}
 @keyframes gblk2{0%,77%{opacity:1}79%,96%{opacity:0}98%,100%{opacity:1}}
 @keyframes gnote{0%,77%{opacity:0}79%,96%{opacity:1}98%,100%{opacity:0}}
 .prann{display:grid}.prann>*{grid-area:1/1}.prann .gpassnote{font:12.5px var(--mono);align-self:center;animation:gnote 20s infinite}
@@ -384,7 +381,7 @@ footer a:hover{color:var(--text)}
 :root{--serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif}
 @keyframes tglow{0%,3.33%{border-color:var(--line)}4.44%,34.44%{border-color:var(--muted)}36.67%,100%{border-color:var(--line)}}
 @keyframes cglow{0%,35%{border-color:var(--line)}36.67%,77.78%{border-color:var(--muted)}88.89%,100%{border-color:var(--line)}}
-.term,.contract,.code,.explorer,.tablewrap,.install,.prcheck,.tab,.btn,.flt,.fact,.sev,.proptable,.install .copy{border-radius:3px}
+.term,.contract,.code,.explorer,.tablewrap,.install,.tab,.btn,.flt,.fact,.proptable,.install .copy{border-radius:3px}
 .term,.contract{box-shadow:none}
 .fact{animation:none}
 nav{backdrop-filter:none}
@@ -395,7 +392,7 @@ h1{font-size:clamp(38px,6.2vw,68px);line-height:1.04}
 h1 em{font-style:italic;background:none;color:var(--text);-webkit-background-clip:initial;background-clip:initial}
 h2{font-size:clamp(26px,3.6vw,36px);line-height:1.18}
 .label{color:var(--muted);letter-spacing:.08em}
-.hero{text-align:left;padding:88px 0 64px}
+.hero{text-align:left}
 .hero .lead{margin:0 0 28px;font-size:18px}
 .hero .install,.hero .installnote{margin-left:0}
 .hero .cta{justify-content:flex-start}
@@ -403,8 +400,8 @@ h2{font-size:clamp(26px,3.6vw,36px);line-height:1.18}
 .install{background:transparent}
 section .wrap{display:grid;grid-template-columns:120px minmax(0,1fr);column-gap:28px}
 section .wrap>*{grid-column:2;min-width:0}
-section .wrap>.explorer,section .wrap>.tablewrap,section .wrap>.prcheck{grid-column:1/-1}
-section .wrap>.label{grid-column:1;grid-row:1;align-self:start;padding-top:15px}
+section .wrap>.explorer,section .wrap>.tablewrap{grid-column:1/-1}
+section .wrap>.label{grid-column:1;grid-row:1;align-self:start;padding-top:16px}
 section .wrap>h2{align-self:start}
 .card{background:none;border:0;border-top:1px solid var(--line);border-radius:0;padding:16px 0 0;transition:none}
 .card:hover{transform:none;box-shadow:none;border-color:var(--muted)}
@@ -424,12 +421,38 @@ section .wrap>h2{align-self:start}
 .chatcard{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:3px}
 .chatcard .cchead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--line);font:12px var(--mono);color:var(--muted)}
 .chatcard .cchead .prtag{margin-left:auto}
-.chatcard .ccbody{padding:14px}
+.chatcard .ccbody{padding:14px;height:400px;overflow-y:auto;overscroll-behavior:contain}
+@media(max-width:720px){.chatcard .ccbody{height:360px}}
+.ccthink{display:flex;gap:5px;align-items:center;width:max-content;margin:0;padding:10px 14px;background:#1b1b19;border:1px solid var(--line);border-radius:3px}
+.ccthink i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:ccdot 1.2s ease-in-out infinite}
+.ccthink i:nth-child(2){animation-delay:.15s}.ccthink i:nth-child(3){animation-delay:.3s}
+@keyframes ccdot{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+@keyframes cth1{0%,5%{opacity:0}6%,8%{opacity:1}9%,100%{opacity:0}}
+@keyframes cth2{0%,46%{opacity:0}47%,50.5%{opacity:1}52%,100%{opacity:0}}
+.ccthink.t1{animation:cth1 16s forwards}.ccthink.t2{animation:cth2 16s forwards}
+.ccslot{position:relative}.ccslot>.ccthink{position:absolute;top:-4px;left:0}
+.chatcard:not(.go) .cx{animation-play-state:paused}
+.ccform{margin:0 14px 14px}
+.ccform .ccin{display:flex;gap:10px;align-items:center;padding:8px 8px 8px 12px;border:1px solid var(--line);border-radius:3px}
+.ccform input{flex:1;min-width:0;background:transparent;border:0;color:var(--text);font:14px/1.5 var(--sans);padding:4px 0;outline:0;text-overflow:ellipsis;white-space:nowrap}
+.ccform button{flex:none;font:600 12px var(--mono);padding:8px 14px;border-radius:3px;border:1px solid var(--text);background:var(--text);color:var(--bg);cursor:pointer}
+.ccform button:disabled{background:transparent;border-color:var(--line);color:var(--muted);cursor:default}
+.ccform input:disabled{color:var(--muted);opacity:.55}
+.ccform.nudge button:not(:disabled){outline:1px solid var(--accent);outline-offset:3px;animation:ccnudge 1.6s ease-out infinite}
+@keyframes ccnudge{0%{outline-offset:2px;outline-color:var(--accent)}100%{outline-offset:9px;outline-color:transparent}}
+.ccform button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ccform .cchint{margin:8px 0 0;font:12px var(--mono);color:var(--muted)}
+.ccform.ready .ccin{border-color:var(--muted)}
+.chatcard.done .ccthink.t1,.chatcard.done .ccthink.t2{display:none}
+.ccchat2{display:grid;gap:8px;margin-top:8px}.ccchat2:empty{display:none}
+.lin{animation:lin .35s both}
+@keyframes lin{from{opacity:0;transform:translateY(6px)}}
+.ccbox .ccrow small{display:block;color:var(--muted);font:12px var(--mono);padding-left:2ch}
 .ccbox{border:1px solid var(--line);border-radius:3px;padding:10px 14px;font:13px/1.7 var(--mono)}
 .ccbox b{color:var(--text)}
 .ccbox .ccrow{display:block;color:var(--muted)}
 .ccbox .ccrow b{font-weight:400;color:var(--text)}
-.cctally{margin-top:12px;font:12.5px var(--mono);color:var(--muted)}
+.cctally{margin-top:0;font:12.5px var(--mono);color:var(--muted)}
 .cctally b{color:var(--text)}
 </style>
 </head>
@@ -458,7 +481,6 @@ section .wrap>h2{align-self:start}
 
 <header class="hero" id="top">
   <div class="wrap">
-    <!-- <span class="eyebrow">source-available &middot; runs locally &middot; no account</span> -->
     <h1>The AI governance layer for<br><em>your design system</em></h1>
     <p class="lead">Invariant turns your design system components, tokens and approved UX patterns into a contract that AI agents read and enforce.</p>
     <div class="install">
@@ -486,9 +508,14 @@ section .wrap>h2{align-self:start}
 <section id="problem">
   <div class="wrap">
     <div class="label">The problem</div>
-    <h2>Your design system's rules live in docs, Storybook and people's heads. The agent has read none of them.</h2>
+    <h2>Your design system's rules live in Figma comments, Storybook, Slack threads and people's heads. The agent has read none of them.</h2>
     <p class="sub">Teams adopt AI coding tools and watch the design system erode one pull request at a time. The agent never saw your rules, so it guesses, and a person has to catch every guess.</p>
-    <div class="grid g3">
+    <div class="gen" aria-label="Illustrative example of agent-generated code that ignores the design system">
+      <div class="term-bar"><span>Dashboard.tsx, written by an agent</span><span>illustrative</span></div>
+<pre><span class="ln"><span class="c">// Button accepts "primary" | "secondary" | "ghost". Brand color is --color-brand.</span></span><span class="ln">&lt;<span class="k">Button</span> <span class="k">variant</span>=<span class="b">"danger"</span>&gt;Delete&lt;/<span class="k">Button</span>&gt;</span><span class="miss">                    ^ <i>no such variant. It renders unstyled.</i></span><span class="ln">&lt;<span class="k">div</span> <span class="k">style</span>={{ <span class="k">background</span>: <span class="b">"#0057ff"</span>, <span class="k">padding</span>: <span class="b">13</span> }}&gt;</span><span class="miss">                         ^ <i>brand color pasted in. It ignores dark theme. Padding is off the 16px token.</i></span><span class="ln">  &lt;<span class="k">Spinner</span> /&gt;</span><span class="miss">   ^ <i>no Spinner in the system. Button already has loading.</i></span></pre>
+      <div class="gennote">It compiles and the page looks fine in the agent's screenshot. A reviewer finds all three, or nobody does.</div>
+    </div>
+    <div class="grid g3" style="margin-top:26px">
       <div class="card"><h3>Invented APIs</h3><p>Props, variants and components that don't exist. The code looks right and fails in review, or worse, in production.</p></div>
       <div class="card"><h3>Hard-coded values</h3><p>A hex color here, 13px of padding there. Your tokens are bypassed and theming quietly breaks.</p></div>
       <div class="card"><h3>Off-pattern pages</h3><p>Every generated page is laid out a little differently, and the loading, error and confirm states your team requires are forgotten.</p></div>
@@ -656,7 +683,7 @@ section .wrap>h2{align-self:start}
         <span class="c prtag">validate app --format github</span></div>
       <div class="prann"><div class="gx gpassnote c">No new violations against the contract. The merge is no longer blocked.</div><pre class="out gx gan"><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:5 <span class="c">pattern-order-violated</span></span><span class="ln ind c">Card at line 4: Card.Body (line 5) comes before Card.Header (line 8); Card.Header must come first (pattern pattern:page.settings). Fix: Move Card.Header before Card.Body.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">pattern-parent-required</span></span><span class="ln ind c">IconButton at line 6 must be inside Stack, but sits inside Card.Body instead (pattern pattern:page.settings). Fix: Wrap it in Stack.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">required-prop-missing</span></span><span class="ln ind c">IconButton requires the prop "label". Fix: Add label (string).</span><span class="ln c">&hellip;and 5 more annotations</span></pre></div>
       <div class="prcommit gx gcm"><b>new commit</b> Fix card order and add the label <span class="c prtag">pushed &middot; check runs again</span></div>
-      <div class="prmerge gmerge"><span class="mbtn">Merge pull request</span><span style="position:relative;display:inline-block;min-width:34ch;height:1.4em"><span class="c gx gblk" style="position:absolute">Blocked while a required check fails.</span><span class="c gx gok">Ready to merge.</span></span></div>
+      <div class="prmerge gmerge"><span class="mbtn">Merge pull request</span><span style="position:relative;display:inline-block;min-width:min(34ch,100%);height:1.4em"><span class="c gx gblk" style="position:absolute">Blocked while a required check fails.</span><span class="c gx gok">Ready to merge.</span></span></div>
     </div>
     <div class="grid g3" style="margin-top:16px">
       <div class="card"><h3>New problems only</h3><p>Existing violations are baselined, so a pull request is checked on what it adds, not on history.</p></div>
@@ -668,9 +695,32 @@ section .wrap>h2{align-self:start}
 
 <section id="discover">
   <div class="wrap">
-    <div class="label">Adopt</div>
+    <div class="label">Discover</div>
     <h2>Point it at your app code and it lists the layouts and structures you already repeat.</h2>
     <p class="sub">Point Invariant at your application code. It finds the structures that recur, shows the files and lines, and explains why it flagged them. You accept, reject or defer each one, and promote the good ones into your patterns.</p>
+    <div class="dgrid" aria-label="Real output of invariant discover on the pattern-discovery fixture">
+      <div class="dpanel">
+        <div class="term-bar"><span>app/pages</span><span>4 files</span></div>
+        <div class="drow">pages/Accounts.tsx:11:5<small>&lt;Modal&gt; containing Button</small></div>
+        <div class="drow">pages/Invoices.tsx:11:5<small>&lt;Modal&gt; containing Button</small></div>
+        <div class="drow">pages/Orders.tsx:11:5<small>&lt;Modal&gt; containing Button</small></div>
+        <div class="drow">pages/Reports.tsx:12:5<small>&lt;Modal&gt; containing Button</small></div>
+        <div class="dfoot">Four pages, written the same way. Nobody decided that, so it starts as a candidate.</div>
+      </div>
+      <div class="term">
+        <div class="term-bar">~/your-project</div>
+<pre class="nowrap"><span class="p">$ </span>invariant discover app
+5 of 6 files analyzed, 5 candidates written to
+  invariant.candidates.json
+<span class="p">$ </span>invariant candidates list
+<span class="c">id                      kind           status    files  uses  name</span>
+arrangement.d70bb486    arrangement    <span class="w">proposed</span>  4      4     Modal with Button
+<span class="c">…</span>
+<span class="p">$ </span>invariant candidates accept arrangement.d70bb486 --as maria
+accepted candidate:arrangement.d70bb486, recorded in
+  invariant.candidate-reviews.json.</pre>
+      </div>
+    </div>
     <div class="grid g3">
       <div class="card"><h3>Candidates only</h3><p>Nothing discovered is approved or enforced. Promotion adds an unapproved definition with its provenance, and no rules.</p></div>
       <div class="card"><h3>Similar is not the same</h3><p>Structural overlap is measured and reported. It never claims two pages serve the same purpose.</p></div>
@@ -684,6 +734,28 @@ section .wrap>h2{align-self:start}
     <div class="label">Trust</div>
     <h2>What Invariant checks, and what it won't claim.</h2>
     <p class="sub">An agent that sounds sure and is wrong is worse than no agent. Everything here is designed to be checkable.</p>
+    <div class="dgrid" aria-label="A source edit caught by invariant verify --fresh on the react fixture">
+      <div class="dpanel">
+        <div class="term-bar"><span>Button.loading</span><span>react fixture</span></div>
+        <div class="drow">loading<span class="dstat" style="color:var(--st-discovered)">discovered</span><small>src/Button.tsx:15</small><small>compiler-api: loading?: boolean</small></div>
+        <div class="dconv">Then someone edits that line:</div>
+        <div class="drow"><span class="dline del">- loading?: boolean</span><span class="dline add">+ loading?: boolean | "auto"</span></div>
+        <div class="dfoot">The contract still says <code>boolean</code>. Nothing is guessed, and the mismatch is reported.</div>
+      </div>
+      <div class="term">
+        <div class="term-bar">~/your-project</div>
+<pre><span class="p">$ </span>invariant verify --fresh
+<span class="c">┌</span>  <b>invariant verify</b>
+<span class="c">│</span>
+<span class="b">■</span>  <span class="b">error   verify.stale: the sources have changed since the contract was compiled. Run `invariant compile`.</span>
+<span class="c">│</span>  components: +0 -0 ~2
+<span class="c">│</span>    ~ component:button (facts, props)
+<span class="c">│</span>    ~ component:iconbutton (facts, props)
+<span class="b">■</span>  <span class="b">invalid: 1 errors, 0 warnings, 0 info</span>
+<span class="c">│</span>  report  invariant/invariant.report.html
+<span class="c">└</span>  <span class="b">verify failed</span></pre>
+      </div>
+    </div>
     <div class="grid g3">
       <div class="card"><h3>Evidence for every fact</h3><p>Each fact links to the file and line it came from, so you can always ask "why does the contract say this?"</p></div>
       <div class="card"><h3>A person approves</h3><p>Conflicts and inferred facts go to a review queue. Approvals live in git and expire when the evidence changes.</p></div>
@@ -726,17 +798,20 @@ section .wrap>h2{align-self:start}
       <div class="cchead"><span>claude code</span><span class="c prtag">illustrative</span></div>
       <div class="ccbody ccchat">
         <div class="ccuser cx cu">build a login form using the Invariant tools</div>
-        <div class="ccasst cx ca">I'll check the design system contract before writing anything.</div>
+        <div class="ccslot"><div class="ccthink t1 cx" aria-hidden="true"><i></i><i></i><i></i></div><div class="ccasst cx ca">I'll check the design system contract before writing anything.</div></div>
         <div class="ccbox cx cb"><b>Invariant &middot; 3 contract checks <span class="ccstate"><span class="cwait cx">checking&hellip;</span><span class="cdone cx ok">&#10003;</span></span></b>
           <span class="ccrow cx cr1"><b>get_design_system_overview</b></span>
           <span class="ccrow cx cr2"><b>search_design_system</b> input</span>
           <span class="ccrow cx cr3"><b>get_component_usage</b> Button</span>
         </div>
         <div class="cctally cx ct"><b>Invariant</b> this turn: 3 contract checks</div>
-        <div class="ccasst cx cf">The contract has a Button with sizes sm, md and lg, and no Input component, so I'm using Button for the actions and native inputs for the fields.</div>
+        <div class="ccslot"><div class="ccthink t2 cx" aria-hidden="true"><i></i><i></i><i></i></div><div class="ccasst cx cf">The contract has a Button with sizes sm, md and lg, and no Input component, so I'm using Button for the actions and native inputs for the fields.</div></div>
+        <div class="ccchat2" id="cclive" aria-live="polite"></div>
       </div>
+      <form class="ccform" id="ccform" autocomplete="off">
+        <div class="ccin"><input id="ccmsg" type="text" readonly disabled aria-label="Prefilled message" value="Build a sales pipeline dashboard with cold, warm and hot leads"><button type="submit" id="ccsend" disabled>Send</button></div>
+      </form>
     </div>
-    <p class="sub" style="margin-top:12px">Illustrative: this is an animated HTML drawing of a conversation, not a screenshot. The three calls and the Button and Input facts come from a real run against <code>fixtures/monorepo/acme</code>; the wording around them is written for the page. The plugin draws the real card with Claude Code's own interface elements. It needs Claude Code; Cursor and Windsurf show plain text.</p>
   </div>
 </section>
 
@@ -903,6 +978,45 @@ invariant --help</pre></div>
     });
   }));
 
+})();
+</script>
+<script>
+(function(){
+  var card=document.querySelector(".chatcard"); if(!card) return;
+  var form=document.getElementById("ccform"),btn=document.getElementById("ccsend"),msg=document.getElementById("ccmsg"),live=document.getElementById("cclive"),hint=document.getElementById("cchint");
+  var rm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var timers=[],busy=false,pane=card.querySelector(".ccbody");
+  function sc(){pane.scrollTop=pane.scrollHeight}
+  function later(ms,fn){timers.push(setTimeout(fn,ms))}
+  function el(cls,html){var d=document.createElement("div");d.className=cls+" lin";d.innerHTML=html;live.appendChild(d);sc();return d}
+  function dots(){return el("ccthink","<i></i><i></i><i></i>")}
+  function unlock(){card.classList.add("done");btn.disabled=false;msg.disabled=false;form.classList.add("ready","nudge");}
+  function start(){if(card.classList.contains("go"))return;card.classList.add("go");if(rm)unlock();else later(9000,unlock)}
+  if(rm||!("IntersectionObserver" in window)){start()}
+  else{var io=new IntersectionObserver(function(e){if(e[0].isIntersecting){io.disconnect();start()}},{rootMargin:"0px 0px -30% 0px"});io.observe(card)}
+  function reset(){pane.scrollTop=0;timers.forEach(clearTimeout);timers=[];live.innerHTML="";busy=false;btn.textContent="Send";btn.disabled=false;btn.dataset.mode="";form.classList.add("nudge");}
+  function run(){
+    busy=true;btn.disabled=true;form.classList.remove("nudge");
+    var t=0,d,box,rows;
+    function at(ms,fn){t+=ms;later(t,fn)}
+    el("ccuser","Build a sales pipeline dashboard with cold, warm and hot leads");
+    at(300,function(){d=dots()});
+    at(1100,function(){d.remove();el("ccasst","I'll look for an approved layout before writing anything.")});
+    at(600,function(){box=el("ccbox","<b>Invariant &middot; 3 contract checks <span class=\"ccstate\"><span class=\"cwait\">checking&hellip;</span></span></b>")});
+    var steps=[
+      ["search_design_system"," dashboard","no pattern matches \"dashboard\""],
+      ["get_design_patterns","","8 patterns: 3 approved, 5 documented"],
+      ["get_pattern_relationships"," page.data-management","composes Application shell, uses Destructive confirmation"]
+    ];
+    steps.forEach(function(r){at(900,function(){var s=document.createElement("span");s.className="ccrow lin";s.innerHTML="<b>"+r[0]+"</b>"+r[1]+"<small>"+r[2]+"</small>";box.appendChild(s);sc()})});
+    at(900,function(){box.querySelector(".cwait").textContent="✓";box.querySelector(".cwait").className="ok";d=dots()});
+    at(1200,function(){d.remove();el("ccasst","No dashboard layout is approved, so I won't invent one. The closest approved page is <b>Data management page</b>: a header, a table toolbar and a results region. I'll build the pipeline as results cards for cold, warm and hot leads, with the toolbar to filter them.");d=dots()});
+    at(1800,function(){d.remove();box=el("ccbox","<b>Invariant &middot; verify <span class=\"ccstate ok\">✓</span></b>");var s=document.createElement("span");s.className="ccrow lin";s.innerHTML="<b>validate_design_system_compliance</b> page.data-management<small>header, toolbar and results regions present</small>";box.appendChild(s);sc()});
+    at(900,function(){el("cctally","<b>Invariant</b> this turn: 4 contract checks")});
+    at(700,function(){el("ccasst","Done. Deleting a lead uses the approved <b>Destructive confirmation</b>. <b>Application shell</b> is documented but not approved, so I've left it for your review.")});
+    at(500,function(){btn.disabled=false;btn.textContent="Run again";btn.dataset.mode="reset";busy=false;form.classList.add("nudge")});
+  }
+  form.addEventListener("submit",function(e){e.preventDefault();if(busy||btn.disabled)return;if(btn.dataset.mode==="reset"){reset();return}run()});
 })();
 </script>
 </body>
