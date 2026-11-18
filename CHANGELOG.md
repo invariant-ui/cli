@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/invariant-ui/cli/compare/v0.6.1...v0.7.0) (2026-11-18)
+
+
+### Features
+
+* **site:** add problem, adopt and trust illustrations, interactive c… ([#20](https://github.com/invariant-ui/cli/issues/20)) ([1d43b9f](https://github.com/invariant-ui/cli/commit/1d43b9f3b115726b39645ba99168f4f4983560b1))
+
 ## [0.6.1](https://github.com/invariant-ui/cli/compare/v0.6.0...v0.6.1) (2026-11-18)
 
 
