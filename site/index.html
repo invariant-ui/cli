@@ -362,6 +362,17 @@ section .wrap>h2{align-self:start}
   section .wrap>.label{padding:0 0 4px}
 }
 .logo{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:600;letter-spacing:-.035em;font-size:22px;display:inline-flex;align-items:center;gap:9px;color:var(--text)}
+
+.chatcard{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.chatcard .cchead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--line);font:12px var(--mono);color:var(--muted)}
+.chatcard .cchead .prtag{margin-left:auto}
+.chatcard .ccbody{padding:14px}
+.ccbox{border:1px solid var(--line);border-radius:3px;padding:10px 14px;font:13px/1.7 var(--mono)}
+.ccbox b{color:var(--text)}
+.ccbox .ccrow{display:block;color:var(--muted)}
+.ccbox .ccrow b{font-weight:400;color:var(--text)}
+.cctally{margin-top:12px;font:12.5px var(--mono);color:var(--muted)}
+.cctally b{color:var(--text)}
 </style>
 </head>
 <body>
@@ -640,6 +651,26 @@ section .wrap>h2{align-self:start}
       <div class="card"><h3>Approved vs proposed</h3><p>Agents follow approved patterns, treat the rest as proposals to confirm, and say which they used.</p></div>
       <div class="card"><h3>Always current</h3><p>The server reloads when you recompile. A missing or tampered contract is never partly served.</p></div>
     </div>
+  </div>
+</section>
+
+<section id="chat">
+  <div class="wrap">
+    <div class="label">In your chat</div>
+    <h2>In Claude Code, each Invariant lookup and check shows up as a card in the chat.</h2>
+    <p class="sub">The Claude Code plugin groups the agent's Invariant calls into one card, and keeps a running count above the prompt. Other tools show the same calls as plain text from the MCP server. The card adds no checks of its own: it lists what the agent called and whether each call succeeded.</p>
+    <div class="chatcard" aria-label="Illustrative chat card">
+      <div class="cchead"><span>claude code</span><span>build a login form using the Invariant tools</span><span class="c prtag">illustrative</span></div>
+      <div class="ccbody">
+        <div class="ccbox"><b>Invariant &middot; 3 contract checks <span class="ok">&#10003;</span></b>
+          <span class="ccrow"><b>get_design_system_overview</b></span>
+          <span class="ccrow"><b>search_design_system</b> input</span>
+          <span class="ccrow"><b>get_component_usage</b> Button</span>
+        </div>
+        <div class="cctally"><b>Invariant</b> this turn: 3 contract checks</div>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:12px">Illustrative: this is an HTML drawing of the card, not a screenshot. The three calls are the ones the agent made in a real run against <code>fixtures/monorepo/acme</code>. The plugin draws the real card with Claude Code's own interface elements. It needs Claude Code; Cursor and Windsurf show plain text.</p>
   </div>
 </section>
 
