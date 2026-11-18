@@ -14,6 +14,8 @@
   <a href="docs/specifications">Specifications</a>
 </p>
 
+Invariant is a source-available CLI and MCP server that compiles a design system (React, Vue, Angular, Storybook, design tokens) and approved UX patterns into one machine-readable JSON contract. AI coding agents (Claude Code, Cursor, Codex, Windsurf) read the contract before they write UI, and Invariant checks the code against it in CI.
+
 Invariant scans your existing design system (React, Vue, Angular, Storybook, design tokens) and compiles it into one machine-readable file: the **contract**. AI coding tools then use that contract to learn which components, props and tokens really exist, and to check that generated code follows them.
 
 No cloud service, no account, no network access. Everything runs locally.

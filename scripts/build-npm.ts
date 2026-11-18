@@ -116,7 +116,24 @@ export function buildNpmPackage(out = join(root, "dist-npm")): BuildResult {
     version: cliJson.version,
     description:
       "Compile your design system, UX patterns and page layouts into a contract AI agents can read, and check code against it.",
-    keywords: ["design-system", "ai-agents", "mcp", "design-tokens", "storybook", "linting", "ux-patterns"],
+    // mcpName must match "name" in server.json: the MCP registry checks it to verify ownership of the package.
+    mcpName: "io.github.invariant-ui/cli",
+    keywords: [
+      "design-system",
+      "ai-agents",
+      "mcp",
+      "mcp-server",
+      "model-context-protocol",
+      "claude-code",
+      "cursor",
+      "design-tokens",
+      "storybook",
+      "react",
+      "vue",
+      "angular",
+      "linting",
+      "ux-patterns"
+    ],
     license: "SEE LICENSE IN LICENSE",
     homepage: "https://invariant-ui.com/",
     repository: { type: "git", url: "git+https://github.com/invariant-ui/cli.git" },
