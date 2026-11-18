@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/invariant-ui/cli/compare/v0.7.0...v0.8.0) (2026-11-18)
+
+
+### Features
+
+* **site:** optimize for answer engines, add MCP registry manifest ([#22](https://github.com/invariant-ui/cli/issues/22)) ([65d05ee](https://github.com/invariant-ui/cli/commit/65d05eea1d3122a6755911bc6e632fe6687e7ff1))
+
 ## [0.7.0](https://github.com/invariant-ui/cli/compare/v0.6.1...v0.7.0) (2026-11-18)
 
 

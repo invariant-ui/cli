@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Docs: Invariant</title>
 <meta name="description" content="Documentation for Invariant: compile your design system and UX patterns into a contract, serve it to AI agents, and enforce it in CI and in a browser.">
+<link rel="canonical" href="https://invariant-ui.com/docs/">
+<meta property="og:title" content="Docs: Invariant">
+<meta property="og:description" content="Documentation for Invariant: compile your design system and UX patterns into a contract, serve it to AI agents, and enforce it in CI.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://invariant-ui.com/docs/">
+<meta property="og:site_name" content="Invariant">
+<meta property="og:image" content="https://invariant-ui.com/assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" type="text/plain" href="/llms-full.txt" title="Documentation as plain text">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Invariant documentation","url":"https://invariant-ui.com/docs/","about":{"@type":"SoftwareApplication","name":"Invariant","url":"https://invariant-ui.com/"},"publisher":{"@type":"Organization","name":"Invariant","url":"https://invariant-ui.com/"},"dateModified":"2026-11-18"}</script>
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
@@ -877,11 +887,11 @@ npx @invariant-ui/cli validate src --format github  # annotate pull requests</pr
   <p>To write the job yourself, or to add it to a workflow you already have, it needs only Node, because <code>npx</code> fetches the package:</p>
   <div class="code"><span class="lang">yaml</span><pre>- uses: actions/setup-node@v4
   with: { node-version: 22 }
-- run: npx @invariant-ui/cli@0.7.0 verify --fresh
-- run: npx @invariant-ui/cli@0.7.0 validate app --format github
+- run: npx @invariant-ui/cli@0.8.0 verify --fresh
+- run: npx @invariant-ui/cli@0.8.0 validate app --format github
 - uses: actions/upload-artifact@v4   # the report, even when a check failed
   with: { name: invariant-report, path: invariant/invariant.report.html }</pre></div>
-  <p>Pin a version (<code>npx @invariant-ui/cli@0.7.0</code>) if you want builds that do not change underneath you.</p>
+  <p>Pin a version (<code>npx @invariant-ui/cli@0.8.0</code>) if you want builds that do not change underneath you.</p>
   <div class="note"><b>No workflow file is generated</b>Invariant does not write files into <code>.github/</code>. Copy the job above into the workflow you already have.</div>
 </section>
 
