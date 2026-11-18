@@ -1,3 +1,4 @@
+export { type Archetype, classify } from "./archetype.js"
 export { findArrangements, keyOf } from "./arrangements.js"
 export { DEFAULT_OPTIONS, type DiscoverInput, type DiscoverOptions, discover } from "./discover.js"
 export {

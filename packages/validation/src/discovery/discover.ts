@@ -1,5 +1,6 @@
 import type { DesignSystem } from "@invariant/contract-query"
 import { buildTree } from "../validate-code.js"
+import { classify } from "./archetype.js"
 import { findArrangements } from "./arrangements.js"
 import {
   CANDIDATES_FILE_VERSION,
@@ -79,7 +80,13 @@ export function discover(input: DiscoverInput): CandidatesFile {
     ...findArrangements(shapes, options),
     ...findSimilarFiles(shapes, { minFiles: options.minFiles, similarity: options.similarity })
   ]
-  const applied = applyReviews(found, input.reviews)
+  const applied = applyReviews(
+    found.map((x) => {
+      const archetype = classify(x)
+      return archetype ? { ...x, archetype } : x
+    }),
+    input.reviews
+  )
   for (const r of applied.stale)
     diagnostics.push({
       code: "discovery-stale-review",

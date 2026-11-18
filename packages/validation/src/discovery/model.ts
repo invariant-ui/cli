@@ -118,6 +118,16 @@ export const candidateSchema = z.strictObject({
     version: z.literal(1),
     parameters: z.record(z.string(), z.union([z.number(), z.string()]))
   }),
+  /** A guess from file paths that this is a page or a layout. Inferred, never approved; a person decides. */
+  archetype: z
+    .strictObject({
+      category: z.enum(["page", "layout"]),
+      basis: z.literal("inferred"),
+      confidence: z.number().min(0).max(1),
+      reason: z.string().min(1),
+      files: z.array(z.string().min(1))
+    })
+    .optional(),
   /** Another candidate whose occurrences contain every occurrence of this one. Kept, not dropped. */
   subsumedBy: z.string().optional(),
   /** The latest recorded decision, when there is one. */

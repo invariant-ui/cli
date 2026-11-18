@@ -88,3 +88,78 @@ export function arrowSelect<T extends string>(
     draw(false)
   })
 }
+
+export interface Option<T extends string> {
+  value: T
+  label: string
+}
+
+/**
+ * An arrow-key checklist in the same frame: up and down move, space toggles, `a` toggles all, Enter confirms the
+ * ticked ones (every option starts ticked), and Esc or Ctrl+C cancels (resolves undefined).
+ */
+export function arrowMultiSelect<T extends string>(
+  input: ReadStream,
+  output: WriteStream,
+  question: string,
+  options: ReadonlyArray<Option<T>>
+): Promise<T[] | undefined> {
+  return new Promise((resolve) => {
+    let at = 0
+    const ticked = new Set(options.map((_, i) => i))
+    const height = options.length + 2
+    const render = (): string =>
+      [
+        `${paint("accent", "◆")}  ${question}`,
+        ...options.map((o, i) => {
+          const box = ticked.has(i) ? paint("ok", "◼") : paint("muted", "◻")
+          const label =
+            i === at ? paint("accent", o.label) : ticked.has(i) ? o.label : paint("muted", o.label)
+          return `${paint("muted", "│")}  ${box} ${label}`
+        }),
+        `${paint("muted", "│")}  ${paint("muted", "↑/↓ move · space toggle · a all · enter confirm · esc stop")}`
+      ].join("\n")
+    const draw = (redraw: boolean): void => {
+      if (redraw) output.write(`\r\x1b[${height}A\x1b[J`)
+      output.write(`${render()}\n`)
+    }
+    const finish = (value: T[] | undefined): void => {
+      input.off("data", onData)
+      input.setRawMode(false)
+      input.pause()
+      output.write(`\r\x1b[${height}A\x1b[J`)
+      const shown = value ? `${value.length} of ${options.length} chosen` : "stopped"
+      output.write(
+        `${paint("accent", "◆")}  ${question}  ${value ? paint("ok", shown) : paint("muted", shown)}\n`
+      )
+      output.write("\x1b[?25h")
+      resolve(value)
+    }
+    const onData = (data: Buffer | string): void => {
+      for (const key of keysOf(String(data))) {
+        if (key === CTRL_C || key === ESC) {
+          finish(undefined)
+          return
+        }
+        if (key === "\r" || key === "\n") {
+          finish(options.filter((_, i) => ticked.has(i)).map((o) => o.value))
+          return
+        }
+        if (key === `${ESC}[A`) at = (at - 1 + options.length) % options.length
+        else if (key === `${ESC}[B`) at = (at + 1) % options.length
+        else if (key === " ") {
+          if (!ticked.delete(at)) ticked.add(at)
+        } else if (key === "a") {
+          if (ticked.size === options.length) ticked.clear()
+          else for (let i = 0; i < options.length; i++) ticked.add(i)
+        }
+      }
+      draw(true)
+    }
+    input.setRawMode(true)
+    input.resume()
+    input.on("data", onData)
+    output.write("\x1b[?25l")
+    draw(false)
+  })
+}

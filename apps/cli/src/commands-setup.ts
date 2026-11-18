@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process"
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import path from "node:path"
+import { PATTERN_CATEGORIES } from "@invariant/contract"
 import { PATTERNS_FILE } from "@invariant/governance"
 import type { CandidatesFile } from "@invariant/validation"
 import { BASELINE_FILE } from "./baseline.js"
@@ -12,6 +13,7 @@ import { CliError } from "./errors.js"
 import { paint } from "./format.js"
 import { columns, done, fail, gap, intro, line, outro, spin, warn, wrap } from "./frame.js"
 import { applyPublish, planPublish } from "./publish.js"
+import { findApps, inferSource, inside, type Source } from "./setup-discovery.js"
 import { type StarterRule, starterRules } from "./starter-rules.js"
 import { loadCompiled } from "./store.js"
 import { CLI_NAME } from "./version.js"
@@ -48,8 +50,8 @@ function whoIs(c: Context): string | undefined {
   }
 }
 
-const slugId = (name: string): string =>
-  `composition.${name
+const slugId = (name: string, category = "composition"): string =>
+  `${category}.${name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
@@ -127,6 +129,79 @@ export async function setup(c: Context): Promise<number> {
     return a.startsWith("y")
   }
 
+  /** Where the components live: --sources, else what was detected, confirmed (all, some, more paths) when someone can answer. */
+  const chooseSources = async (found: Source[]): Promise<Source[]> => {
+    const custom = (list: string[]): Source[] =>
+      list.map((p) => {
+        const rel = inside(c.cwd, p)
+        if (!rel) throw new CliError(`${p} is outside the project`)
+        const hit = inferSource(c.cwd, rel)
+        if (!hit)
+          throw new CliError(`no components found in ${p} (looked for .tsx, .vue and .component.ts files)`)
+        return hit.source
+      })
+    const given = (c.args.values.sources ?? "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean)
+    let kept = found
+    if (given.length > 0) kept = custom(given)
+    else if (!yes && c.io.prompt) {
+      const describe = (s: Source): string => {
+        const n = s.path ? inferSource(c.cwd, s.path)?.files : undefined
+        return `${s.path ?? "."}  (${s.type}${n ? `, ${n} component files` : ""})`
+      }
+      if (c.io.multiselect) {
+        const picked = await c.io.multiselect(
+          "Where do your design system components live?",
+          found.map((s, i) => ({ value: String(i), label: describe(s) }))
+        )
+        kept = found.filter((_, i) => picked?.includes(String(i)))
+      } else {
+        say("Where do your design system components live?")
+        for (const [i, s] of found.entries()) say(`${i + 1}. ${describe(s)}`)
+        const a = (
+          (await c.io.prompt(
+            `${paint("accent", "◆")}  Keep which? Enter for all, numbers (like 1,3), or n for none: `
+          )) ?? ""
+        )
+          .trim()
+          .toLowerCase()
+        if (a === "n" || a === "none") kept = []
+        else if (a !== "") {
+          const pick = new Set(a.split(/[,\s]+/).map((n) => Number(n) - 1))
+          kept = found.filter((_, i) => pick.has(i))
+        }
+      }
+      for (;;) {
+        const p = (
+          (await c.io.prompt(`${paint("accent", "◆")}  Add a directory (path, or Enter to finish): `)) ?? ""
+        ).trim()
+        if (p === "") break
+        try {
+          kept = [...kept, ...custom([p])]
+          say(`added ${p}`)
+        } catch (e) {
+          flag((e as Error).message)
+        }
+      }
+    }
+    const seen = new Set<string>()
+    const ids = new Set<string>()
+    const out: Source[] = []
+    for (const s of kept) {
+      const key = `${s.type}:${s.path ?? "."}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      let id = s.id
+      for (let n = 2; ids.has(id); n++) id = `${s.id}-${n}`
+      ids.add(id)
+      out.push({ ...s, id } as Source)
+    }
+    if (out.length === 0) throw new CliError("no component folders chosen, so there is nothing to compile")
+    return out
+  }
+
   const posture = c.args.values.posture
   if (posture !== undefined && !(POSTURES as readonly string[]).includes(posture))
     throw new CliError(`--posture must be one of ${POSTURES.join(", ")}`)
@@ -142,11 +217,11 @@ export async function setup(c: Context): Promise<number> {
   let consumer = false
   if (!existsSync(configPath)) {
     const detected = c.args.values.contract ? undefined : await detectConfig(c.cwd)
-    if (detected && detected.sources.length > 0) {
-      const r = await sub("init")
-      if (r.code !== 0) throw new CliError(r.err.trim() || "init failed", r.code)
-      step("detected sources")
-      say(r.out.trim().split("\n").slice(1).join("\n"))
+    if (detected && (detected.sources.length > 0 || c.args.values.sources)) {
+      const chosen = await chooseSources(detected.sources)
+      writeConfig(configPath, { ...detected, sources: chosen })
+      step(`component sources (${chosen.length}), written to ${path.basename(configPath)}`)
+      for (const s of chosen) say(`${s.id}  ${s.type}${s.path ? `  ${s.path}` : ""}`)
     } else {
       consumer = true
       let from = c.args.values.contract?.replace(/\\/g, "/").replace(/\/+$/, "")
@@ -230,17 +305,41 @@ export async function setup(c: Context): Promise<number> {
   )
   const holdsDesignSystem = (d: string): boolean => !consumer && implFiles.some((f) => f.startsWith(`${d}/`))
   const skipped: string[] = []
-  const appPaths = c.args.values.paths
+  let appPaths = c.args.values.paths
     ? c.args.values.paths
         .split(",")
         .map((p) => p.trim())
         .filter(Boolean)
-    : APP_DIRS.filter((d) => {
-        if (!isDir(d) || sourcePaths.some((s) => s === d)) return false
-        if (!holdsDesignSystem(d)) return true
-        skipped.push(d)
-        return false
-      })
+    : await (async () => {
+        const apps = await findApps(c.cwd, sourcePaths)
+        if (apps.length > 0) return apps
+        return APP_DIRS.filter((d) => {
+          if (!isDir(d) || sourcePaths.some((s) => s === d)) return false
+          if (!holdsDesignSystem(d)) return true
+          skipped.push(d)
+          return false
+        })
+      })()
+  if (
+    c.args.values.paths === undefined &&
+    appPaths.length > 0 &&
+    !yes &&
+    c.args.values["confirm-contract"] !== true &&
+    c.io.prompt
+  ) {
+    say(`Applications that use your components: ${appPaths.join(", ")}`)
+    const a = (
+      (await c.io.prompt(
+        `${paint("accent", "◆")}  Look for page and layout patterns there? Enter to accept, paths (like apps/web,apps/admin) to use instead, n to skip: `
+      )) ?? ""
+    ).trim()
+    if (a.toLowerCase() === "n") appPaths = []
+    else if (a !== "")
+      appPaths = a
+        .split(",")
+        .map((p) => inside(c.cwd, p.trim()))
+        .filter((p): p is string => p !== undefined && isDir(p))
+  }
   if (skipped.length > 0) say(`skipped ${skipped.join(", ")}: it holds the design system's own components`)
 
   type Cand = CandidatesFile["candidates"][number]
@@ -253,16 +352,70 @@ export async function setup(c: Context): Promise<number> {
       const file = JSON.parse(found.out) as CandidatesFile
       top = file.candidates
         .filter((x) => x.status === "proposed" && x.subsumedBy === undefined)
-        .sort((a, b) => b.support.files - a.support.files || (a.id < b.id ? -1 : 1))
+        .sort(
+          (a, b) =>
+            Number(b.archetype !== undefined) - Number(a.archetype !== undefined) ||
+            b.support.files - a.support.files ||
+            (a.id < b.id ? -1 : 1)
+        )
         .slice(0, TOP)
       if (top.length === 0)
         step(`looked in ${appPaths.join(", ")}: no structure recurs often enough to propose (needs 3 files)`)
       else {
         step(`found ${top.length} recurring structure(s) in ${appPaths.join(", ")}`)
-        for (const [i, x] of top.entries()) say(`${i + 1}. ${x.suggestedName}  (${x.support.files} files)`)
+        say(`${file.summary.filesAnalyzed} of ${file.summary.files} file(s) use your components`)
+        for (const [i, x] of top.entries())
+          say(
+            `${i + 1}. ${x.suggestedName}  (${x.support.files} files)${x.archetype ? `  looks like a ${x.archetype.category}: ${x.archetype.reason}` : ""}`
+          )
       }
     } else print(c, fail(`discovery failed: ${found.err.trim()}`))
   }
+  // Confirm, deny or direct each one. Asked only when someone can answer and nothing already decided.
+  const directed = new Map<string, { name?: string; category?: string }>()
+  const denied: Cand[] = []
+  if (
+    top.length > 0 &&
+    !yes &&
+    only === undefined &&
+    c.args.values["confirm-contract"] !== true &&
+    c.io.prompt
+  ) {
+    say()
+    say("Review each pattern: Enter keeps it, d denies it, e lets you rename it or set its category.")
+    for (const [i, x] of top.entries()) {
+      const guess = x.archetype ? ` (looks like a ${x.archetype.category}, inferred)` : ""
+      const a = (
+        (await c.io.prompt(
+          `${paint("accent", "◆")}  ${i + 1}. ${x.suggestedName}${guess}: keep, deny or edit? [K/d/e] `
+        )) ?? ""
+      )
+        .trim()
+        .toLowerCase()
+      if (a.startsWith("d")) denied.push(x)
+      else if (a.startsWith("e")) {
+        const name = (
+          (await c.io.prompt(`${paint("accent", "◆")}  Name [${x.suggestedName}]: `)) ?? ""
+        ).trim()
+        const cat = (
+          (await c.io.prompt(
+            `${paint("accent", "◆")}  Category (${PATTERN_CATEGORIES.join(", ")}) [${x.archetype?.category ?? "composition"}]: `
+          )) ?? ""
+        )
+          .trim()
+          .toLowerCase()
+        if (cat !== "" && !(PATTERN_CATEGORIES as readonly string[]).includes(cat))
+          flag(`${cat} is not a category, so it keeps ${x.archetype?.category ?? "composition"}`)
+        directed.set(x.id, {
+          ...(name !== "" ? { name } : {}),
+          ...(cat !== "" && (PATTERN_CATEGORIES as readonly string[]).includes(cat) ? { category: cat } : {})
+        })
+      }
+    }
+    top = top.filter((x) => !denied.includes(x))
+  }
+  const categoryOf = (x: Cand): string =>
+    directed.get(x.id)?.category ?? x.archetype?.category ?? "composition"
   const rulesFor = (x: Cand): StarterRule[] => starterRules(x.structure.tree)
   const countViolations = async (): Promise<number> => {
     if (appPaths.length === 0) return 0
@@ -316,10 +469,11 @@ export async function setup(c: Context): Promise<number> {
       ? [`hide ${existingViolations} existing violation(s) so only new ones are flagged`]
       : []),
     ...(clients.length > 0 ? [`connect ${clients.join(", ")}`] : []),
-    ...(ciPossible ? [`add ${WORKFLOW_PATH}, which checks every pull request commit`] : []),
     ...(publishNeeded && publish
       ? [`publish the contract with ${publish.name} (adds "invariant" to files and a prepack script)`]
-      : [])
+      : []),
+    // The GitHub Action is always last.
+    ...(ciPossible ? [`add ${WORKFLOW_PATH}, which checks every pull request commit`] : [])
   ]
 
   type Mode = "quick" | "custom" | "none" | "stop"
@@ -418,12 +572,12 @@ export async function setup(c: Context): Promise<number> {
           `Hide ${existingViolations} existing violation(s) so only new ones are flagged?`,
           true
         )) === true
+    if (publishNeeded && publish)
+      wantPublish = (await ask(`Add the contract to what ${publish.name} publishes?`, true)) === true
     if (ciPossible)
       wantCi =
         wantsCi ||
         (await ask("Add a GitHub Action that checks every commit on pull requests?", true)) === true
-    if (publishNeeded && publish)
-      wantPublish = (await ask(`Add the contract to what ${publish.name} publishes?`, true)) === true
   }
   if ((confirmed || chosen.length > 0) && !by)
     throw new CliError(
@@ -449,15 +603,34 @@ export async function setup(c: Context): Promise<number> {
       : []
     for (const p of existing) if (p.id) taken.add(p.id.replace(/^pattern:/, ""))
     for (const x of chosen) {
-      let id = slugId(x.suggestedName)
-      for (let n = 2; taken.has(id); n++) id = `${slugId(x.suggestedName)}-${n}`
+      const category = categoryOf(x)
+      const label = directed.get(x.id)?.name ?? x.suggestedName
+      let id = slugId(label, category)
+      for (let n = 2; taken.has(id); n++) id = `${slugId(label, category)}-${n}`
       taken.add(id)
       const a = await sub("candidates", "accept", x.id, "--as", by, "--note", "added by invariant setup")
-      const p = a.code === 0 ? await sub("candidates", "promote", x.id, "--id", id, "--as", by) : a
+      const p =
+        a.code === 0
+          ? await sub(
+              "candidates",
+              "promote",
+              x.id,
+              "--id",
+              id,
+              "--as",
+              by,
+              "--category",
+              category,
+              ...(directed.get(x.id)?.name ? ["--name", label] : [])
+            )
+          : a
       if (p.code === 0) promoted.push({ id, cand: x })
       else flag(`skipped ${x.suggestedName}: ${(p.err || p.out).trim().split("\n")[0]}`)
     }
   }
+  if (by)
+    for (const x of denied)
+      await sub("candidates", "reject", x.id, "--as", by, "--note", "denied during invariant setup")
   let approved = 0
   let rulesOn = 0
   if (promoted.length > 0) {
@@ -532,6 +705,18 @@ export async function setup(c: Context): Promise<number> {
     }
   }
 
+  if (wantPublish && publish) {
+    const edits = applyPublish(publish)
+    const ignored = [".gitignore", ".npmignore"].filter(
+      (f) =>
+        existsSync(path.join(c.cwd, f)) &&
+        /^\/?invariant\/?$/m.test(readFileSync(path.join(c.cwd, f), "utf8"))
+    )
+    did.push(
+      `publish    ${publish.name}: ${edits.join(" and ") || "already set up"}. Apps that install it can run ${CLI_NAME} setup.${ignored.length > 0 ? ` Warning: ${ignored.join(" and ")} ignores invariant/, so it would not be published.` : ""}`
+    )
+  }
+
   let ciAdded = false
   if (wantCi) {
     mkdirSync(path.dirname(workflowFile), { recursive: true })
@@ -549,18 +734,6 @@ export async function setup(c: Context): Promise<number> {
     )
   }
   const hasCi = ciAdded || existsSync(workflowFile)
-
-  if (wantPublish && publish) {
-    const edits = applyPublish(publish)
-    const ignored = [".gitignore", ".npmignore"].filter(
-      (f) =>
-        existsSync(path.join(c.cwd, f)) &&
-        /^\/?invariant\/?$/m.test(readFileSync(path.join(c.cwd, f), "utf8"))
-    )
-    did.push(
-      `publish    ${publish.name}: ${edits.join(" and ") || "already set up"}. Apps that install it can run ${CLI_NAME} setup.${ignored.length > 0 ? ` Warning: ${ignored.join(" and ")} ignores invariant/, so it would not be published.` : ""}`
-    )
-  }
 
   say()
   step("set up")
