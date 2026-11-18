@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/invariant-ui/cli/compare/v0.8.0...v0.9.0) (2026-11-18)
+
+
+### Features
+
+* **cli:** guided discovery in setup for component folders, apps and page/layout patterns ([#24](https://github.com/invariant-ui/cli/issues/24)) ([e4b9b64](https://github.com/invariant-ui/cli/commit/e4b9b64149451e74b719524acfc1319b9fc76058))
+
 ## [0.8.0](https://github.com/invariant-ui/cli/compare/v0.7.0...v0.8.0) (2026-11-18)
 
 
