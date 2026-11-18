@@ -1,0 +1,1410 @@
+# Invariant documentation
+
+Source: https://invariant-ui.com/docs/
+
+Start
+
+# Introduction
+
+  AI agents write UI that ignores your design system. Invariant gives them the rules, then checks what they wrote.
+
+  Your design system lives in docs, Storybook and people's heads. An agent has none of that, so it invents props, hard-codes colors, lays pages out differently every time and forgets the loading and error states your team requires. A person ends up catching every one of those in review.
+
+  Invariant compiles the design system into one machine-readable contract: your components, props and tokens, extracted from source with the file and line behind each fact, plus the UX patterns and page layouts your team approves. Agents read the contract before they write. `invariant validate` checks the result in CI, and an opt-in browser run confirms behavior. Everything runs locally, with no account and no network, and your code is analyzed statically and never executed.
+
+### What you get
+
+- A contract you can trust. Every fact has evidence and a status: discovered, documented, inferred or approved. Conflicts are reported, never hidden.
+
+- Pattern contracts. Page archetypes, layout regions, interaction states and rules, written as JSON and approved by people.
+
+- Enforcement. Checks in CI that say pass, fail, not verifiable or skipped, and never count what they can't establish as a pass.
+
+- Runtime proof. Opt-in browser checks for focus, keyboard order and responsive layout, labeled apart from static results.
+
+- Agents that follow a workflow. An MCP server and skills that take an agent from task to approved pattern to validated code.
+
+### Where to start
+
+    InstallOne npx command.
+    Quick startCompile a contract, then enforce it.
+    Add it to your projectDesign system in your repo, or in a package.
+    Define patternsDescribe your pages and interactions.
+    Connect an agentOne command, read-only.
+
+  StatusReact, Vue, Angular, Storybook and token files are supported. Figma and zeroheight are not supported yet, and the config rejects them with a message. Pattern checks and discovery read React only. Browser verification is early.
+
+  Start
+
+## Install
+
+  You need Node 20 or newer. There is nothing to install first: run it with `npx`.
+
+  bash
+```
+npx @invariant-ui/cli setup
+```
+
+  To keep the command, install it globally. It is then called `invariant`, which is what the rest of these docs use.
+
+  bash
+```
+npm install -g @invariant-ui/cli
+invariant --help
+```
+
+  Without a global install, write `npx @invariant-ui/cli` where the docs say `invariant`. `invariant agent init` notices when `invariant` is not on your `PATH` and writes an MCP entry that starts the server with `npx -y @invariant-ui/cli mcp` instead.
+
+### From source
+
+  To work on Invariant itself you need Node 24 and pnpm.
+
+  bash
+```
+git clone https://github.com/invariant-ui/cli.git
+cd invariant
+nvm use                 # reads .nvmrc (Node 24)
+pnpm install
+pnpm build
+pnpm invariant --help   # same as: node apps/cli/dist/main.js
+```
+
+  `pnpm verify` runs lint, typecheck, package boundary checks, build and tests. `pnpm build:npm` assembles the single package that is published.
+
+  Start
+
+## Quick start
+
+  Run these inside the project that holds your design system.
+
+### Fastest path: one command
+
+  bash
+```
+invariant setup
+```
+
+  It detects your sources, compiles the contract and looks at your app code. Then it shows one plan and asks one question:
+
+  text
+```
+Plan. Yes confirms the contract above is right, and does all of this:- add .github/workflows/invariant.yml, which checks every pull request commit- publish the contract with @acme/ui (adds "invariant" to files and a prepack script)◆  Looks right?● Yes, apply this setup○ Choose each step○ No, stop↑/↓ move · enter choose · esc stop
+```
+
+  On a terminal, arrow keys pick a choice and Enter confirms; Esc stops. Enter or `y` does it all, `n` stops with nothing added, and `c` asks about each step. Without a terminal the question is `Looks right? [Y/n, or c to choose each step]`. The plan only lists what applies: the publish line appears in a design system repository, the CI line in a git project.
+
+- Starter rules restate what a recurring arrangement did every time: a `Modal` always contained a `Button`, a `Card.Header` always came before the `Card.Body`. They are checked across your app folders as warnings, so they annotate new code and do not fail a build until you raise them. Skip them with `--no-rules`.
+
+- Publishing (design system repository): adds `invariant` to the package's `files` and a `prepack` script that compiles the contract, so the published package carries it. Skipped for a private package; `--no-publish` skips it.
+
+  Nothing is approved until you say soYes is the confirmation: patterns are approved and starter rules turned on only after you confirm the contract. `--yes` takes the other defaults but never confirms, so patterns are added as proposals and no rule is turned on. `--confirm-contract --as "Your Name"` is the same yes for scripts.
+
+  The steps below do the same thing one at a time.
+
+### 1. Compile the contract
+
+  bash
+```
+invariant init                          # detect sources, write invariant.config.json
+invariant compile                       # write the contract to ./invariant
+invariant components inspect Button --evidence
+invariant conflicts list                # where sources disagree
+```
+
+  `init` detects a source for each framework package, for Storybook and for token files. If your layout is unusual, add sources with `invariant source add <type> [path]` or edit the config. Add `--cwd /path/to/project` to any command to run it elsewhere.
+
+### 2. Add your patterns
+
+  Start from what your apps already do, or write a definition by hand. Both end up in `invariant.patterns.json`, and nothing is enforced until a person approves it.
+
+  bash
+```
+invariant discover src/                 # propose patterns from your code
+invariant candidates list
+invariant candidates accept <id> --as "Your Name"
+invariant candidates promote <id> --id composition.confirm-dialog --as "Your Name"
+invariant compile
+invariant review approve <id> --as "Your Name"   # approve what you have read
+```
+
+### 3. Enforce
+
+  bash
+```
+invariant validate src/                 # components, tokens and approved patterns
+invariant verify --fresh                # is the contract stale or tampered with?
+invariant agent init claude-code        # give your AI tool the contract
+```
+
+  Put `validate` and `verify --fresh` in CI. To start clean on an existing codebase, run `invariant validate src/ --update-baseline`: existing violations are hidden (with a note), and new ones still fail. `--no-baseline` shows everything. To check behavior in a browser, see Browser verification.
+
+  Compile exit code`compile` exits 1 if any diagnostic is an error. The files are still written so you can inspect the problem. `compile --watch` recompiles after changes settle, so a connected agent always sees a current contract.
+
+  `compile` and `verify` end with a `report` line that gives the path to `invariant.report.html`. In a terminal the path is a link that opens the report. In CI it is the plain path.
+
+  Start
+
+## Add it to your project
+
+  What you do depends on where the design system's source code lives, because `compile` reads that source.
+
+### The design system is in this repo
+
+  A single repo or a monorepo, with the design system as a package. Run `npx @invariant-ui/cli setup` at the root. Commit `invariant/`, `invariant.patterns.json`, `invariant.baseline.json` and `.github/workflows/invariant.yml`. CI then runs `verify --fresh` and `validate` on every pull request. An app that imports the library through a workspace dependency (`@acme/ui` as `workspace:*`) works as is, because components are matched by package name.
+
+  If application pages share a folder with the design system's components (`src/pages` next to `src/components`), setup skips that folder as design-system source. Pass `--paths src/pages`.
+
+### The app uses a design system from npm
+
+  The source is not in your repo, so the contract travels with the library.
+
+- Design system repo: run `invariant setup` there. It adds `invariant` to the package's `files` and a `prepack` script that compiles the contract (in a monorepo it compiles at the root and exports into the package), so each release ships a contract that matches it. It skips a private package.
+
+- App repo: install the package, then run `npx @invariant-ui/cli setup`. It sees there is no design system source here, finds the contract the package ships (`node_modules/<package>/invariant/`), and writes a config that extends it. With several installed it asks which; `--contract <folder>` chooses.
+
+  json
+```
+{
+  "name": "Acme UI",
+  "sources": [],
+  "extends": { "contract": "node_modules/@acme/ui/invariant" }
+}
+```
+
+  From then on `compile` starts from the shipped contract, keeps its components, tokens and patterns with their evidence and approvals, and adds your own `invariant.patterns.json`, `invariant.policies.json` and `invariant.decisions.json` on top. The result is written to `invariant/` in your repo, so `validate`, `discover`, the MCP server and `agent init` all work with no `--dir`.
+
+- Upgrading the library: when the package ships a new contract, `verify --fresh` fails with `verify.stale` and says what changed. Run `compile` and commit the result.
+
+- CI: the generated workflow installs your dependencies first (with the package manager your lockfile names), so the shipped contract is present.
+
+- Your patterns: set them up in the app repo with `discover`, or write them by hand. Patterns that every app should follow belong in the design system repo.
+
+  Where files are writtenCommands that write their own files, such as `discover` and `browser run`, never write into `node_modules`. If you point `--dir` at a shipped contract, they write to your project's own output folder.
+
+  Without a contract, setup stopsIf there is no design system source and no installed package ships a contract, `setup` says so and creates nothing. `compile` likewise refuses a config with no sources and no `extends`, instead of writing an empty contract.
+
+  Concepts
+
+## How it works
+
+  Each stage has one job and a clear boundary.
+
+  text
+```
+sources (code)
+  -> adapters (extract)
+  -> IR (shared)
+  -> reconcile (merge, conflicts)
+  -> enrich (infer, with evidence)
+  -> verify (check)
+  -> contract + evidence
+```
+
+- Discover. Find packages, entry points, Storybook configuration, token files and docs.
+
+- Extract. Each adapter reads one kind of source and emits facts with evidence into an intermediate representation (IR). Adapters never merge or resolve, and do not know about each other.
+
+- Reconcile. A pure compiler merges the IR from every source into one contract. Disagreements become conflicts, never silent overwrites.
+
+- Enrich. A deterministic semantic engine adds clearly labeled `inferred` facts, such as a token's category.
+
+- Verify. The output is checked for structure, references, hashes and evidence before it is written.
+
+  Adapters must not independently generate the contract, and the contract is not coupled to any frontend framework or to MCP.
+
+  Concepts
+
+## The contract
+
+  The contract is one JSON file, `invariant.contract.json`. Think of it as a catalog of everything in your design system, where every entry points to the proof for it. The Zod schema in `packages/contract` defines it, and JSON Schemas generated from it are committed under `packages/contract/schema/`.
+
+### What is inside
+
+      `invariant.contract.json`
+
+          What your system has
+
+          componentsprops, events, slots, variants
+
+          tokensvalues, aliases, per-theme modes
+
+          themesthe modes tokens vary by
+
+          patternsrepeatable layouts
+
+          guidelinesdocuments about usage
+
+          Rules about it
+
+          constraintsmachine-checkable limits
+
+          policiesrules a person approved
+
+          Health and trust
+
+          sourceswhere facts came from, and how healthy
+
+          conflictswhere sources disagree
+
+          metadataname, versions, frameworks
+
+          integritycontent hash
+
+    &rarr;every fact lists `evidenceIds` that resolve here
+
+      `invariant.evidence.json`
+
+      evidencefile, line, method and original text for each id
+
+    Section | What it holds | Example id |
+
+    `components` | One entry per conceptual component, with one `implementation` per framework and source. Props (type, required, default, allowed values, deprecation), events, slots, variants, states, accessibility, examples, composition and lifecycle. | `component:button` |
+
+    `tokens` | A category (color, typography, spacing, sizing, border, shadow, breakpoint, motion or other) and a value that is either a literal or `aliasOf` another token, plus per-theme `modes`. | `token:color.brand.primary` |
+
+    `themes` | The modes that token values vary by, such as `dark`. | `theme:dark` |
+
+    `patterns`, `guidelines` | Patterns are layouts, interactions, pages and compositions that you define (see Pattern definitions): parts, regions, states, relationships and constraints. Guidelines are references to documents in your repo. | `pattern:form.login` |
+
+    `constraints`, `policies` | Checkable rules. A policy is a rule a named person approved, with severity and enforcement. A policy without approval cannot exist. | `policy:icon-buttons-need-labels` |
+
+    `conflicts` | Where sources disagree: at least two claims, each with its source, status, evidence and value. The losing claim is never deleted. | `conflict:value-mismatch/...` |
+
+    `sources` | Every input, its location, version when it has one, what it can supply, and its health (ok, degraded or failed). | `ui-react` |
+
+    `metadata`, `integrity` | The design system's name and id, compiler version, frameworks and compile time, and the content hash. |  |
+
+### Anatomy of one entry
+
+  Every entity keeps plain values next to a `facts` map. The map says, for each field, how it is known and where the proof is. This sketch is illustrative and trimmed.
+
+  json
+```
+{
+  "id": "component:button",
+  "name": "Button",
+  "props": [
+    { "name": "variant", "allowedValues": ["primary", "secondary", "ghost"] }
+  ],
+  "implementations": [ { "framework": "react", "exportName": "Button" } ],
+  "facts": {
+    "props.variant.allowedValues": {
+      "status": "discovered",
+      "evidenceIds": ["ev_3f9a..."]      // resolves in invariant.evidence.json
+    }
+  }
+}
+```
+
+  Fact paths are dot-separated (`props.size.default`, `modes.theme:dark.value`). On an array, a segment picks the item with that `name` or `id`. See Facts and evidence for the four statuses.
+
+### Rules the contract follows
+
+    Rule | What it means for you |
+
+    Ids are `kind:name` | Kinds are component, token, theme, pattern, guideline, constraint, policy and conflict. Names use lowercase letters, digits, `.`, `_` and `-`, with optional `/` segments. |
+
+    One id, many implementations | A React and a Vue Button are one `component:button` with two implementations, so you compare frameworks in one place. |
+
+    Strict objects | Unknown fields are rejected. Framework-specific data lives only under `extensions.react`, `extensions.vue` or `extensions.angular`, and the core model never reads it. |
+
+    Sorted and deterministic | Collections are sorted by id and keys are canonical, so recompiling unchanged sources gives identical bytes and clean diffs. |
+
+    Hash ignores timestamps | `integrity.contentHash` is a SHA-256 of the contract without the `integrity` block, `metadata.compiledAt` and `sources[].lastSyncedAt`. Times are recorded but cannot change the hash. |
+
+    Version is explicit | `contractVersion` is `1.1.0`, which added optional pattern fields. Contracts written as `1.0.0` are still read as they are. Contract changes are versioned. |
+
+  Concepts
+
+## Facts and evidence
+
+  Every field of every entity has a fact that says how it is known. This is how Invariant keeps discovered information separate from guesses.
+
+    Status | Meaning |
+
+    discovered | Machine-parsed from an artifact whose structure is the claim, such as a TypeScript prop type. |
+
+    documented | Written by a person in prose or guidance, such as a JSDoc description. |
+
+    inferred | Derived by a named deterministic rule. Always carries a `derivation` and a `confidence`. Adapters never emit it. |
+
+    approved | Accepted by a named person. Layered over the earlier status, which is kept as `priorStatus`. |
+
+  text
+```
+status:      discovered | documented | inferred | approved
+evidenceIds: at least one id into invariant.evidence.json
+confidence:  0..1, required when inferred
+derivation:  { rule, reasoning, inputs }, required when inferred
+approval:    { approvedBy, approvedAt, role?, reference?, fingerprint, priorStatus }
+```
+
+### Evidence
+
+  Evidence lives in `invariant.evidence.json`, referenced by id. Each entry records the source, the location (file and line), the extraction method and the original text. Ids are `ev_` plus 24 hex characters of a SHA-256 over the immutable parts of the observation.
+
+### Approvals expire
+
+  An approval stores a fingerprint of the entity id, path and value at the time it was made. If the value changes, verification reports `contract.approval-stale`. An approval cannot silently outlive the thing it approved.
+
+  RuleInferred rules are never automatically promoted to approved policies, and LLMs are never the authority for extractable facts such as TypeScript APIs, props, exports, defaults or token values.
+
+  Concepts
+
+## Conflicts and review
+
+  When two sources disagree, both claims stay in the contract with their evidence. The losing claim is never deleted.
+
+### Conflict types
+
+  `value-mismatch`, `existence-mismatch`, `deprecation-mismatch`, `identity-ambiguity` and `token-value-mismatch`. Ids look like `conflict:<type>/<subject>/<path>`. Resolution starts as `open`.
+
+  Storybook findings with evidence on both sides become conflicts, for example `arg-value-not-allowed` or `default-mismatch`. A story arg that a component's type does not allow is caught this way.
+
+### Review queue
+
+  `invariant.review.json` lists every open conflict and every inferred fact that needs a person, each with evidence, a reason and `approvalRequired: true`. Work through it with the CLI:
+
+  bash
+```
+invariant review list
+invariant review show <id>
+invariant review approve <id> --as "Jane Doe" --role "design-system lead"
+invariant review reject <id> --as "Jane Doe"
+invariant review accept <id> --as "Jane Doe" --note "known difference"
+```
+
+  See Decisions for what each command does.
+
+### The semantic engine
+
+  All its rules emit `inferred` facts with a rule name, reasoning and confidence, citing existing evidence.
+
+    Rule | Output | Confidence |
+
+    `token-category.dtcg-type` | Token category from a declared DTCG `$type` | 0.95 |
+
+    `token-category.value-kind` | Category from a CSS value kind (color) | 0.9 |
+
+    `token-category.name-prefix` | Category from a name prefix such as `color`, `space`, `font` | 0.7 |
+
+    `token-category.fallback` | Category stays `other` | 0.2 |
+
+    `document.classify` | Guideline kind from keywords in a page title or file name | 0.6 to 0.7 |
+
+    `document.names-component` | Guideline `appliesTo` from a file stem or title that names a component | 0.8 stem, 0.6 title |
+
+    `compound.name-prefix` | Component `contains` child, from shared name prefixes | 0.7 same file, 0.5 otherwise |
+
+  Sources
+
+## React
+
+  Source type `react`. Uses the TypeScript compiler API and type checker. Nothing is executed or imported.
+
+### What counts as a component
+
+  Only components exported from a package's entry points are reported. Aliases, renames, `export *`, default exports and barrels are followed, so one component exported under several names is one entity.
+
+    Form | Rule |
+
+    Function or arrow | Pascal-case name and returns JSX |
+
+    Annotated function | Pascal-case, declared `React.FC<P>`, `FunctionComponent<P>` or `VFC<P>` |
+
+    Class | Extends `Component` or `PureComponent` |
+
+    Wrappers | `forwardRef`, `memo` (nesting allowed), `lazy` (props unknown) |
+
+    CSS-in-JS | Tagged templates from `styled-components` or `@emotion/styled` |
+
+    Compound | `Object.assign(Root, { Child })` and `Root.Child = Child` |
+
+  Hooks, lowercase functions, constants and functions without JSX are not components. Higher-order components and unrecognized factory calls are reported with a diagnostic and not analyzed.
+
+### Facts extracted
+
+- Props: type text and kind, required, default, allowed values in declaration order (through aliases), JSDoc description and deprecation.
+
+- Variants: string-literal union props and `cva` configs.
+
+- Slots: `children`, renderable-typed props and render props.
+
+- Accessibility: a static `role` and every `aria-*` attribute on native elements in the component's own body.
+
+- Styling: CSS modules, `var(--x)` references, class names and Tailwind, recorded as written and never resolved to tokens.
+
+- Composition: which public components this one renders.
+
+- Usage: static counts of props across JSX sites. These are source counts, never runtime frequency.
+
+  CompletenessWhen props cannot be fully listed (a base type from outside the project, `lazy`, an untyped parameter), the component is marked `propsComplete: false`. Treat an absent prop as unknown unless `propsComplete` is true.
+
+  Sources
+
+## Vue and Angular
+
+  Source types `vue` and `angular`. Both produce the same neutral facts as React, so a component's contract looks the same whichever framework it came from. A test checks one Button implemented in all three.
+
+### Vue
+
+  Public components are the `.vue` files and `defineComponent(...)` declarations that entry points export. Extracted: `defineProps`, runtime props, `defineModel`, `defineEmits`, `defineSlots` merged with template `<slot>` outlets, and Options API props. Imports of `.vue` files resolve through virtual script modules, so a props type declared in another SFC works.
+
+### Angular
+
+  Public components and directives are the decorated classes that entry points export. Extracted: `@Input`, `input()`, `input.required()`, `model()`, `@Output` with `EventEmitter`, `output()`, and `<ng-content>` slots from the template. `@NgModule` classes become entities of kind `module`.
+
+### Neutral mapping
+
+    Concept | React | Vue | Angular |
+
+    Props | props | props | inputs |
+
+    Events | callback props (kept as props) | emits | outputs |
+
+    Slots | `children`, render props | slots | `ng-content` |
+
+  Events differ on purpose: React callbacks stay props with `role: event-handler`, while Vue emits and Angular outputs are `events`.
+
+  Path aliases from `tsconfig` (`paths`, `baseUrl`, `extends`, `references`) are resolved for all adapters. Package-name `extends` is not followed.
+
+  Sources
+
+## Storybook
+
+  Source type `storybook`. Stories are read statically from CSF files and MDX. No Storybook process is started and no story code runs.
+
+### Supported forms
+
+  CSF 3 object stories, CSF 2 function stories, `Template.bind({})` stories, and CSF 2 assignment annotations such as `Story.args = ...`. Meta can be an object literal, an identifier, or wrapped in `satisfies`, `as` or parentheses. When `component` is absent, `Meta<typeof X>` is used.
+
+### Static evaluation
+
+  `args`, `argTypes` and `parameters` are evaluated by a small static evaluator. It resolves literals, objects, arrays, `const` identifiers (across files), property access and object spread. It never guesses. Functions, JSX, calls, template literals with substitutions and unresolvable identifiers are listed under an `...Unresolved` fact by key path.
+
+### Linking stories to components
+
+  A story links to its component through the `file` and `localName` pair the component adapter publishes. Display names are never used for linking. Because of that, the project root is the configuration's directory, so all sources share one set of project-relative paths.
+
+### What reconciliation reports
+
+  Conflicts: `arg-value-not-allowed`, `control-option-not-allowed`, `default-mismatch`, `arg-undeclared`, `control-undeclared` and `deprecated-demonstrated`. Coverage findings such as `prop-not-demonstrated` and `component-unlinked` stay diagnostics.
+
+  Sources
+
+## Design tokens
+
+  Source type `tokens`, adapter id `design-tokens`. It is its own package because tokens are not React-specific.
+
+### CSS custom properties
+
+  Each declaration yields a name, raw value and line. Scope is classified conservatively:
+
+- `:root`, `html`, `:host` and `body` are the default value.
+
+- `[data-theme="x"]` (also `data-mode`, `data-color-scheme`, `data-color-mode`), `.dark`, `.light`, `.theme-x`, and `@media (prefers-color-scheme: ...)` around a root selector are theme modes.
+
+- Anything else is component-private and gets no value or mode fact.
+
+### JSON
+
+  W3C Design Tokens files (`$value`, `$type`, `{path}` aliases, `$description`, `$deprecated`) and Style Dictionary files (`value`, `type`, `comment`). Evidence carries the line of each token's key.
+
+### What it does not decide
+
+  Category, semantic name, and the mapping between a CSS variable name and a JSON token name are not decided here. Tokens from different files merge on a normalized name (`color.brand` equals `color-brand`), recorded as an `inferred` fact. A different literal or alias for the same token and theme is a `token-value-mismatch` conflict.
+
+  Patterns
+
+## Pattern definitions
+
+  Patterns describe how your organization assembles interfaces: a page layout, an interaction such as confirming a delete, a page archetype, or a composition like a card with actions. You write them in `invariant.patterns.json`, with no code, and `compile` turns them into patterns in the contract. Agents then find them with `get_design_patterns`.
+
+  json
+```
+{
+  "$schema": "./schema/patterns-file-v1.schema.json",
+  "version": 1,
+  "patterns": [
+    {
+      "id": "page.data-management",
+      "name": "Data management page",
+      "category": "page",
+      "description": "A page to find, review and act on a collection of records.",
+      "intent": "Let a person search a collection and act on what they find.",
+      "layout": { "regions": [{ "name": "header", "required": true }, { "name": "results", "required": true }] },
+      "composition": {
+        "parts": [
+          { "name": "toolbar", "ref": "Table toolbar", "role": "required", "region": "results" },
+          { "name": "table", "ref": "DataTable", "role": "required", "region": "results" }
+        ]
+      },
+      "relationships": [{ "id": "tools", "type": "composes", "target": "composition.table-toolbar" }],
+      "constraints": [
+        {
+          "id": "single-table",
+          "kind": "cardinality",
+          "description": "A data management page shows exactly one table.",
+          "details": { "target": "DataTable", "min": 1, "max": 1, "within": "region:results" },
+          "enforce": { "severity": "error", "enforcement": "block" }
+        }
+      ],
+      "approval": { "approvedBy": "design-system-owners", "approvedAt": "2026-11-03T10:00:00.000Z" }
+    }
+  ]
+}
+```
+
+  `invariant export --to <dir>` writes the JSON Schema to `schema/patterns-file-v1.schema.json`. Point `$schema` at it and your editor validates the file as you type.
+
+### What you can describe
+
+    Field | Describes |
+
+    `composition.parts` | The named parts of the pattern, each a component or another pattern, and whether it is required, optional or prohibited. |
+
+    `layout.regions` | Named regions with hierarchy, width, grid, spacing tokens and responsive behavior. |
+
+    `behavior` | States, the initial state and transitions, with required feedback. |
+
+    `variations` | Named, approved ways a pattern may differ: a part's role changes (required to optional or prohibited) or a part exists only in the variation. Each says when to use it. |
+
+    `relationships` | How it relates to other patterns: `composes`, `contains`, `requires`, `uses`, `extends`, `alternative-to`, `prohibited-with`, `supersedes`. |
+
+    `constraints` | Checkable rules: `required-child`, `forbidden-child`, `requires-parent`, `required-region`, `ordering`, `cardinality`. |
+
+### References by name
+
+  Write a component or pattern by id or by name (`DataTable`, `data table`, `component:data-table`). Compiling resolves it. An exact id wins, then a name, then the part of a pattern id after its category. If a name matches several things at the same level, you get an error and write the full id. A name that matches nothing gets the nearest suggestions.
+
+### Page archetypes
+
+  A page archetype is a definition with `category: "page"` that composes other patterns. A data management page, a detail page and a create or edit form can share an application shell, a page header, a toolbar, a delete confirmation and a form workflow, and each says what may differ.
+
+- Regions and parts: place each part in a region. A required region nothing fills gets a warning.
+
+- Variations: `read-only` makes an actions part prohibited, `create` prohibits a remove button, `bulk-actions` adds a part. They are named and carry a `when`, instead of becoming extra patterns.
+
+- Required interaction states: `required-state` constraints on the archetype, or on the interaction patterns it uses.
+
+- Followed to any depth: compiling rejects a circular reference, two patterns declared prohibited together that one page composes, and a prohibition that a composed pattern defeats. It warns about a pattern that another supersedes.
+
+- A part is a slot: prohibiting one part does not clash with another part of the same pattern that uses the same component. Only what a composed pattern brings in does.
+
+  bash
+```
+invariant patterns resolve page.detail
+invariant patterns resolve page.detail --variation read-only
+```
+
+  `resolve` shows the regions, the composition expanded through every pattern it builds on, the variations, the interaction states it requires and whether a policy enforces each, responsive expectations, and prohibited combinations. Agents get the same through `get_design_patterns` with `name` and `resolve` (or `variation`).
+
+  Approval is not inheritedAn approved archetype does not approve the patterns it builds on. Resolving lists the ones that are not approved.
+
+### Constraint inheritance
+
+  By default each constraint is enforced by its own policy, with its own paths. To hold a whole page file to the constraints of everything its archetype composes, opt in on the archetype:
+
+  json
+```
+"appliesTo": { "paths": ["src/pages/**"], "frameworks": ["react"] },
+"inheritsConstraints": true
+```
+
+  It follows parts and variation parts through every pattern they use, and puts each rule that an approved policy already carries onto those paths. It creates no policy and approves nothing, and it has effect only while `appliesTo` and the opt-in are both approved. A file covered by a policy's own paths and by the archetype's is checked once, under the policy's own scope. Results of inherited rules say `inheritedFrom`.
+
+### Approval
+
+- No `approval` block: the pattern is `documented`. `patterns list` marks it as not approved, and each of its facts appears in `invariant review list` as a `pattern-fact`. Approve one with `invariant review approve <id> --as "Your Name"`.
+
+- With `approval`: the pattern's facts are `approved`. Change the definition without updating the approval and verification reports it as stale.
+
+  A file in the repository is not an approval by itself, and approver names are asserted, not authenticated.
+
+### Enforcement
+
+  Add `enforce` to a constraint to make it a policy. That needs an approved pattern, because nothing infers an approval. On an unapproved pattern, compiling warns and adds the constraint without a policy.
+
+  How it is checked`invariant validate` checks React files against these policies and reports what it cannot establish as not verifiable. See Validate code, "Pattern rules". A whole-file constraint (`required-region`, or `ordering` and `cardinality` without `within`) needs `appliesTo.paths`, because the paths mark which files are instances of the pattern.
+
+### Problems are reported, not guessed
+
+  If a definition has an unknown component, token or pattern, an ambiguous name, a bad constraint, or a region it does not define, compiling reports every problem with its location and leaves that pattern out of the contract. Your other patterns are still added, and `compile` exits 1. Details are in `docs/specifications/pattern-definitions-v1.md`.
+
+  Patterns
+
+## Pattern discovery
+
+  Discovery finds structures that already recur in your application code and proposes them as candidates. It never approves anything and never writes a rule. A person reviews each candidate, and an accepted one can be promoted into `invariant.patterns.json`, still unapproved.
+
+  bash
+```
+invariant discover src/
+invariant candidates list
+invariant candidates show modal-button-ab12cd34
+invariant candidates accept ab12cd34 --as "Your Name" --note "our confirm dialog"
+invariant candidates promote ab12cd34 --id composition.confirm-dialog --as "Your Name"
+```
+
+### Two methods
+
+    Kind | How it works |
+
+    `arrangement` | Exact structure. Each design-system element with something inside it gets a canonical form such as `card(card.header,card.body(button))`, with marks for elements that may not render, may repeat, or take children from elsewhere. Identical forms are grouped. A group recurring in enough files and places is a candidate. |
+
+    `similar-files` | Overlap of structure. Files are described by their top-level elements and nested pairs, and grouped when every pair overlaps by at least `--similarity`. The candidate reports what every file shares, what most share, what varies, and the lowest and mean overlap. |
+
+### What a candidate does and does not say
+
+- Every candidate is `inferred` and starts `proposed`. Every one lists its evidence (file, line, column) and explains why it was found.
+
+- `equivalence` is always `not-established`. Similar structure is measured and reported; it is never taken to mean the same purpose.
+
+- No language model is involved and no confidence score is invented. You get counts and measured overlap.
+
+- Output is deterministic: the same files and options give identical bytes, and a candidate keeps its id while its structure is unchanged.
+
+### Review and promotion
+
+  Decisions are an append-only history in `invariant.candidate-reviews.json`, kept across new discovery runs. A decision about a structure that is gone is reported, not dropped. `promote` needs an accepted candidate and adds a definition with an `origin` block (candidate, method, counts, who accepted it and when). It adds no approval, no intent and no constraints: an observed arrangement is not a rule. After `compile` the pattern is `documented`, and you approve it with `invariant review` like any other.
+
+  ScopeDiscovery reads React `.tsx` and `.jsx` files by syntax, never runs them, and needs a compiled contract. Vue, Angular and HTML files are skipped and counted. An element counts as inside another when it is under it in the same file, so markup between them is ignored.
+
+  Enforce
+
+## Validate code
+
+  `invariant validate <path...>` checks application code against the compiled contract. Paths are files or directories inside the project. Directories are walked, skipping `node_modules`, build output, symbolic links, `.d.ts` files and `validation.ignore` globs. Recognized files: `.tsx .jsx .ts .js .mjs .cjs .vue .html`.
+
+  bash
+```
+invariant validate src                                 # text report, exit 1 on any error
+invariant validate src --format json|github|sarif      # machine-readable output
+invariant validate src --fail-on warning|never         # change the failing threshold
+```
+
+  The framework comes from the file name, then `--framework`, then the contract's only framework, then React. Nothing is executed or imported. Only literal values are verified. Expressions and bindings are counted as unverified and never guessed.
+
+### What a violation says
+
+  text
+```
+$ invariant validate app/pages/Prop.tsxapp/pages/Prop.tsx:3:27 error prop-value-not-allowedButton.variant is "danger", which is not one of "primary", "secondary", "ghost"fix: Use one of "primary", "secondary", "ghost".evidence src/Button.tsx:11 (discovered); subject component:button … 2 errors, 0 warnings, 0 info in 1 files (1 components checked)
+```
+
+  Every violation has file, line and column, a rule code, a subject, an explanation, a suggested fix, evidence (or the approved policy) and a `basis`: `discovered`, `documented`, `inferred`, `approved` or `heuristic`.
+
+### The eleven rules
+
+    Rule | Codes | Severity |
+
+    Unknown component | `component-unknown`, `framework-not-implemented` | error |
+
+    Unknown property | `unknown-prop`, `unverifiable-prop` | warning, info |
+
+    Invalid property value | `prop-value-not-allowed`, `prop-type-mismatch` | error, warning |
+
+    Deprecated component | `component-deprecated` | warning |
+
+    Deprecated property | `prop-deprecated` | warning |
+
+    Unsupported composition | `composition-parent-required`, `composition-not-allowed` | error |
+
+    Missing required property | `required-prop-missing` | error |
+
+    Hardcoded color | `color-not-in-tokens`, `color-matches-token` | warning, info |
+
+    Unapproved token | `unknown-css-variable`, `token-deprecated`, `token-forbidden` | warning, warning, error |
+
+    Missing accessibility requirement | `accessibility-requirement-missing` | error |
+
+    Invalid layout pattern | `layout-pattern-invalid` | error |
+
+  Run `invariant rules` for every code with its default severity and origin. Set a severity or `off` per code in `validation.rules`. Helper findings such as `component-ambiguous` and `native-element-has-equivalent` (a name match such as `<button>` and `Button`, always `heuristic` at confidence 0.5) are reported once per file.
+
+### Literal values
+
+  Invariant also compares literal values with tokens of the matching category. A check needs at least one token of that category with a literal value, otherwise it is skipped and the report says so. Anything containing `var(`, `calc(` or a binding is skipped, never guessed.
+
+    Kind | Codes | Reads |
+
+    Color | `color-not-in-tokens`, `color-matches-token` | Hex, `rgb()`/`rgba()`, `hsl()`/`hsla()` and CSS named colors. Hex and functional colors compare by value, so `rgb(0 87 255)` equals `#0057ff`. Names are read only as the value of a color property and match a token by name. |
+
+    Spacing | `spacing-not-in-tokens`, `spacing-matches-token` | Lengths in `margin*`, `padding*` and `gap`, in CSS or style objects. `rem` and `em` use a 16px root. Zero, `auto` and percentages are skipped. |
+
+    Typography | `typography-not-in-tokens`, `typography-matches-token` | `font-size`, `font-weight`, `line-height`, `letter-spacing` and the first `font-family` name, including the parts of composite typography tokens. |
+
+### Pattern rules
+
+  When a pattern is approved and one of its constraints has `enforce`, `validate` checks React files against it. Only approved policies are enforced. The policy's `appliesTo.paths` says which files are instances of the pattern.
+
+    Constraint | Code | Checks |
+
+    `required-child` | `pattern-required-child-missing` | Each parent contains the child (at any depth, at least `min`). |
+
+    `forbidden-child` | `pattern-child-forbidden` | No such child appears inside the parent. |
+
+    `requires-parent` | `pattern-parent-required` | The child sits inside one of the allowed parents. |
+
+    `required-region` | `pattern-region-missing` | A region of the pattern is present in the file. A region is recognized by the components of the composition parts that name it. |
+
+    `ordering` | `pattern-order-violated` | One kind of element comes before another, in the file or inside each container. |
+
+    `cardinality` | `pattern-cardinality-violated` | The number of elements is within `min` and `max`. `max: 0` forbids an element. |
+
+    `required-state` | `pattern-state-missing` | An interaction in the file represents a state its workflow requires. See Interaction checks below. |
+
+  Every check is reported with a status, in `evaluations` in the JSON output and as a tally in text:
+
+    Status | Meaning |
+
+    `pass` | Evaluated, and it holds. |
+
+    `fail` | Evaluated, and it is violated. Produces a finding with the policy's severity. |
+
+    `warning` | Holds only if conditionally rendered elements render, or a list or condition might break a limit. |
+
+    `not-verifiable` | This analysis cannot establish it. No finding, never counted as a pass, and it does not fail the run. |
+
+    `skipped` | It applies but cannot be evaluated, with the reason: for example a whole-file rule with no paths, nothing to order, or a Vue or Angular template. |
+
+  Invariant only says something is missing, out of order or over a limit when it can see everything in that scope. If the scope holds a component from outside the design system, or children that come from somewhere else (`{children}`, a spread, a function call), the answer is `not-verifiable`. Something that is present counts as proof even then. Elements inside a list or a condition never prove that something is present or that a limit holds.
+
+  What is not checked yetPatterns used as references inside a constraint, `ordering` and `cardinality` within a region, and regions with no component part to recognize them are reported as not verifiable. Vue, Angular and HTML templates are skipped. Each file is read on its own, so a parent or child in another file cannot be seen. `requires-parent` can be a false positive if a wrapper lives in another file.
+
+### Interaction checks
+
+  A `required-state` constraint says that wherever a workflow occurs in a file, it must represent one of its states. Invariant looks for three workflows in the JSX and handlers of a React file:
+
+    Workflow | Found as | States |
+
+    `form-submission` | An element with `onSubmit`. | `submitting`, `error`, `success`, `guarded` (not submittable twice while pending). |
+
+    `destructive-confirmation` | A click handler that calls something named delete, remove or destroy, or a button that says so. | `confirming` (a dialog or `confirm` comes first), `cancellable`. |
+
+    `search-results` | A search input. | `connected`, `loading`, `empty`, `error`, `clearable`. |
+
+  json
+```
+{
+  "id": "shows-submitting",
+  "kind": "required-state",
+  "description": "A form shows that it is submitting.",
+  "details": { "workflow": "form-submission", "state": "submitting", "minimum": "static-inferred" },
+  "enforce": { "severity": "error", "enforcement": "block" }
+}
+```
+
+  Each result that found its state says how much that establishes:
+
+    Level | Meaning |
+
+    `structural` | The code has the piece and the interface shows it, for example a state called `isSubmitting` that the JSX reads. Part of this rests on names, and the evidence names the identifier. |
+
+    `static-inferred` | A handler's code shows it happening: a flag set before an `await` and cleared after, a `catch` that sets the error, a delete reachable only from the dialog's confirm button. |
+
+    `runtime-verified` | Reserved for results of running the code. Static analysis never produces it. |
+
+  `minimum` sets the weakest level that satisfies the rule (default `structural`). A state found below the minimum is a `warning`. A state that is not found is a `fail` when nothing in the file could be hiding it, and `not-verifiable` when something could: a handler passed in as a prop, a custom hook, a spread on the form, a form `action`, or a component from another file.
+
+  Represented is not workingThese checks show that a state exists in the code and is shown to the user. They do not run the code, so they cannot show that it works, and no result is ever called runtime verified. The text report ends its tally with how many results are at each level.
+
+  Care with false claimsUnknown-component detection for React depends on imports: a tag without an import from a package the contract publishes is never called unknown. Standard HTML attributes, `aria-*`, `data-*` and event or slot names are never flagged as unknown props.
+
+  Enforce
+
+## Policies
+
+  Organizational rules are written by people in `invariant.policies.json`, kept in version control.
+
+  json
+```
+{ "version": 1, "policies": [ {
+  "id": "icon-buttons-need-labels",
+  "name": "Icon-only buttons need an accessible name",
+  "statement": "A button without text content must have aria-label or aria-labelledby.",
+  "severity": "error",
+  "enforcement": "block",
+  "approval": {
+    "approvedBy": "Jane Doe",
+    "approvedAt": "2026-01-05T00:00:00.000Z",
+    "role": "design-system lead",
+    "reference": "RFC-7"
+  },
+  "rule": {
+    "kind": "require-attribute",
+    "components": ["Button"],
+    "anyOf": ["aria-label", "aria-labelledby"],
+    "unlessChildren": true,
+    "category": "accessibility"
+  }
+} ] }
+```
+
+  Rule kinds: `require-attribute`, `forbid-prop`, `forbid-prop-value`, `forbid-component`, `forbid-token`, `allowed-children` and `required-parent`.
+
+- A policy without `approval` is rejected. Nothing infers or auto-approves a policy.
+
+- Policies take their severity from the file, lowered by enforcement: `warn` caps at warning, `report-only` is info.
+
+- `compile` adds each policy to the contract, so `validate` reads only the contract.
+
+- A policy that names a component or token the contract lacks is kept and reported as `governance.policy-unknown-component`. That part cannot fire.
+
+- Composition checks are conservative: `required-parent` only fires when the element sits inside other design-system components and none is an allowed parent.
+
+  List approved policies with `invariant policy list`. There is no `policy add` yet; write the file by hand.
+
+  Enforce
+
+## Browser verification
+
+  Static analysis cannot show focus behavior, keyboard order, responsive layout or what actually renders. `invariant browser run` checks a running app in a headless browser for the scenarios you write. It is opt-in and kept apart from compiling and from `validate`.
+
+  json
+```
+{
+  "version": 1,
+  "baseUrl": "http://localhost:3000",
+  "scenarios": [
+    {
+      "id": "edit-form-saves",
+      "pattern": "pattern:page.edit-form",
+      "path": "/accounts/1/edit",
+      "viewports": [{ "width": 375, "height": 700 }, { "width": 1280, "height": 800 }],
+      "steps": [
+        { "action": "fill", "selector": "#name", "value": "Ada" },
+        { "action": "click", "selector": "button[type=submit]" }
+      ],
+      "expect": [
+        { "kind": "visible", "selector": "[role=status]" },
+        { "kind": "tab-order", "selectors": ["#name", "button[type=submit]"] }
+      ]
+    }
+  ]
+}
+```
+
+  bash
+```
+npm install --save-dev playwright && npx playwright install chromium
+invariant browser run
+```
+
+### What you can check
+
+  Steps: `click`, `fill`, `press`, `wait-for`. Expectations: `visible`, `hidden`, `text`, `focused`, `tab-order`, `contains` (rendered nesting) and `count`. Each scenario runs once per viewport. `pattern` and `constraint` record which approved pattern a scenario gives a runtime check for; you write the link, nothing infers it.
+
+### Opt-in and controlled
+
+- Invariant does not install or depend on Playwright. It loads it from your project, and says how to install it if it is missing. No other command starts a browser.
+
+- A spec is data only: unknown keys are rejected and no step runs code.
+
+- Each scenario gets a fresh headless context with service workers blocked. Requests to origins other than the base URL's and `allowOrigins` are aborted. The base URL must be local unless its origin is listed.
+
+### Results stay distinguishable
+
+  Results go to `<output>/invariant.browser-results.json` with `kind: "runtime"` and level `runtime-verified`, and each one records the browser, its version, the viewport and the URL. `pass` and `fail` are findings about the page. `error` means the check could not run (page did not load, a step failed) and is never counted as a pass. Failures say what was seen, such as `Tab 1 should reach #save, but focus is on <input#name>`. `validate` results are never upgraded by a browser result.
+
+  EarlyThe Playwright driver has not yet been exercised against a real browser in this repository's tests, which use a scripted stand-in. Run it against your app before relying on it. Accessibility audits are not included.
+
+  Enforce
+
+## Decisions
+
+  Decisions are written to `invariant.decisions.json` and applied on every `compile`.
+
+    Command | Effect at compile |
+
+    `review approve <id>` | The fact becomes `approved`, layered over its prior status, with a fingerprint and your `--role`, `--reference` and `--note`. |
+
+    `review reject <id>` | Removes an inferred containment link, guideline link or token category. Other inferred facts cannot be rejected; the reason says how to fix it at the source. |
+
+    `review resolve|accept|dismiss <id> [--source s]` | Records the conflict's resolution: `resolved` (fixed at the source), `accepted` (a known difference) or `dismissed` (not a real conflict). The conflict disappears on recompile once the source is fixed. |
+
+  Every decision needs `--as <name>` (or the `INVARIANT_USER` environment variable) and records when it was made.
+
+### Stale decisions
+
+  A decision records the value or claims it was made about. If they change, the decision is stale: it is not applied, `compile` reports `governance.decision-stale`, and the item returns to the queue. A decision whose target is gone is reported as `governance.decision-target-missing`.
+
+  Authorization is not authenticationThe recorded name is asserted, not proven. `governance.approvers` restricts which names the CLI will record and `compile` will apply. Real enforcement is your repository's review process over `invariant.policies.json` and `invariant.decisions.json`, for example CODEOWNERS.
+
+  Enforce
+
+## Verify in CI
+
+  Exit codes plus output formats are the integration. `--format github` prints workflow annotations, `--format sarif` prints SARIF 2.1.0 for code scanning, and `--format json` is for scripts.
+
+  bash
+```
+npx @invariant-ui/cli compile
+npx @invariant-ui/cli verify --fresh                # fails if stale or tampered with, and says what changed
+npx @invariant-ui/cli validate src --format github  # annotate pull requests
+```
+
+  Commit the `invariant/` folder, `invariant.config.json`, `invariant.policies.json` and `invariant.decisions.json`. Compiling unchanged sources gives identical bytes, so diffs are meaningful.
+
+### Let setup add it
+
+  In a git project, the `invariant setup` plan lists "add `.github/workflows/invariant.yml`, which checks every pull request commit". Yes writes it:
+
+- When it runs: on every commit to an open pull request (`opened`, `synchronize`, `reopened`) and on pushes to `main`. A newer push cancels the run before it.
+
+- What it runs: `verify --fresh`, which fails if the committed `invariant/` folder is stale or was edited by hand, then `validate` on your application folders with `--format github`, which annotates the lines that break the contract. Violations in `invariant.baseline.json` are hidden. New ones are annotated, and any at error severity fail the check; starter rules are warnings, so they annotate without failing. Then the job uploads `invariant/invariant.report.html` as the `invariant-report` artifact, even when a check failed, and links it from the run summary.
+
+- Safe by default: it pins the exact version it was written for, asks for `contents: read` only, and uses no secrets.
+
+- Options: `--ci` adds it without asking (and in a folder that is not a git project), `--no-ci` skips the question. An existing `invariant.yml` is never overwritten. `--yes` answers yes.
+
+  Commit the contractThe job verifies against the committed `invariant/` folder, so commit it along with the workflow and `invariant.baseline.json`. Without them the first run fails.
+
+  To write the job yourself, or to add it to a workflow you already have, it needs only Node, because `npx` fetches the package:
+
+  yaml
+```
+- uses: actions/setup-node@v4
+  with: { node-version: 22 }
+- run: npx @invariant-ui/cli@0.7.0 verify --fresh
+- run: npx @invariant-ui/cli@0.7.0 validate app --format github
+- uses: actions/upload-artifact@v4   # the report, even when a check failed
+  with: { name: invariant-report, path: invariant/invariant.report.html }
+```
+
+  Pin a version (`npx @invariant-ui/cli@0.7.0`) if you want builds that do not change underneath you.
+
+  No workflow file is generatedInvariant does not write files into `.github/`. Copy the job above into the workflow you already have.
+
+  Use it
+
+## CLI
+
+  The package is `@invariant-ui/cli` and the command is `invariant`. Run it with `npx @invariant-ui/cli <command>`, or install it with `npm install -g @invariant-ui/cli` and write `invariant <command>`, as below. It needs no account, network access or cloud service to run.
+
+    Command | What it does |
+
+    `init` | Runs discovery and writes `invariant.config.json`. A repository with more than five packages of one framework gets one whole-project entry for it. Refuses to overwrite without `--force`. |
+
+    `source add <type> [path] [--id id]` | Adds a source entry. Checks the type, that the path is a directory inside the project, and that the id is unique. |
+
+    `source remove <id>` | Removes a source entry from JSON configuration. An unknown id lists the configured ids. |
+
+    `source list` | Lists configured sources. |
+
+    `analyze` | Discovers and extracts every source, prints what was found and the diagnostics, writes the IR to `<output>/analysis/`. Builds no contract. |
+
+    `compile` | Full pipeline: discover, extract, reconcile, enrich, verify. Writes the output files. `--watch` compiles once, then again after changes settle, until Ctrl+C. It ignores the output directory, so writing files never triggers a cycle, and it keeps watching after a broken config. |
+
+    `components list`, `components inspect <name|id>` | Read the compiled contract. `inspect` shows implementations, props with status, events, slots, variants, composition and conflicts. `--evidence` adds source locations. |
+
+    `tokens list`, `conflicts list` | Read the contract. Inferred token categories are marked `*`. `conflicts list` filters by `--severity`, `--type`, `--subject`. |
+
+    `patterns list|inspect|resolve|search|relationships` | Read the pattern definitions in the contract. `list` filters by `--category` and `--status`, and marks patterns that are not fully approved with `*`. `inspect <name|id>` shows parts, regions, states, constraints, relationships, which policies enforce it, and whether it is approved (`--evidence` adds the source of each fact). `resolve <name> [--variation v]` reads a pattern as a page blueprint, to any depth, with its variations, required interaction states and what is not approved. `search` ranks by name, intent, parts, regions and states. `relationships` walks edges (`--direction`, `--depth 1-5`). |
+
+    `setup` | One command: compile, propose patterns from your app code, connect your AI tool, baseline existing violations. Options: `--yes`, `--confirm-contract`, `--as`, `--paths`, `--contract`, `--no-agent`, `--ci`, `--no-ci`. With no design system source in the project it uses the contract an installed package ships; see Add it to your project. See Quick start and Verify in CI. |
+
+    `discover <path...>` | Finds structures that recur in your React code and writes them to `<output>/invariant.candidates.json` as candidates to review. Options: `--min-files` (3), `--min-uses` (3), `--similarity` (0.7), `--depth` (3). See Pattern discovery. |
+
+    `candidates list|show|accept|reject|defer|promote` | Review what `discover` found. `accept|reject|defer <id> --as <name>` records a decision. `promote <id> --id <pattern id> --as <name>` adds an accepted candidate to `invariant.patterns.json` without approving it. |
+
+    `browser run` | Opt-in runtime checks of a running app in a headless browser, from `invariant.browser.json`. Needs Playwright in your project. See Browser verification. |
+
+    `validate <path...>` | Checks application code against the compiled contract, including the structural rules of approved patterns. See Validate code. |
+
+    `verify` | Checks the compiled output without the sources: structure, references, approval fingerprints, content hash, evidence ids and every file hash. `--fresh` also recompiles. If sources changed it reports `verify.stale` and then what changed: counts per collection, and each entity with the fields that differ. `--json` adds this as `changes`. |
+
+    `rules`, `policy list` | List validation rules and approved policies. |
+
+    `review list|show|approve|reject|resolve|accept|dismiss` | Record human decisions. See Decisions. The queue also lists the unapproved facts of patterns you wrote (`pattern-fact`), which `approve` accepts. |
+
+    `mcp` | Serve the contract to AI tools over stdio, read-only. |
+
+    `agent init <client|all>`, `agent list` | Write MCP config, skills and rules for Claude Code, Cursor, Codex and Windsurf. |
+
+    `export --to <dir>` | Verifies, then copies the artifacts plus `schema/` to a directory. Refuses an invalid output or a non-empty target unless `--force`. |
+
+### Options and exit codes
+
+  Read commands accept `--json`. Global options: `--cwd`, `--config`, `--dir` (output directory), `--trust-config`.
+
+    Exit code | Meaning |
+
+    `0` | Success |
+
+    `1` | Findings or invalid output |
+
+    `2` | Bad usage or input |
+
+  Use it
+
+## Configuration
+
+  `invariant.config.json` is read as data. `init` writes it for you.
+
+  json
+```
+{
+  "name": "Acme Design System",
+  "contractId": "acme-design-system",
+  "sources": [
+    { "id": "ui-library", "type": "react", "path": "packages/ui" },
+    { "id": "storybook", "type": "storybook", "path": "packages/ui" },
+    { "id": "tokens", "type": "tokens" }
+  ],
+  "output": { "directory": "invariant" }
+}
+```
+
+### Sources
+
+- `type` is one of `react`, `vue`, `angular`, `storybook`, `tokens`. `zeroheight` and `figma` are rejected as not supported yet.
+
+- `path` limits an entry to sources found at or below that directory. Without it, the entry covers the whole project. Several entries of one type are combined. A type with no entry is not run.
+
+- `id` is a label. `compile` and `analyze` print which compiled sources each entry produced, and warn with `cli.source-matched-nothing` when an entry matched none.
+
+- All paths must be relative, with no `..`, no absolute paths and no backslashes. The output directory defaults to `invariant`.
+
+- The neutral inventory adapters (packages, Markdown documentation, token files, Storybook configuration) always run.
+
+### Other settings
+
+    Key | Purpose |
+
+    `extends.contract` | For an app that uses a design system from a package: the folder holding the contract the package ships. `compile` starts from it and adds your own patterns, policies and decisions. See Add it to your project. |
+
+    `validation.rules` | Severity or `off` per rule code. Unknown codes are rejected with a suggestion. |
+
+    `validation.failOn` | Default failing threshold for `validate`. |
+
+    `validation.ignore` | Globs `validate` skips. |
+
+    `governance.policiesFile` | Path to the policies file. Default `invariant.policies.json`. |
+
+    `governance.patternsFile` | Path to the pattern definitions file. Default `invariant.patterns.json`. |
+
+    `governance.approvers` | Optional list of names allowed to record and apply decisions. |
+
+### Code configuration
+
+  `invariant.config.ts`, `.mts`, `.mjs` or `.js` with a default export also works, but loading one executes it. It is only loaded with `--trust-config`. `source add` and `source remove` never edit it, because that would mean running it. They tell you to edit it by hand or to run `invariant init`, which writes `invariant.config.json`. A JSON file wins over code files when both exist.
+
+  Use it
+
+## MCP server
+
+  `invariant mcp` serves the compiled contract over stdio, read-only. The contract does not know MCP exists: the server only reads the files `compile` wrote.
+
+  bash
+```
+invariant compile
+invariant mcp [--dir invariant]     # serves until stdin closes
+```
+
+### Tools
+
+  All eleven are read-only and deterministic. Results are JSON in `structuredContent` and in the text content, always with `contractHash`. Lists take `offset` and `limit` (default 50, at most 200). Results over 400,000 characters are refused with advice to narrow the request.
+
+    Tool | Returns |
+
+    `get_design_system_overview` | Name, frameworks, sources and health, counts, open conflicts, inferred-fact count, and what is not covered. |
+
+    `search_design_system` | Lexical hits over components, tokens, guidelines and patterns with score and what matched. Handles plurals, prefixes and one-letter typos. Fixed ranking; no model or embeddings. |
+
+    `get_component` | Implementations (with `apiComplete`), props with type, default, allowed values, status and source line, events, slots, variants, accessibility, conflicts, guidelines. |
+
+    `get_component_usage` | How to import, required props, variants and defaults, deprecated props, source examples, observed prop combinations (React only). |
+
+    `get_component_composition` | What it contains and what contains it, with discovered or inferred status; slots. |
+
+    `get_design_tokens` | Tokens filtered by category, text and theme, with alias chains and resolved values. Cycles and missing targets are reported, not guessed. |
+
+    `get_design_patterns` | The pattern catalog, filterable by category, status and text. With a name or id, one pattern in full: parts, regions, states, constraints, relationships, enforcing policies, and every fact with its evidence. Each result says whether it is approved; anything else is a proposal. With `resolve` or `variation`, the pattern as a page blueprint: composed patterns expanded to any depth, variations, required interaction states, and notes such as an approved archetype built on patterns that are not approved. |
+
+    `get_pattern_relationships` | The edges around a pattern, to a chosen depth and direction, each with the status and source of the fact behind it. Nothing is inferred from names. |
+
+    `get_design_guidelines` | Guideline titles, kinds and referenced documents. Page bodies are not included. |
+
+    `validate_component_usage` | Checks one intended use: unknown component or prop, disallowed value, type mismatch, deprecations, missing required props. |
+
+    `validate_design_system_compliance` | Checks a snippet (React, Vue, Angular or HTML; at most 200,000 characters): props and values, literal colors and CSS variables against tokens. Pass `filename` so path-scoped pattern rules apply; the result lists every pattern check with its status. |
+
+### Resources
+
+  `invariant://manifest`, `invariant://metadata`, `invariant://components`, `invariant://tokens`, `invariant://patterns`, `invariant://guidelines`, and the templates `invariant://component/{id}` and `invariant://pattern/{id}`. All are `application/json`.
+
+### Protocol
+
+  Transport is newline-delimited JSON-RPC on stdio. Only protocol messages go to stdout; logs go to stderr. The server supports the modern stateless revision (2026-07-28) and legacy revisions 2025-11-25, 2025-06-18, 2025-03-26 and 2024-11-05. Methods: `initialize`, `ping`, `server/discover`, `tools/list`, `tools/call`, `resources/list`, `resources/templates/list`, `resources/read`. Prompts, logging, completions, subscriptions, tasks, sampling, elicitation, pagination and HTTP transports are not supported.
+
+### Loading and reload
+
+  The server verifies the contract (structure, references, content hash, evidence) before serving and reloads when file modification times or sizes change, so a recompile is picked up without a restart. Pair it with `invariant compile --watch` to keep the contract current as you edit. A missing, invalid or tampered contract is never partly served: tools report what is wrong and to run `invariant compile`.
+
+  Treat contract text as untrustedNames, descriptions and examples are copied from your source and documents, and can contain instructions aimed at a model. The server says so in its instructions, marks every result as untrusted content, and returns structured JSON instead of prose. It has no network listener, no authentication surface, no write path, and never runs customer code.
+
+  Use it
+
+## Install the plugin
+
+  The plugin is the easiest way to start, and it needs no terminal work. You install it into Claude Code or Cursor, ask the AI tool to set up Invariant, and answer a few plain questions. It finds your design system, shows you what it found, asks for your approval, and turns on the checks. Nothing is approved until you say yes.
+
+  It needs Node.js 20 or newer. The first time it runs, it installs the Invariant command line tool into `~/.invariant/`. If you already have `invariant` on your `PATH`, that copy is used.
+
+### Claude Code
+
+  claude code
+```
+/plugin marketplace add invariant-ui/cli
+/plugin install invariant@invariant
+```
+
+  No marketplace? Download the plugin, unzip it, and start Claude Code with `claude --plugin-dir <the unzipped folder>`. That loads it for one session.
+
+### Cursor (preview)
+
+  Download the plugin, unzip it into `~/.cursor/plugins/local/invariant`, and reload the window (`Developer: Reload Window`). On a company-managed Cursor, an admin has to turn on "Allow Local Plugin Imports" first.
+
+  Cursor is a previewCursor reports a violation to the agent after it edits a file. It does not stop the write the way Claude Code does, because Cursor's hooks run after the edit. The plugin's behavior in Cursor has not yet been checked on every version.
+
+### Then
+
+  Ask your AI tool: `/invariant:setup` (in Cursor, say "set up Invariant"). It walks you through five things: where your design system lives, what it found, which patterns to approve and under whose name, how strict to be, and a test that proves a wrong component is blocked. It tells you at the end which files to commit so your whole team gets the same contract. Teammates only need to install the plugin.
+
+  Want the details of how it works? See See it working in your agent chat.
+
+  Use it
+
+## Agent setup
+
+  One command writes MCP configuration, skills and rules for your AI tool.
+
+  bash
+```
+invariant agent init claude-code     # also: cursor, codex, windsurf, all
+invariant agent list
+```
+
+  The entry it writes launches `invariant mcp --dir <output dir>`. If `invariant` is on your `PATH` (after `npm install -g @invariant-ui/cli`), the entry runs it directly. If it is not, for example when you run Invariant with `npx`, the entry runs `npx -y @invariant-ui/cli mcp` instead, and the package installs on first use. To use something else, such as a local build, pass `--command`:
+
+  bash
+```
+invariant agent init claude-code \
+  --command node --command-arg /abs/path/to/invariant/apps/cli/dist/main.js
+```
+
+  `--dry-run` shows what would be written. `--force` replaces differing entries.
+
+  The `invariant-build-ui` skill gives agents a scoped workflow instead of the whole contract: understand the task, find the page archetype (`get_design_patterns` with `resolve`), find interaction and layout patterns, check each pattern's status, get components and tokens, generate, validate, correct, and report. Agents follow approved patterns and treat documented, inferred or mixed ones as proposals to confirm. The report must list what is unresolved: unfixed violations, every check that was `not-verifiable` or `skipped`, and unapproved patterns that were followed. Generated files list the ids of fully approved page archetypes, never their names or descriptions.
+
+  Safe by constructionGenerated skills and rules only include identifiers matching `[A-Za-z][A-Za-z0-9._-]{0,63}` (at most 60 component names) and a short title. A hostile description in your source cannot be written into committed agent configuration.
+
+  Use it
+
+## See it working in your agent chat
+
+  You do not have to trust that an agent followed your design system, or ask it to check. With Claude Code, Invariant checks every file the agent writes, stops the ones that break the contract, and keeps a record you can forward.
+
+  Ask an agent for a settings page with a delete button. This is what you watch happen, taken from the scripted demo (`pnpm demo` in a source checkout):
+
+  chat
+```
+1. first try: a danger-styled delete button   invariant blocked the write. The agent reads: invariant blocked app/pages/Settings.tsx: 1 error against the @acme/ui contract✗ prop-value-not-allowed: Button.variant is "danger", which is not one of "primary", "secondary", "ghost" (line 8)fix: Use one of "primary", "secondary", "ghost". Fix these, then write the file again. Facts and fixes come from the compiled contract, not guesses. … 4. fourth try: a confirm button inside the dialog   the write landed. The agent reads: invariant ✓ app/pages/Settings.tsx follows the @acme/ui contract (6 component uses checked) … Invariant enforcement: 4 writes checked · 3 violations caught · 3 fixed · 0 outstanding
+```
+
+  Each block happens before the file is written, so the bad code never lands. The agent reads the finding and the fix from your contract and tries again. You do not run anything.
+
+### The record
+
+  Every check the hook makes is appended to `.invariant/enforcement.jsonl`, a local file that ignores itself in git. It holds file paths and findings, never file contents.
+
+  bash
+```
+invariant enforcement report                       # latest session, as text
+invariant enforcement report --format html --to report.html   # one self-contained page you can forward
+```
+
+  The headline reads `4 writes checked · 3 violations caught · 3 fixed · 0 outstanding`, followed by a timeline of what was caught and what fixed it. A violation counts as fixed when a later write to the same file passes. The report covers what the hook checked; it does not include checks the agent ran itself through the MCP tools.
+
+### Turn it up or down
+
+  Set `enforcement.hooks` in `invariant.config.json`: `gate-errors` (default) blocks writes with errors, `warn` never blocks and reports after the write, `off` checks nothing. Your baseline, rule overrides and ignore globs apply, so existing violations do not trap an agent. If the hook cannot run, the write goes ahead.
+
+### What each tool gets
+
+    Client | How the contract is applied | Enforced at write time |
+
+    Claude Code | Hooks on every Write and Edit, plus MCP and skills | Yes |
+
+    Cursor | MCP and rules; the agent is asked to validate | No |
+
+    Codex, Windsurf | MCP and rules; the agent is asked to validate | No |
+
+    Any client | `invariant validate` in CI | At pull request time |
+
+  Only Claude Code has a hook system that can stop a write today. For the others, Invariant gives the agent the facts and the validator, and CI is the backstop.
+
+  Reference
+
+## Output files
+
+  `compile` writes these to the output directory (default `invariant/`).
+
+    File | Contents |
+
+    `invariant.contract.json` | The canonical contract. |
+
+    `invariant.evidence.json` | Evidence cited by the contract. |
+
+    `invariant.diagnostics.json` | Every diagnostic from discovery, extraction, reconciliation, enrichment and verification. |
+
+    `invariant.review.json` | Open conflicts and inferred facts that need a decision. |
+
+    `invariant.report.html` | A static summary for people. `compile` and `verify` print its path, and the CI job uploads it as the `invariant-report` artifact. |
+
+    `invariant.manifest.json` | Tool version, build time, compiled sources with input hashes, and the SHA-256 and size of every other file. |
+
+  Other commands write their own files: `discover` writes `invariant.candidates.json` to the output directory, `browser run` writes `invariant.browser-results.json`, and decisions about candidates are kept in `invariant.candidate-reviews.json` at the project root, next to `invariant.patterns.json`, `invariant.policies.json` and `invariant.decisions.json`.
+
+  `--keep-ir` adds `ir/` and `invariant.project.json`. Only the manifest holds the build time, so all other files are reproducible.
+
+  The report is self-contained: no scripts, no external requests, a restrictive Content-Security-Policy, and every value from your source is HTML-escaped. Every table lists every row: the first 200 are visible and the rest are folded into a `<details>` block.
+
+  The contract stays valid and useful alone. If the evidence file is missing, facts keep their status and you get a diagnostic, not an invalid contract.
+
+  Reference
+
+## Safety model
+
+- No code execution. Source is parsed, never run. The one exception is an explicitly trusted code configuration (`--trust-config`).
+
+- Writes stay inside the output directory. `export` writes only inside its `--to` directory. Artifact paths are checked against escaping.
+
+- No secrets. The configuration has no credential fields, so there is nowhere to put one.
+
+- No absolute paths. Absolute paths and hostnames never enter the contract or evidence. Paths are POSIX-relative to a recorded source root.
+
+- Untrusted text. Anything copied from your source is treated as data by the MCP server and agent kit.
+
+  Reference
+
+## Known limitations
+
+  What Invariant does not do today. Where it cannot tell, it says so in the output instead of guessing.
+
+### Sources and extraction
+
+- Figma and zeroheight are not supported. The config rejects them with a message.
+
+- Third-party types are not loaded. Props inherited from library types (HTML attributes, other design systems, `VariantProps`) are listed as inherited, not enumerated, and the component is marked `propsComplete: false`. Because of that, many Storybook arg and control checks end as `unverifiable-names`.
+
+- React components made by factory functions, and higher-order components, are reported but not analyzed. Accessibility facts cover only static attributes on native elements in the component's own body.
+
+- Vue: components registered only through a plugin, components exported under a different local name than their import, `<script src>` and `<template src>` blocks, and non-HTML template languages such as pug are not read (each is reported). Generic components are marked incomplete.
+
+- Angular: template semantics such as structural directives, pipes and template references are not modeled. Members from `hostDirectives` are not enumerated, and types from `inject()` stay `unknown`.
+
+- Usage statistics (`usage.*` and observed prop combinations) exist for React only.
+
+- Storybook is read statically. Global `preview` args, parameters and decorators, URL args and dynamically generated stories are not read, MDX is scanned and not compiled, and stories for components that are not public are reported as unlinked.
+
+- Extraction was validated on a small set of real libraries, including one Vue and one Angular library. Treat other libraries as unvalidated.
+
+### Contract and inference
+
+- Patterns are not extracted from code or documents, because a pattern needs a description of intent that static facts do not supply. They exist only if you write them in `invariant.patterns.json`. Otherwise `patterns list` says none exist.
+
+- Page archetypes are not shipped: organizations define their own. Nested patterns are shown with their base composition, and a page does not inherit the constraints of the patterns it composes.
+
+- Pattern definitions are one JSON file, with facts per section rather than per field. Composition parts are not enforced on their own: write a constraint.
+
+- `requires-parent` relationships, accessibility requirements and layout patterns are not produced by any compiler. They work only through approved policies.
+
+- Name-based identity is a heuristic, marked as such. It cannot link `Buttons` to `Button` or `Button / Primary` to `Button`.
+
+- Compound inference is naming-based and proposes some wrong parents, for example `Button` and `ButtonGroup`. These get confidence 0.4 to 0.7 and sit in the review queue.
+
+- A guideline's kind is read from its title and file name only. Developer documents such as changelogs and contributing guides also become `reference` guidelines.
+
+- The token model is a literal or an alias, per theme. Composite values are kept as JSON. Token values are compared as the adapter reports them, so a whitespace-only difference is a mismatch.
+
+- When sources conflict, the entity keeps one value. Read the conflict list to see the others.
+
+- Evidence excerpts are capped at 2,000 characters.
+
+- The review queue lists every inferred fact, so it is long on large libraries (437 items for Radix). It is ordered by priority, with no filtering or batch approval.
+
+### Validation and governance
+
+- Interaction checks cover three workflows in React and read one component at a time. They show a state is represented, never that it works, and some of the evidence rests on names. State kept in a parent component or a store is not visible.
+
+- Pattern rules read one file's JSX, for React only. Anything that depends on another file, or on children a file does not show, is not verifiable. Patterns as references, regions as scopes, and templates are not evaluated yet.
+
+- `validate` sees one file at a time: no cross-file data flow, no resolution of wrapper components, and no knowledge of which package an unimported tag comes from. React unknown-component detection depends on imports. Vue and Angular detect components by name or selector only.
+
+- Discovery reads React JSX only and groups by design-system structure. It cannot tell intent, so every candidate stays unapproved until a person decides. MCP does not expose candidates.
+
+- Browser verification runs only the scenarios you write, does not start your app, and has no accessibility audit. Its Playwright driver has not been run against a real browser in this repository's tests.
+
+- Name-based findings (`native-element-has-equivalent` and ambiguity) are heuristics.
+
+- Colors are compared by value after converting to hex. `hsl()` conversion rounds, so a hex token and an hsl literal can differ by one step. Named colors match only a token with the same name. `oklch()`, `color()`, `lab()` and Tailwind class names are not read.
+
+- `rem` and `em` literals are compared against a 16px root font size.
+
+- Policies have seven rule kinds and cannot express arbitrary logic. They are written by hand: there is no `policy add`.
+
+- Approver names are asserted, not authenticated. Enforce who may approve through your repository review process.
+
+- Rejecting an inferred identity cannot split it between implementations, and a conflict decision does not change the contract's kept value.
+
+### CLI and MCP
+
+- No incremental compile. Every run, including each `compile --watch` cycle, recompiles all sources.
+
+- `source add` and `source remove` cannot edit a code configuration, by design, because editing it would mean running it.
+
+- `init` detects by package manifests and discovery. Unusual layouts need `source add` or a hand edit.
+
+- The MCP server speaks a protocol subset: no HTTP transport, authentication, subscriptions or pagination. Search is lexical: it matches words, plural and `-ing` stems, prefixes and one-letter typos (labeled approximate), but not synonyms or meaning.
+
+- The MCP validators check literal values in one snippet. They do not resolve imports or follow props through wrappers.
+
+- The server cannot record decisions. People record them with `invariant review`.
+
+- Windsurf's MCP configuration could not be verified, so `agent init windsurf` prints the entry instead of writing it.
+
+  Reference
+
+## Contributing
+
+  The repo is a pnpm workspace with explicit package boundaries. `apps/cli` is the command, and `packages/*` hold the adapters, compiler, contract, validation (which includes pattern discovery), governance, browser verification, MCP server and agent kit. Users get one package, `@invariant-ui/cli`: `pnpm build:npm` assembles the workspace into it, and `docs/releasing.md` in the repository covers publishing.
+
+  bash
+```
+pnpm build             # tsc -b
+pnpm test              # vitest
+pnpm lint              # biome
+pnpm typecheck
+pnpm check:boundaries  # enforce package boundaries
+pnpm verify            # lint + typecheck + boundaries + build + test
+pnpm update:golden     # regenerate golden fixtures
+pnpm build:npm         # assemble the single package that is published
+```
+
+### Engineering rules
+
+- TypeScript strict mode, small composable modules, deterministic compilation, structured diagnostics.
+
+- Unit tests for extraction logic, integration tests for adapters, golden fixtures for regressions.
+
+- Contract changes are versioned: update the schema and runtime validation, add migration logic when needed, and update fixtures and tests.
+
+- Significant architecture decisions are recorded as ADRs in `docs/decisions/`.
+
+  The detailed specifications live in `docs/specifications/`.
+
+### License
+
+  Invariant is source-available under the Functional Source License, Version 1.1, ALv2 Future License. Each version converts to Apache-2.0 two years after release.

@@ -15,7 +15,9 @@
           "path": "apps/cli/package.json",
           "jsonpath": "$.version"
         },
-        "apps/cli/src/version.ts"
+        "apps/cli/src/version.ts",
+        { "type": "json", "path": "server.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "server.json", "jsonpath": "$.packages[0].version" }
       ],
       "exclude-paths": [
         "plugins",
