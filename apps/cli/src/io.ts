@@ -1,6 +1,6 @@
 import type { Readable, Writable } from "node:stream"
 import type { BrowserDriver, BrowserName } from "@invariant/browser-verify"
-import type { Choice } from "./select.js"
+import type { Choice, Option } from "./select.js"
 
 export interface Io {
   cwd: string
@@ -20,5 +20,10 @@ export interface Io {
   prompt?: (question: string) => Promise<string | undefined>
   /** An arrow-key menu; resolves the picked value, or undefined when cancelled. Absent without a terminal. */
   select?: <T extends string>(question: string, choices: ReadonlyArray<Choice<T>>) => Promise<T | undefined>
+  /** An arrow-key checklist (every option starts ticked); resolves the ticked values, or undefined when cancelled. */
+  multiselect?: <T extends string>(
+    question: string,
+    options: ReadonlyArray<Option<T>>
+  ) => Promise<T[] | undefined>
   browserDriver?: (browser: BrowserName, projectRoot: string) => Promise<BrowserDriver>
 }

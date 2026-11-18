@@ -55,6 +55,7 @@ const OPTIONS = {
   "confirm-contract": { type: "boolean" },
   "no-agent": { type: "boolean" },
   paths: { type: "string" },
+  sources: { type: "string" },
   contract: { type: "string" },
   ci: { type: "boolean" },
   "no-ci": { type: "boolean" },
@@ -118,6 +119,7 @@ export interface Parsed {
     "confirm-contract"?: boolean
     "no-agent"?: boolean
     paths?: string
+    sources?: string
     contract?: string
     ci?: boolean
     "no-ci"?: boolean

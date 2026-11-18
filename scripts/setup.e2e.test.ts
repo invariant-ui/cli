@@ -26,6 +26,9 @@ function project(): string {
   return dir
 }
 
+/** Answers to the discovery questions that come first: keep all components, add none, accept the app folder, keep all 3 patterns. */
+const REVIEW = ["", "", "", "", "", ""]
+
 async function cli(cwd: string, argv: string[], answers?: string[]) {
   let out = ""
   let err = ""
@@ -172,9 +175,9 @@ describe("invariant setup", () => {
 
   it("asks once. Yes confirms the contract and does the whole plan", async () => {
     const dir = project()
-    const r = await cli(dir, ["setup", "--as", "ana"], ["y"])
-    expect(r.asked).toHaveLength(1)
-    expect(r.asked[0]).toMatch(/Looks right\?/)
+    const r = await cli(dir, ["setup", "--as", "ana"], [...REVIEW, "y"])
+    expect(r.asked).toHaveLength(7)
+    expect(r.asked.filter((q) => /Looks right\?/.test(q))).toHaveLength(1)
     expect(r.out).toMatch(/Plan\. Yes confirms the contract above is right/)
     expect(r.out).toMatch(/approved by ana/)
     expect(r.out).toMatch(/starter rule\(s\) as warnings/)
@@ -183,14 +186,14 @@ describe("invariant setup", () => {
 
   it("asking and answering just Enter means yes", async () => {
     const dir = project()
-    const r = await cli(dir, ["setup", "--as", "ana"], [""])
+    const r = await cli(dir, ["setup", "--as", "ana"], [...REVIEW, ""])
     expect(patterns(dir).patterns.every((p) => p.approval?.approvedBy === "ana")).toBe(true)
-    expect(r.asked).toHaveLength(1)
+    expect(r.asked).toHaveLength(7)
   })
 
   it("no stops: nothing is approved, added or written", async () => {
     const dir = project()
-    const r = await cli(dir, ["setup", "--as", "ana"], ["n"])
+    const r = await cli(dir, ["setup", "--as", "ana"], [...REVIEW, "n"])
     expect(r.code).toBe(0)
     expect(r.out).toMatch(/Stopped\. Nothing was approved or added/)
     expect(existsSync(path.join(dir, "invariant.patterns.json"))).toBe(false)
@@ -201,14 +204,86 @@ describe("invariant setup", () => {
   it("c asks about each step, and a no on the contract keeps patterns unapproved", async () => {
     const dir = project()
     // contract? no. which patterns? skip 1. baseline: yes (the rest default to yes).
-    const r = await cli(dir, ["setup", "--as", "ana"], ["c", "n", "1", "y"])
-    expect(r.asked[0]).toMatch(/Looks right\?/)
+    const r = await cli(dir, ["setup", "--as", "ana"], [...REVIEW, "c", "n", "1", "y"])
+    expect(r.asked.some((q) => /Looks right\?/.test(q))).toBe(true)
     expect(r.asked.some((q) => /Does this look like your design system/.test(q))).toBe(true)
     expect(r.asked.some((q) => /Approve \d+ pattern/.test(q))).toBe(false)
     expect(r.out).toMatch(/contract not confirmed/)
     const list = patterns(dir).patterns
     expect(list).toHaveLength(2)
     expect(list.every((p) => p.approval === undefined)).toBe(true)
+  })
+
+  it("lets the person deny a pattern, and rename and re-categorise another", async () => {
+    const dir = project()
+    // components: all, none added. apps: accept. pattern 1 deny, 2 edit (name, category), 3 keep. Then the plan: yes.
+    const r = await cli(
+      dir,
+      ["setup", "--as", "ana", "--no-ci", "--no-agent"],
+      ["", "", "", "d", "e", "Account home", "layout", "", "y"]
+    )
+    expect(r.code).toBe(0)
+    const list = patterns(dir).patterns
+    expect(list).toHaveLength(2)
+    expect(list.some((p) => p.id.startsWith("layout.account-home"))).toBe(true)
+    const reviews = JSON.parse(readFileSync(path.join(dir, "invariant.candidate-reviews.json"), "utf8")) as {
+      reviews: Array<{ decision: string }>
+    }
+    expect(reviews.reviews.filter((x) => x.decision === "rejected")).toHaveLength(1)
+  })
+
+  it("lets the person pick component folders and add one by path", async () => {
+    const dir = project()
+    const r = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"], ["n", "src", "", "n", "n"])
+    expect(r.asked[0]).toMatch(/Keep which/)
+    const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+      sources: Array<{ path?: string }>
+    }
+    expect(config.sources).toHaveLength(1)
+    expect(config.sources[0]?.path).toBe("src")
+  })
+
+  it("uses the checklist for component folders when the terminal has one", async () => {
+    const dir = project()
+    const asked: string[] = []
+    let out = ""
+    const code = await run(["setup", "--as", "ana", "--no-ci", "--no-agent", "--only", "none"], {
+      cwd: dir,
+      stdout: (t) => (out += t),
+      stderr: () => {},
+      clock: FIXED_CLOCK,
+      env: {},
+      prompt: async (q: string) => {
+        asked.push(q)
+        return ""
+      },
+      multiselect: async <T extends string>(
+        _q: string,
+        options: ReadonlyArray<{ value: T; label: string }>
+      ) => options.slice(0, 1).map((o) => o.value),
+      select: async () => "yes" as never
+    })
+    expect(code).toBe(0)
+    expect(asked.some((q) => /Keep which/.test(q))).toBe(false)
+    const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+      sources: unknown[]
+    }
+    expect(config.sources).toHaveLength(1)
+  })
+
+  it("--sources names the component folders and refuses one with no components", async () => {
+    const dir = project()
+    const r = await cli(dir, ["setup", "--yes", "--as", "ana", "--no-ci", "--no-agent", "--sources", "src"])
+    expect(r.code).toBe(0)
+    const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+      sources: Array<{ path?: string }>
+    }
+    expect(config.sources.map((s) => s.path)).toEqual(["src"])
+    const other = project()
+    mkdirSync(path.join(other, "empty"))
+    const bad = await cli(other, ["setup", "--yes", "--sources", "empty", "--as", "ana"])
+    expect(bad.code).not.toBe(0)
+    expect(bad.err).toMatch(/no components found in empty/)
   })
 
   it("does not ask or add anything when there is no terminal and no --yes", async () => {
@@ -373,8 +448,8 @@ describe("setup: GitHub Action", () => {
   it("is part of the one plan in a git project", async () => {
     const dir = project()
     mkdirSync(path.join(dir, ".git"))
-    const r = await cli(dir, ["setup", "--as", "ana"], ["y"])
-    expect(r.asked).toHaveLength(1)
+    const r = await cli(dir, ["setup", "--as", "ana"], [...REVIEW, "y"])
+    expect(r.asked).toHaveLength(7)
     expect(r.out).toContain(`add ${wf}, which checks every pull request commit`)
     expect(existsSync(path.join(dir, wf))).toBe(true)
   })
@@ -382,8 +457,8 @@ describe("setup: GitHub Action", () => {
   it("can be declined in the step-by-step mode", async () => {
     const dir = project()
     mkdirSync(path.join(dir, ".git"))
-    // c, contract yes, patterns all, approve yes, rules yes, baseline yes, CI no.
-    const r = await cli(dir, ["setup", "--as", "ana"], ["c", "y", "", "y", "y", "y", "n"])
+    // c, contract yes, patterns all, approve yes, rules yes, baseline yes, publish yes, CI no (CI is always last).
+    const r = await cli(dir, ["setup", "--as", "ana"], [...REVIEW, "c", "y", "", "y", "y", "y", "y", "n"])
     expect(r.asked.some((q) => /GitHub Action/.test(q))).toBe(true)
     expect(existsSync(path.join(dir, wf))).toBe(false)
     expect(r.out).toMatch(/Add this to CI/)

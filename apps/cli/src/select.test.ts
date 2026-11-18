@@ -1,6 +1,6 @@
 import { PassThrough } from "node:stream"
 import { describe, expect, it } from "vitest"
-import { arrowSelect, type Choice } from "./select.js"
+import { arrowMultiSelect, arrowSelect, type Choice } from "./select.js"
 
 const choices: Choice<"yes" | "custom" | "no">[] = [
   { value: "yes", label: "Yes, apply this setup", key: "y" },
@@ -49,5 +49,40 @@ describe("arrowSelect", () => {
     const b = arrowSelect(ctrl.input as never, ctrl.output as never, "Looks right?", choices)
     ctrl.input.write("\x03")
     expect(await b).toBeUndefined()
+  })
+})
+
+describe("arrowMultiSelect", () => {
+  const opts = [
+    { value: "a", label: "one" },
+    { value: "b", label: "two" },
+    { value: "c", label: "three" }
+  ]
+  it("starts with everything ticked and confirms with Enter", async () => {
+    const t = terminal()
+    const p = arrowMultiSelect(t.input as never, t.output as never, "Which?", opts)
+    t.input.write("\r")
+    expect(await p).toEqual(["a", "b", "c"])
+  })
+  it("toggles the current option with space and all with a", async () => {
+    const t = terminal()
+    const p = arrowMultiSelect(t.input as never, t.output as never, "Which?", opts)
+    t.input.write("\x1b[B") // down to two
+    t.input.write(" ") // untick two
+    t.input.write("\r")
+    expect(await p).toEqual(["a", "c"])
+    const u = terminal()
+    const q = arrowMultiSelect(u.input as never, u.output as never, "Which?", opts)
+    u.input.write("a") // all ticked, so clear
+    u.input.write("\x1b[B")
+    u.input.write(" ")
+    u.input.write("\r")
+    expect(await q).toEqual(["b"])
+  })
+  it("resolves undefined on Esc", async () => {
+    const t = terminal()
+    const p = arrowMultiSelect(t.input as never, t.output as never, "Which?", opts)
+    t.input.write("\x1b")
+    expect(await p).toBeUndefined()
   })
 })
