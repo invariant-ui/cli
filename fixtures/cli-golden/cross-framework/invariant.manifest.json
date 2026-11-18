@@ -3,7 +3,7 @@
     {
       "bytes": 38009,
       "path": "invariant.contract.json",
-      "sha256": "9c82a0b952c905576fce2b308dad47f7981ee0136733ee2c620616163e0de3b0"
+      "sha256": "3ee79bd8593fff7d88cebd5eb3b5de3fe2062ec3739b08e0073af8a8064c5a0a"
     },
     {
       "bytes": 57,
@@ -13,12 +13,12 @@
     {
       "bytes": 15877,
       "path": "invariant.evidence.json",
-      "sha256": "1a08524d6211c408e67c0b228f184e4e2ed66ccfc6b086baaedaf43a5db059e5"
+      "sha256": "63d830b50d71fe0056bfbaf1fd93633ba012ed85f9e4b39e640fdb2734f4da80"
     },
     {
       "bytes": 4158,
       "path": "invariant.report.html",
-      "sha256": "d84d3c94e17970d258a41d94d7b2f252f23a35357018a0a387c15055e1f054ad"
+      "sha256": "38aff68349c234bb0bdd567bd8f2f246e21a92ffe20ae6e92904c97170279af0"
     },
     {
       "bytes": 2431,
@@ -95,6 +95,6 @@
   ],
   "tool": {
     "name": "invariant",
-    "version": "0.8.0"
+    "version": "0.9.0"
   }
 }
