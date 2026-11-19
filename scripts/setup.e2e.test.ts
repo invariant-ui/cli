@@ -276,6 +276,7 @@ describe("invariant setup", () => {
   it("uses the checklist and menu when the terminal has them", async () => {
     const dir = project()
     const asked: string[] = []
+    const questions: string[] = []
     const code = await run(["setup", "--as", "ana", "--no-ci", "--no-agent", "--only", "none"], {
       cwd: dir,
       stdout: () => {},
@@ -286,19 +287,77 @@ describe("invariant setup", () => {
         asked.push(q)
         return ""
       },
-      multiselect: async <T extends string>(
-        _q: string,
-        options: ReadonlyArray<{ value: T; label: string }>
-      ) => options.map((o) => o.value),
+      tree: async <T extends string>(
+        q: string,
+        groups: ReadonlyArray<{ items: ReadonlyArray<{ value: T; ticked?: boolean }> }>
+      ) => {
+        questions.push(q)
+        return groups.flatMap((g) => g.items.filter((it) => it.ticked !== false).map((it) => it.value))
+      },
       select: async <T extends string>(q: string): Promise<T | undefined> =>
         (/Next\?/.test(q) ? "confirm" : "yes") as T
     })
     expect(code).toBe(0)
     expect(asked.some((q) => /Enter keeps the/.test(q))).toBe(false)
+    expect(questions).toEqual(["Which components are your design system's?"])
     const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
       componentSources: Array<{ status: string }>
     }
     expect(config.componentSources.some((s) => s.status === "approved")).toBe(true)
+  })
+
+  it("lists every discovered component to tick or untick one by one, and compiles only what is ticked", async () => {
+    const dir = project()
+    const lists: Array<
+      Array<{ label: string; items: Array<{ value: string; label: string; ticked?: boolean }> }>
+    > = []
+    const code = await run(["setup", "--as", "ana", "--no-ci", "--no-agent", "--only", "none"], {
+      cwd: dir,
+      stdout: () => {},
+      stderr: () => {},
+      clock: FIXED_CLOCK,
+      env: {},
+      prompt: async () => "",
+      tree: async <T extends string>(
+        _q: string,
+        groups: ReadonlyArray<{
+          label: string
+          items: ReadonlyArray<{ value: T; label: string; ticked?: boolean }>
+        }>
+      ) => {
+        lists.push(groups.map((g) => ({ label: g.label, items: g.items.map((i) => ({ ...i })) })))
+        // Untick the file that holds Button, keep the rest.
+        return groups.flatMap((g) =>
+          g.items.filter((i) => i.ticked !== false && i.value !== "src/Button.tsx").map((i) => i.value)
+        )
+      },
+      select: async <T extends string>(q: string): Promise<T | undefined> =>
+        (/Next\?/.test(q) ? "confirm" : "yes") as T
+    })
+    expect(code).toBe(0)
+    const items = lists[0]?.flatMap((g) => g.items) ?? []
+    // The list is complete: every component file the scan found, each with its path, and the recommended ones ticked.
+    expect(items.length).toBeGreaterThan(8)
+    expect(items.find((i) => i.value === "src/Button.tsx")?.label).toMatch(
+      /^Button, Spinner {2}(Button\.tsx|src\/Button\.tsx):\d+/
+    )
+    expect(items.some((i) => i.ticked !== false)).toBe(true)
+    const cfg = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+      componentSources: Array<Record<string, string>>
+    }
+    expect(cfg.componentSources).toContainEqual({
+      path: "src/Button.tsx",
+      type: "file",
+      source: "user",
+      status: "excluded"
+    })
+    const contract = JSON.parse(
+      readFileSync(path.join(dir, "invariant/invariant.contract.json"), "utf8")
+    ) as {
+      components: Array<{ name: string }>
+    }
+    expect(contract.components.map((c) => c.name)).not.toContain("Button")
+    expect(contract.components.length).toBeGreaterThan(0)
   })
 
   it("--include names the sources, --exclude rejects, and a path with no components is refused", async () => {
@@ -608,13 +667,16 @@ describe("setup: a scan that is not sure, and an AI agent that helps", () => {
   it("shows why the agent failed and offers the choices again, and the person can name the directory themselves", async () => {
     const dir = unsureProject()
     const agent = fakeAgent({ fail: "Error: Authentication required. Please log in." })
-    // menu: ask Claude Code (fails). menu again: choose myself. nothing is recommended, so nothing is ticked: pick 2 (src/widgets). confirm. plan: yes.
-    const r = await cli(dir, flags, ["1", "2", "2", "c", "y"], { env: agent.env })
+    // menu: ask Claude Code (fails). menu again: choose myself. nothing is recommended, so nothing is ticked: 1 is Home.tsx, 2-6 are
+    // the five widgets. confirm. plan: yes.
+    const r = await cli(dir, flags, ["1", "2", "2-6", "c", "y"], { env: agent.env })
     expect(r.code).toBe(0)
     expect(r.out).toMatch(/Claude Code: Claude Code stopped with exit code 1: Error: Authentication required/)
-    expect(r.out).toMatch(/2\. \[ \] src\/widgets · 5 components · low confidence/)
+    // Every component the scan found is listed, with its directory, ticked or not.
+    expect(r.out).toMatch(/src\/widgets · 5 components · low confidence · not recommended/)
+    expect(r.out).toMatch(/2\. \[ \] Alpha {2}Alpha\.tsx:\d+/)
+    // src/pages was left alone, so it is not recorded as rejected.
     expect(config(dir).componentSources).toEqual([
-      { path: "src/pages", type: "directory", source: "discovered", status: "excluded" },
       { path: "src/widgets", type: "directory", source: "discovered", status: "approved" }
     ])
   })
@@ -641,10 +703,10 @@ describe("setup: a scan that is not sure, and an AI agent that helps", () => {
     const r = await cli(dir, flags, ["y"], {
       env: agent.env,
       io: {
-        multiselect: async <T extends string>(
+        tree: async <T extends string>(
           _q: string,
-          options: ReadonlyArray<{ value: T; ticked?: boolean }>
-        ) => options.filter((o) => o.ticked !== false).map((o) => o.value),
+          groups: ReadonlyArray<{ items: ReadonlyArray<{ value: T; ticked?: boolean }> }>
+        ) => groups.flatMap((g) => g.items.filter((it) => it.ticked !== false).map((it) => it.value)),
         select: async <T extends string>(
           q: string,
           choices: ReadonlyArray<{ value: T; label: string }>
@@ -662,6 +724,56 @@ describe("setup: a scan that is not sure, and an AI agent that helps", () => {
       path: "src/widgets",
       source: "agent",
       status: "approved"
+    })
+  })
+
+  it("offers the agent in the review menu even when the scan is sure, and keeps what it says next to the scan's evidence", async () => {
+    const dir = project()
+    const agent = fakeAgent({
+      reply: { version: 1, directories: [{ path: "src", confidence: "high", reason: "the package source" }] }
+    })
+    const menus: string[][] = []
+    let first = true
+    const r = await cli(
+      dir,
+      ["setup", "--as", "ana", "--no-ci", "--no-agent", "--only", "none", "--no-baseline"],
+      [],
+      {
+        env: agent.env,
+        io: {
+          tree: async <T extends string>(
+            _q: string,
+            groups: ReadonlyArray<{ items: ReadonlyArray<{ value: T; ticked?: boolean }> }>
+          ) => groups.flatMap((g) => g.items.filter((it) => it.ticked !== false).map((it) => it.value)),
+          select: async <T extends string>(
+            q: string,
+            choices: ReadonlyArray<{ value: T; label: string }>
+          ): Promise<T | undefined> => {
+            if (!/Next\?/.test(q)) return "yes" as T
+            menus.push(choices.map((c) => c.label))
+            const pick = first ? "agent" : "confirm"
+            first = false
+            return pick as T
+          }
+        }
+      }
+    )
+    expect(r.code).toBe(0)
+    expect(menus[0]).toContain(
+      "Ask Claude Code to help find them (it only reads files; what it reads is sent to its provider)"
+    )
+    expect(agent.ran()).toBe(true)
+    // This fixture scores medium, so the prompt says why the scan is not certain.
+    expect(agent.prompt()).toContain(
+      "Why the scan is unsure: the strongest directory, src, is medium confidence"
+    )
+    // The scan had already recommended src, so the agent only agrees: the choice stays the scan's.
+    expect(config(dir).componentSources).toContainEqual({
+      path: "src",
+      type: "directory",
+      source: "discovered",
+      status: "approved",
+      note: "also suggested by Claude Code (high confidence): the package source"
     })
   })
 
@@ -737,7 +849,141 @@ describe("setup: a scan that is not sure, and an AI agent that helps", () => {
       ["2", "n"]
     )
     expect(chosen.out).toMatch(/compiling everything the detected sources export, as you chose/)
-    expect(config(dir).componentSources).toBeUndefined()
+    // An empty list is the person's answer, so the next run does not ask again.
+    expect(config(dir).componentSources).toEqual([])
+    const again = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent", "--only", "none"], ["n"])
+    expect(again.out).toMatch(/using invariant\.config\.json/)
+    expect(again.out).not.toMatch(/scanned/)
+  })
+})
+
+describe("setup on a project that already has a configuration", () => {
+  /** What an older setup wrote: the detected sources, and no word on which components are the design system's. */
+  const OLD = { name: "shop", sources: [{ id: "shop-react", type: "react" }] }
+  function unconfirmed(): string {
+    const dir = mkdtempSync(path.join(tmpdir(), "invariant-old-"))
+    made.push(dir)
+    mkdirSync(path.join(dir, "src/widgets"), { recursive: true })
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({
+        name: "shop",
+        private: true,
+        version: "1.0.0",
+        main: "src/index.ts",
+        dependencies: { react: "^18" }
+      })
+    )
+    const names = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon"]
+    for (const n of names)
+      writeFileSync(
+        path.join(dir, `src/widgets/${n}.tsx`),
+        `import React from "react"\nexport function ${n}(props: { label: string }) { return <div>{props.label}</div> }\n`
+      )
+    writeFileSync(
+      path.join(dir, "src/index.ts"),
+      `${names.map((n) => `export { ${n} } from "./widgets/${n}"`).join("\n")}\n`
+    )
+    return dir
+  }
+  const read = (dir: string) =>
+    JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+      sources: Array<Record<string, unknown>>
+      componentSources?: Array<Record<string, string>>
+    }
+  const flags = ["setup", "--as", "ana", "--no-ci", "--no-agent", "--only", "none", "--no-baseline"]
+  const flat = (out: string): string => out.replace(/\s*\n│\s+/g, " ")
+
+  it("reviews components nobody confirmed, like a first run, instead of reusing the file without a word", async () => {
+    const dir = unconfirmed()
+    writeFileSync(path.join(dir, "invariant.config.json"), JSON.stringify(OLD))
+    // No agent here, so the review opens at once: tick everything (a). confirm. plan: yes.
+    const r = await cli(dir, flags, ["a", "c", "y"], { env: { PATH: "/usr/bin:/bin" } })
+    expect(r.code).toBe(0)
+    expect(r.out).toMatch(/using invariant\.config\.json\n[\s\S]*scanned \d+ files/)
+    expect(r.out).toMatch(/not confident about the component directories/)
+    expect(read(dir).componentSources).toEqual([
+      { path: "src/widgets", type: "directory", source: "discovered", status: "approved" }
+    ])
+    expect(read(dir).sources).toEqual([{ id: "shop-react", type: "react" }])
+  })
+
+  it("offers an agent here too, and saves what it names with who named it", async () => {
+    const dir = unconfirmed()
+    writeFileSync(path.join(dir, "invariant.config.json"), JSON.stringify(OLD))
+    const bin = mkdtempSync(path.join(tmpdir(), "invariant-bin-"))
+    made.push(bin)
+    const reply = JSON.stringify({
+      version: 1,
+      directories: [{ path: "src/widgets", confidence: "high", reason: "five shared widgets" }]
+    })
+    writeFileSync(path.join(bin, "claude"), `#!/bin/sh\ncat > /dev/null\ncat <<'EOF'\n${reply}\nEOF\n`, {
+      mode: 0o755
+    })
+    // menu: ask Claude Code. checklist: keep what is ticked. menu: confirm. plan: yes.
+    const r = await cli(dir, flags, ["1", "", "c", "y"], { env: { PATH: `${bin}:/usr/bin:/bin` } })
+    expect(r.code).toBe(0)
+    expect(read(dir).componentSources?.[0]).toMatchObject({
+      path: "src/widgets",
+      source: "agent",
+      status: "approved",
+      note: "suggested by Claude Code (high confidence): five shared widgets"
+    })
+  })
+
+  it("does not move on without a terminal, and leaves the file as it was", async () => {
+    const dir = unconfirmed()
+    writeFileSync(path.join(dir, "invariant.config.json"), JSON.stringify(OLD))
+    const r = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"])
+    expect(flat(r.out)).toMatch(/need your confirmation .* The configuration was not changed/)
+    expect(read(dir)).toEqual(OLD)
+    expect(existsSync(path.join(dir, "invariant"))).toBe(false)
+  })
+
+  it("stopping the review leaves the file as it was", async () => {
+    const dir = unconfirmed()
+    writeFileSync(path.join(dir, "invariant.config.json"), JSON.stringify(OLD))
+    const r = await cli(dir, flags, ["3"], { env: { PATH: "/usr/bin:/bin" } })
+    expect(r.code).toBe(0)
+    expect(read(dir)).toEqual(OLD)
+  })
+
+  it("does not ask again once the components are confirmed, or once the person chose everything", async () => {
+    for (const confirmed of [
+      [{ path: "src/widgets", type: "directory", source: "user", status: "approved" }],
+      []
+    ]) {
+      const dir = unconfirmed()
+      writeFileSync(
+        path.join(dir, "invariant.config.json"),
+        JSON.stringify({ ...OLD, componentSources: confirmed })
+      )
+      const r = await cli(dir, flags, ["n"])
+      expect(r.out).toMatch(/using invariant\.config\.json/)
+      expect(r.out).not.toMatch(/scanned/)
+      expect(read(dir).componentSources).toEqual(confirmed)
+    }
+    const dir = unconfirmed()
+    writeFileSync(
+      path.join(dir, "invariant.config.json"),
+      JSON.stringify({
+        ...OLD,
+        componentSources: [{ path: "src/widgets", type: "directory", source: "user", status: "approved" }]
+      })
+    )
+    expect((await cli(dir, flags, ["n"])).out).toMatch(
+      /1 approved component source\(s\) \(--rediscover reviews them again\)/
+    )
+  })
+
+  it("does not review a configuration that only has tokens or Storybook, or that extends a shipped contract", async () => {
+    const dir = unconfirmed()
+    writeFileSync(
+      path.join(dir, "invariant.config.json"),
+      JSON.stringify({ name: "shop", sources: [{ id: "tokens", type: "tokens" }] })
+    )
+    const r = await cli(dir, flags, ["n"])
+    expect(r.out).not.toMatch(/scanned/)
   })
 })
 

@@ -37,6 +37,18 @@ export function normalizeSources(list: readonly ComponentSource[]): ComponentSou
   return kept.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
 }
 
+/** What the most specific decision that covers a file says, or undefined when none does. `pending` is no decision. */
+export function statusFor(
+  file: string,
+  sources: readonly ComponentSource[]
+): "approved" | "excluded" | undefined {
+  const covering = sources
+    .filter((s) => s.status !== "pending" && (s.type === "file" ? file === s.path : under(file, s.path)))
+    .sort((a, b) => b.path.length - a.path.length)
+  const top = covering[0]?.status
+  return top === "pending" ? undefined : top
+}
+
 /**
  * Whether a file counts. The most specific decision that covers it wins, so a file the person added inside an excluded
  * directory stays in, and a directory they excluded inside an approved one stays out. Without a decision it is out,
@@ -44,10 +56,7 @@ export function normalizeSources(list: readonly ComponentSource[]): ComponentSou
  */
 export function inScope(file: string, sources: readonly ComponentSource[]): boolean {
   if (!sources.some((s) => s.status === "approved")) return true
-  const covering = sources
-    .filter((s) => s.status !== "pending" && (s.type === "file" ? file === s.path : under(file, s.path)))
-    .sort((a, b) => b.path.length - a.path.length)
-  return covering[0]?.status === "approved"
+  return statusFor(file, sources) === "approved"
 }
 
 export const hasApproved = (config: InvariantConfig | undefined): boolean =>
@@ -118,7 +127,10 @@ export function applyDecisions(
 ): InvariantConfig {
   const FRAMEWORKS = new Set(["react", "vue", "angular"])
   const generated = sourcesFor(input.decisions, input.recognition, input.candidates)
-  const keep = [...config.sources, ...(input.extraSources ?? [])].filter((s) => !FRAMEWORKS.has(s.type))
+  // A framework source that reads an installed package (`declarations`) is not derived from the approved paths, so it stays.
+  const keep = [...config.sources, ...(input.extraSources ?? [])].filter(
+    (s) => !FRAMEWORKS.has(s.type) || s.declarations === true
+  )
   const seen = new Set<string>()
   const sources = [...keep, ...generated].filter((s) => {
     const k = `${s.type}:${s.path ?? "."}`
@@ -147,4 +159,47 @@ export function applyDecisions(
       }))
     }
   }
+}
+
+/**
+ * The decisions that make exactly the ticked files count. Each group is a directory (or one file) the scan or the person
+ * named; it is approved when most of the files shown under it are ticked, and excluded otherwise, and a weak group nobody
+ * ticked and nobody decided before is left undecided so a large repository does not fill the file with rejections. A file
+ * whose tick differs from what its directory says gets a decision of its own, which wins because it is more specific. The
+ * result is checked against `statusFor`, so it holds for every file, whatever else was decided earlier.
+ */
+export function decisionsFromSelection(input: {
+  prior: readonly ComponentSource[]
+  groups: ReadonlyArray<{
+    /** Path, type, source and note of the decision. `status` is worked out here. */
+    entry: ComponentSource
+    /** The files shown under this group. */
+    own: readonly string[]
+    /** Every file under it, including those shown under a group inside it. */
+    all: readonly string[]
+    weak: boolean
+  }>
+  files: readonly string[]
+  ticked: ReadonlySet<string>
+}): ComponentSource[] {
+  const discovered = new Set(input.files)
+  // The selection decides every file it lists, so an earlier decision about one of them is replaced, not kept beside it.
+  const prior = input.prior.filter((p) => !(p.type === "file" && discovered.has(trim(p.path))))
+  const decided = new Set(prior.map((p) => trim(p.path)))
+  const dirs: ComponentSource[] = []
+  for (const g of input.groups) {
+    const basis = g.own.length > 0 ? g.own : g.all
+    const on = basis.filter((f) => input.ticked.has(f)).length
+    const approved = on > 0 && on * 2 >= basis.length
+    if (approved || !g.weak || decided.has(trim(g.entry.path)))
+      dirs.push({ ...g.entry, status: approved ? "approved" : "excluded" })
+  }
+  const base = mergeDecisions(prior, dirs)
+  const own: ComponentSource[] = []
+  for (const f of input.files) {
+    const wanted = input.ticked.has(f)
+    if (wanted !== (statusFor(f, base) === "approved"))
+      own.push({ path: f, type: "file", source: "user", status: wanted ? "approved" : "excluded" })
+  }
+  return mergeDecisions(base, own)
 }

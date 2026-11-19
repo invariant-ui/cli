@@ -215,4 +215,10 @@ describe("the summary sent to an agent", () => {
     expect(text).toContain("- @acme/ui  at packages/ui  looks like: unknown  react")
     expect(text).not.toContain("\u001b")
   })
+
+  it("says the person asked for a second opinion when the scan was not unsure", () => {
+    const text = scanSummary({ files: 1, directories: 1, packages: [], candidates: [], reasons: [] })
+    expect(text).toContain("The person asked for a second opinion on what the scan found.")
+    expect(text).not.toContain("Why the scan is unsure")
+  })
 })

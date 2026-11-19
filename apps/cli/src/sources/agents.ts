@@ -304,9 +304,9 @@ export function scanSummary(input: {
     .slice(0, 30)
   return [
     `Scanned ${input.files} files in ${input.directories} folders. Dependencies, build output and .gitignore entries are skipped.`,
-    ...(input.reasons.length > 0
-      ? [`Why the scan is unsure: ${input.reasons.map((r) => plain(r, 300)).join("; ")}.`]
-      : []),
+    input.reasons.length > 0
+      ? `Why the scan is unsure: ${input.reasons.map((r) => plain(r, 300)).join("; ")}.`
+      : "The person asked for a second opinion on what the scan found.",
     "",
     `Packages that use a UI framework (${shown.length} of ${ui.length}; ${input.packages.length} packages in all):`,
     ...(shown.length > 0

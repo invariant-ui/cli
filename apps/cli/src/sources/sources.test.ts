@@ -6,6 +6,7 @@ import { configSchema, validateConfig } from "../config.js"
 import {
   applyDecisions,
   type ComponentSource,
+  decisionsFromSelection,
   inScope,
   mergeDecisions,
   normalizeSources
@@ -352,6 +353,29 @@ describe("approved sources", () => {
     })
     expect(configSchema.safeParse(config).success).toBe(true)
   })
+  it("keeps a framework source that reads an installed package, and replaces the other framework sources", async () => {
+    const dir = project({ "package.json": lib(), "src/Button.tsx": react("Button") })
+    const a = await analyzeProject(dir)
+    const out = await discoverSources(dir, a.recognition, a.targets)
+    const base = validateConfig({
+      name: "DS",
+      sources: [
+        { id: "installed", type: "react", path: "node_modules/@acme/other", declarations: true },
+        { id: "old", type: "react" }
+      ]
+    })
+    const config = applyDecisions(base, {
+      decisions: [src("src", "approved")],
+      recognition: a.recognition,
+      candidates: out.candidates,
+      packages: a.targets
+    })
+    expect(config.sources.map((s) => `${s.type}:${s.path ?? "."}`)).toEqual([
+      "react:node_modules/@acme/other",
+      "react:."
+    ])
+    expect(config.sources.some((s) => s.id === "old")).toBe(false)
+  })
   it("rejects duplicate paths, bad paths and inverted thresholds", () => {
     const ok = { name: "DS", sources: [] }
     expect(() =>
@@ -363,5 +387,114 @@ describe("approved sources", () => {
     expect(() => validateConfig({ ...ok, discovery: { thresholds: { high: 40, medium: 60 } } })).toThrow(
       /lower than high/
     )
+  })
+})
+
+describe("decisions from a selection of files", () => {
+  const entry = (path: string): ComponentSource => ({
+    path,
+    type: "directory",
+    source: "discovered",
+    status: "excluded"
+  })
+  const group = (path: string, own: string[], weak = false, all = own) => ({
+    entry: entry(path),
+    own,
+    all,
+    weak
+  })
+
+  it("approves a directory most of whose files are ticked, and gives the files that differ a decision of their own", () => {
+    const files = ["src/a.tsx", "src/b.tsx", "src/c.tsx", "src/d.tsx"]
+    const out = decisionsFromSelection({
+      prior: [],
+      groups: [group("src", files)],
+      files,
+      ticked: new Set(["src/a.tsx", "src/b.tsx", "src/c.tsx"])
+    })
+    expect(out).toEqual([
+      { path: "src", type: "directory", source: "discovered", status: "approved" },
+      { path: "src/d.tsx", type: "file", source: "user", status: "excluded" }
+    ])
+  })
+
+  it("leaves a weak directory nobody ticked undecided, and approves single files ticked inside one", () => {
+    const files = ["lib/x.tsx", "lib/y.tsx", "src/a.tsx"]
+    const out = decisionsFromSelection({
+      prior: [],
+      groups: [group("src", ["src/a.tsx"]), group("lib", ["lib/x.tsx", "lib/y.tsx"], true)],
+      files,
+      ticked: new Set(["src/a.tsx", "lib/y.tsx"])
+    })
+    // lib: one of two ticked is half, so it is approved as a whole and x.tsx is the exception.
+    expect(out.map((d) => `${d.path}:${d.status}`)).toEqual([
+      "lib:approved",
+      "lib/x.tsx:excluded",
+      "src:approved"
+    ])
+    const none = decisionsFromSelection({
+      prior: [],
+      groups: [group("src", ["src/a.tsx"]), group("lib", ["lib/x.tsx", "lib/y.tsx"], true)],
+      files,
+      ticked: new Set(["src/a.tsx"])
+    })
+    expect(none).toEqual([{ path: "src", type: "directory", source: "discovered", status: "approved" }])
+  })
+
+  it("replaces an earlier decision about a file the selection lists", () => {
+    const files = ["src/a.tsx", "src/b.tsx"]
+    const prior: ComponentSource[] = [{ path: "src/a.tsx", type: "file", source: "user", status: "excluded" }]
+    const out = decisionsFromSelection({
+      prior,
+      groups: [group("src", files)],
+      files,
+      ticked: new Set(files)
+    })
+    expect(out).toEqual([{ path: "src", type: "directory", source: "discovered", status: "approved" }])
+  })
+
+  it("makes exactly the ticked files count, whatever the groups and earlier decisions look like", () => {
+    const files = [
+      "a/1.tsx",
+      "a/2.tsx",
+      "a/b/3.tsx",
+      "a/b/4.tsx",
+      "a/b/c/5.tsx",
+      "a/b/c/6.tsx",
+      "d/7.tsx",
+      "d/8.tsx",
+      "d/9.tsx"
+    ]
+    const groups = [
+      group(
+        "a",
+        ["a/1.tsx", "a/2.tsx"],
+        false,
+        files.filter((f) => f.startsWith("a/"))
+      ),
+      group(
+        "a/b",
+        ["a/b/3.tsx", "a/b/4.tsx"],
+        false,
+        files.filter((f) => f.startsWith("a/b/"))
+      ),
+      group("a/b/c", ["a/b/c/5.tsx", "a/b/c/6.tsx"]),
+      group("d", ["d/7.tsx", "d/8.tsx", "d/9.tsx"], true)
+    ]
+    const prior: ComponentSource[] = [
+      { path: "a/b", type: "directory", source: "user", status: "excluded" },
+      { path: "d/8.tsx", type: "file", source: "user", status: "approved" }
+    ]
+    let seed = 7
+    const next = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648
+      return seed / 2147483648
+    }
+    for (let round = 0; round < 300; round++) {
+      const ticked = new Set(files.filter(() => next() < 0.5))
+      if (ticked.size === 0) continue
+      const out = decisionsFromSelection({ prior, groups, files, ticked })
+      for (const f of files) expect(inScope(f, out), `${f} in ${[...ticked]}`).toBe(ticked.has(f))
+    }
   })
 })
