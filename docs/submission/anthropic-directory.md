@@ -56,7 +56,7 @@ Invariant reads your design system and checks every file Claude writes against i
 
 | Component | What it does |
 | --- | --- |
-| Skills (6) | `setup` (the guided setup), plus `invariant-build-ui`, `invariant-component-discovery`, `invariant-layout-composition`, `invariant-design-review` and `invariant-refactor-ui`. They are generic: they name no component or pattern of any customer and read what they need through the MCP tools. |
+| Skills (7) | `setup` (the guided setup), `invariant-setup` (finds where the design system's components live when setup's own scan is unsure; it only reads), plus `invariant-build-ui`, `invariant-component-discovery`, `invariant-layout-composition`, `invariant-design-review` and `invariant-refactor-ui`. They are generic: they name no component or pattern of any customer and read what they need through the MCP tools. |
 | MCP server `invariant` | Read-only tools that describe the design system (components, props, tokens, patterns) and validate code snippets against it. It writes nothing and runs no project code. |
 | Hooks | `PreToolUse` and `PostToolUse` on `Write` and `Edit`, to check each file written. `SessionStart`, to install the command line tool early in projects that use Invariant. All three run one script, `bin/invariant-launch.mjs`. |
 | Launcher | A single dependency-free Node script that finds or installs the Invariant command line tool and runs it. |

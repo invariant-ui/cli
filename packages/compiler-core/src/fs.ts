@@ -27,11 +27,14 @@ export function nodeFs(rootDirectory: string): ReadonlyFs {
       throw new Error(`Path escapes project root: ${relative}`)
     return absolute
   }
+  // Resolved once: it does not change while a project is being read, and reading a large project asks for it per file.
+  let resolvedRoot: string | undefined
   return {
     async readFile(relative) {
       const absolute = resolve(relative)
       const real = await nodeFsPromises.realpath(absolute)
-      const realRoot = await nodeFsPromises.realpath(root)
+      resolvedRoot ??= await nodeFsPromises.realpath(root)
+      const realRoot = resolvedRoot
       if (real !== realRoot && !real.startsWith(realRoot + path.sep))
         throw new Error(`Symlink escapes project root: ${relative}`)
       return nodeFsPromises.readFile(real, "utf8")

@@ -36,6 +36,7 @@ const label = (
     `${multi && c.packageName ? `${c.packageName}: ` : ""}${c.path}`,
     `${c.componentCount} component${c.componentCount === 1 ? "" : "s"}`,
     `${c.classification.confidence} confidence`,
+    ...(c.suggestion ? [`suggested by ${c.suggestion.by} (${c.suggestion.confidence})`] : []),
     ...(c.classification.category === "examples"
       ? ["examples"]
       : c.recommendation === "potential"
@@ -62,6 +63,12 @@ export function describeComponents(c: DirectoryCandidate): string[] {
 export function describeEvidence(c: DirectoryCandidate): string[] {
   return [
     `${c.path}: score ${c.classification.score}/100, ${c.classification.confidence} confidence, ${c.recommendation.replace("-", " ")}. A heuristic, not a probability.`,
+    ...(c.suggestion
+      ? [
+          `  ${c.suggestion.by} suggested it (${c.suggestion.confidence} confidence): ${c.suggestion.reason}`,
+          "  That is an AI agent's judgment. Setup only checked that the directory exists and holds components."
+        ]
+      : []),
     ...c.classification.evidence.map(
       (e) => `  ${e.weight > 0 ? "+" : e.weight < 0 ? "-" : " "}${Math.abs(e.weight)}  ${e.detail}`
     )
@@ -80,7 +87,9 @@ export async function reviewSources(
   const prior = new Map(input.prior.map((p) => [p.path, p]))
   const cands = [...input.candidates]
   const added = new Map<string, Added["type"]>()
-  const hidden = cands.filter((c) => c.recommendation === "not-recommended" && !prior.has(c.path))
+  const weak = cands.filter((c) => c.recommendation === "not-recommended" && !prior.has(c.path))
+  // Weak directories are set aside to keep the list short. When every directory is weak there is nothing else to choose from.
+  const hidden = weak.length === cands.length ? [] : weak
   const shown = (): DirectoryCandidate[] => cands.filter((c) => !hidden.includes(c))
   const ticked = new Set(
     cands
@@ -99,8 +108,11 @@ export async function reviewSources(
     if (a === undefined) closed = true
     return (a ?? "").trim()
   }
+  // A component counts once even when two ticked directories contain it (a directory and one inside it).
   const count = (): { components: number; dirs: number } => ({
-    components: cands.filter((c) => ticked.has(c.path)).reduce((n, c) => n + c.componentCount, 0),
+    components: new Set(
+      cands.filter((c) => ticked.has(c.path)).flatMap((c) => c.components.map((k) => `${k.file}#${k.name}`))
+    ).size,
     dirs: ticked.size
   })
   const pickIndex = async (question: string): Promise<DirectoryCandidate | undefined> => {
@@ -152,7 +164,9 @@ export async function reviewSources(
     ui.say(
       `${hidden.length} more director${hidden.length === 1 ? "y" : "ies"} found but not recommended (${hidden.map((c) => c.path).join(", ")}). Add one with "add" if it belongs.`
     )
-  if (!(await selectDirs()) || closed) return undefined
+  if (shown().length === 0)
+    ui.say('The scan found no directory to choose from. Add one with "add" (a path from the project root).')
+  else if (!(await selectDirs()) || closed) return undefined
   for (;;) {
     const n = count()
     type Next = "confirm" | "add" | "view" | "evidence" | "select"
@@ -219,11 +233,21 @@ export async function reviewSources(
   const decisions: ComponentSource[] = []
   for (const c of shown()) {
     const user = added.has(c.path)
+    const agent = !user && c.foundBy === "agent"
     decisions.push({
       path: c.path,
       type: added.get(c.path) ?? "directory",
-      source: user ? "user" : "discovered",
-      status: ticked.has(c.path) ? "approved" : "excluded"
+      source: user ? "user" : agent ? "agent" : "discovered",
+      status: ticked.has(c.path) ? "approved" : "excluded",
+      // Where an AI agent had a say, the saved decision keeps who, how sure it was and why.
+      ...(c.suggestion && !user
+        ? {
+            note: `${agent ? "" : "also "}suggested by ${c.suggestion.by} (${c.suggestion.confidence} confidence): ${c.suggestion.reason}`.slice(
+              0,
+              600
+            )
+          }
+        : {})
     })
   }
   return { decisions: mergeDecisions(input.prior, decisions), candidates: cands }

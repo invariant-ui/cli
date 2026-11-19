@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process"
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import path from "node:path"
+import { scanPrompt } from "@invariant/agent-kit"
 import { PATTERN_CATEGORIES } from "@invariant/contract"
 import { PATTERNS_FILE } from "@invariant/governance"
 import type { CandidatesFile } from "@invariant/validation"
@@ -13,9 +14,20 @@ import { CliError } from "./errors.js"
 import { paint } from "./format.js"
 import { columns, done, fail, gap, intro, line, outro, spin, warn, wrap } from "./frame.js"
 import { applyPublish, planPublish } from "./publish.js"
+import type { Choice } from "./select.js"
 import { findApps, inside } from "./setup-discovery.js"
+import {
+  type Agent,
+  type AgentId,
+  detectAgents,
+  parseFindings,
+  runAgent,
+  scanSummary,
+  withSuggestion
+} from "./sources/agents.js"
 import { applyDecisions, type ComponentSource, priorDecisions } from "./sources/approval.js"
-import { analyzePath } from "./sources/discover.js"
+import { assess } from "./sources/confidence.js"
+import { analyzePath, type DirectoryCandidate } from "./sources/discover.js"
 import { analyzeProject, discoverFor } from "./sources/plan.js"
 import { type Added, decideWithoutAsking, type ReviewResult, reviewSources } from "./sources/review.js"
 import { type StarterRule, starterRules } from "./starter-rules.js"
@@ -100,8 +112,9 @@ export async function setup(c: Context): Promise<number> {
     print(c, warn(first))
     for (const l of rest) print(c, line(l))
   }
-  const busy = <T>(label: string, work: () => Promise<T>): Promise<T> =>
+  const busy = <T>(label: string | (() => string), work: () => Promise<T>): Promise<T> =>
     spin((t) => c.io.stdout(t), label, work)
+  const num = (n: number): string => n.toLocaleString("en-US")
   const yes = c.args.values.yes === true
   const carry = [
     ...(c.args.values.config ? ["--config", c.args.values.config] : []),
@@ -142,16 +155,38 @@ export async function setup(c: Context): Promise<number> {
   const includes = listOf(c.args.values.include ?? c.args.values.sources)
   const excludes = listOf(c.args.values.exclude)
 
+  /** Why the last discovery was not sure, for the message when there is no one to ask. */
+  let unsure: string[] = []
+  const needsConfirmation = (): string =>
+    `The component directories need your confirmation${unsure.length > 0 ? ` (${unsure.join("; ")})` : ""}, and there is no terminal to ask. ${
+      yesish
+        ? "Nothing was recommended, so --yes had nothing to accept. Name the directories with --include <paths>"
+        : "Re-run with --yes to accept the recommended directories, or name them with --include <paths>"
+    } (and --exclude <paths> to reject some). If you do not know where they are, an AI agent can find them: ask it to follow the invariant-setup skill from the Invariant plugin (the one that finds where components live, not the guided setup), then pass what it found to --include.`
+
   /**
    * Recognizes the project, discovers the directories that hold components, and has the person confirm them (or takes
    * `--include`, `--exclude` and `--yes`). Nothing recommended counts as approved until it is confirmed.
    */
   const confirmComponentSources = async (
     base: InvariantConfig,
-    prior: ComponentSource[]
-  ): Promise<{ config: InvariantConfig } | "stopped" | "needs-confirmation" | "nothing-found"> => {
-    const analysis = await busy("analyzing the project", () => analyzeProject(c.cwd, base))
+    prior: ComponentSource[],
+    options: { allowEverything: boolean }
+  ): Promise<
+    { config: InvariantConfig } | "stopped" | "needs-confirmation" | "nothing-found" | "everything"
+  > => {
+    let walked = { files: 0, directories: 0 }
+    const analysis = await busy(
+      () => `scanning every folder: ${num(walked.files)} files so far`,
+      () =>
+        analyzeProject(c.cwd, base, (p) => {
+          walked = p
+        })
+    )
     const { recognition, thresholds } = analysis
+    step(
+      `scanned ${num(analysis.scan.files.length)} files in ${num(analysis.scan.directories)} folders (dependencies, build output and .gitignore entries are skipped)`
+    )
     const kinds: Record<string, string> = {
       "component-library": "a UI component library",
       application: "an application",
@@ -197,18 +232,178 @@ export async function setup(c: Context): Promise<number> {
       const type = statSync(full).isDirectory() ? "directory" : "file"
       if (type === "file" && !/\.(tsx|jsx|vue|ts|js)$/i.test(rel))
         return `${raw} is not a component file (.tsx, .jsx, .vue or .ts)`
-      const r = await analyzePath(c.cwd, recognition, rel, thresholds)
+      const r = await analyzePath(c.cwd, recognition, rel, thresholds, analysis.scan)
       return r
         ? { candidate: r.candidate, type }
         : `no components found in ${raw} (looked for React, Vue and Angular components)`
     }
-    if (found.candidates.length === 0 && includes.length === 0) return "nothing-found"
+    const assessment = assess({ candidates: found.candidates, recognition, thresholds })
+    const canAsk = c.io.prompt !== undefined && !yesish && includes.length === 0 && excludes.length === 0
+    let candidates = found.candidates
+
+    /** One of the choices, with arrows when there is a terminal and typed numbers when there is not. */
+    const pick = async <T extends string>(
+      question: string,
+      choices: ReadonlyArray<Choice<T>>
+    ): Promise<T | undefined> => {
+      if (c.io.select) return c.io.select(question, choices)
+      for (const [i, ch] of choices.entries()) say(`${i + 1}. ${ch.label}`)
+      for (let tries = 0; tries < 3; tries++) {
+        const a = (await c.io.prompt?.(`${paint("accent", "◆")}  ${question} [1-${choices.length}] `))?.trim()
+        if (a === undefined) return undefined
+        const n = Number(a)
+        const hit =
+          Number.isInteger(n) && n >= 1 && n <= choices.length
+            ? choices[n - 1]
+            : choices.find((ch) => ch.key === a.toLowerCase())
+        if (hit) return hit.value
+        flag(`${a === "" ? "nothing" : a} is not one of the choices`)
+      }
+      return undefined
+    }
+
+    /**
+     * Asks an AI agent where the components are, then checks what it says: every directory must exist and hold components
+     * setup can find itself. The agent's confidence and reason are kept with the directory. Nothing is approved here.
+     */
+    const askAgent = async (agent: Agent): Promise<DirectoryCandidate[] | "stopped" | undefined> => {
+      const prompt = scanPrompt(
+        scanSummary({
+          files: analysis.scan.files.length,
+          directories: analysis.scan.directories,
+          packages: recognition.packages,
+          candidates,
+          reasons: assessment.reasons
+        })
+      )
+      const started = Date.now()
+      const ran = await busy(
+        () =>
+          `${agent.name} is looking through the project (${Math.round((Date.now() - started) / 1000)}s). This can take a few minutes. Ctrl+C stops.`,
+        () =>
+          runAgent(agent, prompt, {
+            cwd: c.cwd,
+            ...(c.io.env ? { env: c.io.env } : {}),
+            ...(c.io.signal ? { signal: c.io.signal } : {})
+          })
+      )
+      if (c.io.signal?.aborted) return "stopped"
+      if (!ran.ok) {
+        flag(`${agent.name}: ${ran.reason}`)
+        return undefined
+      }
+      const findings = parseFindings(ran.text)
+      if (!findings.ok) {
+        flag(`${agent.name} answered, but setup cannot use the answer: ${findings.reason}`)
+        return undefined
+      }
+      const next = [...candidates]
+      let confirmed = 0
+      for (const s of findings.directories) {
+        const r = await addPath(s.path)
+        if (typeof r === "string") flag(`${agent.name} named ${s.path}: ${r}`)
+        else if (r.type !== "directory")
+          flag(`${agent.name} named ${s.path}, which is a file; only directories are taken`)
+        else {
+          const at = next.findIndex((x) => x.path === r.candidate.path)
+          const known = at >= 0 ? (next[at] as DirectoryCandidate) : undefined
+          // The scan keeps the credit only for a directory it recommended itself; a low-scoring one the agent vouched for is the agent's.
+          const marked = withSuggestion(
+            known ?? r.candidate,
+            agent.name,
+            s,
+            known?.recommendation === "recommended"
+          )
+          if (at >= 0) next[at] = marked
+          else next.push(marked)
+          confirmed++
+          say(
+            `${s.path}  ${marked.componentCount} component${marked.componentCount === 1 ? "" : "s"}  (${s.confidence}) ${s.reason}`
+          )
+        }
+      }
+      for (const p of findings.rejected)
+        flag(`${agent.name} named ${p}, which is not a path inside the project`)
+      if (findings.notes) say(`${agent.name} noted: ${findings.notes}`)
+      step(
+        `${agent.name} named ${findings.directories.length} director${findings.directories.length === 1 ? "y" : "ies"}; ${confirmed} hold${confirmed === 1 ? "s" : ""} components setup can find`
+      )
+      if (confirmed === 0) return undefined
+      candidates = next
+      return next
+    }
+
+    /** The scan is not sure, and someone can answer: offer the agents found on this machine, or let them choose themselves. */
+    const whenUnsure = async (): Promise<"stopped" | "everything" | "review"> => {
+      flag(`not confident about the component directories: ${assessment.reasons.join("; ")}`)
+      const agents = detectAgents(c.io.env ?? {})
+      if (agents.length === 0 && candidates.length > 0) {
+        say(
+          "No AI agent to ask was found on this machine (looked for claude, codex and cursor-agent). Review what the scan found, or add directories yourself."
+        )
+        return "review"
+      }
+      if (agents.length > 0)
+        say(
+          `An AI agent can look through the project and point at the directories: found ${agents.map((a) => a.name).join(", ")}. It can only read files (it cannot edit them or run commands), and what it reads is sent to its provider, under your account. Setup checks what it says, and nothing is approved until you confirm it.`
+        )
+      for (;;) {
+        type Choose = AgentId | "review" | "everything" | "stop"
+        const picked = await pick<Choose>("How do you want to go on?", [
+          ...agents.map((a, i) => ({
+            value: a.id as Choose,
+            label: `Ask ${a.name} to find them (it only reads files)`,
+            key: String(i + 1)
+          })),
+          {
+            value: "review" as Choose,
+            label:
+              candidates.length > 0
+                ? "Choose from what the scan found, or add directories myself"
+                : "Enter the directories myself",
+            key: "d"
+          },
+          ...(options.allowEverything
+            ? [
+                {
+                  value: "everything" as Choose,
+                  label: "Compile everything the packages export, with no list of components",
+                  key: "e"
+                }
+              ]
+            : []),
+          { value: "stop" as Choose, label: "Stop", key: "n" }
+        ])
+        if (picked === undefined || picked === "stop") return "stopped"
+        if (picked === "review" || picked === "everything") return picked
+        const agent = agents.find((a) => a.id === picked) as Agent
+        const got = await askAgent(agent)
+        if (got === "stopped") return "stopped"
+        if (got) return "review"
+      }
+    }
+
+    if (assessment.level === "low" && canAsk) {
+      const next = await whenUnsure()
+      if (next === "stopped") return "stopped"
+      if (next === "everything") return "everything"
+    } else if (
+      assessment.level === "low" &&
+      candidates.length === 0 &&
+      includes.length === 0 &&
+      !yesish &&
+      recognition.packages.some((p) => p.frameworks.length > 0)
+    ) {
+      // Components should be here and the scan found none. With no one to ask, going on would mean guessing.
+      unsure = assessment.reasons
+      return "needs-confirmation"
+    }
+    if (candidates.length === 0 && includes.length === 0 && !canAsk) return "nothing-found"
     step(
-      `found ${found.candidates.reduce((n, x) => n + x.componentCount, 0)} components in ${found.candidates.length} director${found.candidates.length === 1 ? "y" : "ies"}`
+      `found ${new Set(candidates.flatMap((x) => x.components.map((k) => `${k.file}#${k.name}`))).size} components in ${candidates.length} director${candidates.length === 1 ? "y" : "ies"}`
     )
     let result: ReviewResult | undefined
-    if (c.io.prompt && !yesish && includes.length === 0 && excludes.length === 0)
-      result = await reviewSources(c.io, { say, flag }, { candidates: found.candidates, prior, addPath })
+    if (canAsk) result = await reviewSources(c.io, { say, flag }, { candidates, prior, addPath })
     else {
       const include: Added[] = []
       for (const p of includes) {
@@ -223,8 +418,11 @@ export async function setup(c: Context): Promise<number> {
             ? ("file" as const)
             : ("directory" as const)
       }))
-      result = decideWithoutAsking({ candidates: found.candidates, prior, yes: yesish, include, exclude })
-      if (!result.decisions.some((d) => d.status === "approved")) return "needs-confirmation"
+      result = decideWithoutAsking({ candidates, prior, yes: yesish, include, exclude })
+      if (!result.decisions.some((d) => d.status === "approved")) {
+        unsure = assessment.level === "low" ? assessment.reasons : []
+        return "needs-confirmation"
+      }
     }
     if (!result) return "stopped"
     const picked = result.candidates.filter((x) =>
@@ -253,7 +451,18 @@ export async function setup(c: Context): Promise<number> {
     const analysis = await analyzeProject(c.cwd)
     const found = await discoverFor(c.cwd, analysis)
     const { project: _project, ...recognition } = analysis.recognition
-    json(c, { recognition, candidates: found.candidates, diagnostics: found.diagnostics })
+    json(c, {
+      recognition,
+      scanned: { files: analysis.scan.files.length, directories: analysis.scan.directories },
+      // How sure the scan is. When it is low, the invariant-setup skill is the way to look further.
+      confidence: assess({
+        candidates: found.candidates,
+        recognition: analysis.recognition,
+        thresholds: analysis.thresholds
+      }),
+      candidates: found.candidates,
+      diagnostics: found.diagnostics
+    })
     return 0
   }
 
@@ -266,21 +475,22 @@ export async function setup(c: Context): Promise<number> {
   if (!existsSync(configPath)) {
     const detected = c.args.values.contract ? undefined : await detectConfig(c.cwd)
     if (detected && (detected.sources.length > 0 || includes.length > 0)) {
-      const r = await confirmComponentSources(detected, [])
+      const r = await confirmComponentSources(detected, [], { allowEverything: true })
       if (r === "stopped") {
         say("Stopped. Nothing was written.")
         print(c, outro("stopped", true))
         return 0
       }
       if (r === "needs-confirmation") {
-        say(
-          `The component directories need your confirmation, and there is no terminal to ask. Re-run with --yes to accept the recommended directories, or --include <paths> to name them (and --exclude <paths> to reject some). Nothing was written.`
-        )
+        say(`${needsConfirmation()} Nothing was written.`)
         print(c, outro("not confirmed", true))
         return 0
       }
       if (r === "nothing-found") {
         flag("no components found by reading the source, so the detected sources are used as they are")
+        writeConfig(configPath, detected)
+      } else if (r === "everything") {
+        step("compiling everything the detected sources export, as you chose")
         writeConfig(configPath, detected)
       } else writeConfig(configPath, r.config)
       step(`wrote ${path.basename(configPath)}`)
@@ -336,17 +546,17 @@ export async function setup(c: Context): Promise<number> {
       `using ${path.basename(configPath)}${consumer ? ` (extends ${existing?.extends?.contract})` : ""}${approved > 0 ? `, ${approved} approved component source(s)` : ""}`
     )
     if (c.args.values.rediscover && existing && !consumer) {
-      const r = await confirmComponentSources(existing, priorDecisions(existing))
+      const r = await confirmComponentSources(existing, priorDecisions(existing), { allowEverything: false })
       if (r === "stopped" || r === "needs-confirmation") {
         say(
           r === "stopped"
             ? "Stopped. The configuration was not changed."
-            : "The component directories need your confirmation (--yes, or --include <paths>). The configuration was not changed."
+            : `${needsConfirmation()} The configuration was not changed.`
         )
         print(c, outro(r === "stopped" ? "stopped" : "not confirmed", true))
         return 0
       }
-      if (r !== "nothing-found") writeConfig(configPath, r.config)
+      if (r !== "nothing-found" && r !== "everything") writeConfig(configPath, r.config)
     }
   }
   const compiled = await busy("compiling", () => sub("compile"))

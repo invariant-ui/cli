@@ -1,5 +1,5 @@
 import { discoverProject, type ProjectDiscovery } from "@invariant/compiler-core"
-import { scan } from "./scan.js"
+import { type Scan, scan } from "./scan.js"
 
 export const ROLES = ["design-system", "application", "tokens", "icons", "utility", "unknown"] as const
 export type PackageRoleName = (typeof ROLES)[number]
@@ -53,10 +53,12 @@ const LIB_DIRS = ["components", "ui", "primitives", "composites", "layout", "fou
  */
 export async function recognizeProject(
   cwd: string,
-  explicit: ReadonlyArray<{ path: string; role: PackageRoleName }> = []
+  explicit: ReadonlyArray<{ path: string; role: PackageRoleName }> = [],
+  given?: Scan
 ): Promise<ProjectRecognition> {
-  const { fs, files } = await scan(cwd)
-  const project = await discoverProject({ fs })
+  const { fs, files } = given ?? (await scan(cwd))
+  // Every folder is read: setup's point is to look everywhere, so the walk has no file limit.
+  const project = await discoverProject({ fs, limits: { maxFiles: Number.POSITIVE_INFINITY } })
   const dirsOf = (dir: string): Set<string> => {
     const out = new Set<string>()
     const prefix = dir === "." ? "" : `${dir}/`

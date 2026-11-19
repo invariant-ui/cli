@@ -53,6 +53,10 @@ export interface DirectoryCandidate {
   frameworks: string[]
   classification: { confidence: Confidence; score: number; category?: string; evidence: Evidence[] }
   recommendation: "recommended" | "potential" | "not-recommended"
+  /** An AI agent named this directory. Setup confirmed it holds components; the confidence and reason are the agent's own. */
+  suggestion?: { by: string; confidence: Confidence; reason: string }
+  /** Present when the scan did not find this directory and an agent did: who chose it, for the saved decision. */
+  foundBy?: "agent"
 }
 
 export interface DiscoveryOutput {
@@ -174,6 +178,15 @@ export interface AnalyzeInput {
   within?: string
 }
 
+/** What is kept of a file once its text is read: components are found in it, and the rest is dropped to bound memory. */
+interface FileFacts {
+  specs: string[]
+  api: boolean
+  routing: boolean
+  tokens: boolean
+  accessible: boolean
+}
+
 /** Finds the components under one package (or one path) and gathers the facts the scoring reads. Reads files only. */
 export async function analyzeComponents(
   input: AnalyzeInput,
@@ -183,30 +196,25 @@ export async function analyzeComponents(
   const dir = role?.dir ?? "."
   const s = shared ?? (await scan(input.cwd))
   const diagnostics: string[] = []
-  if (s.truncated)
-    diagnostics.push("the project has more files than discovery reads, so the results may be incomplete")
   const pkgPrefix = dir === "." ? "" : `${dir}/`
   const inPackage = s.files.filter(
     (f) => f.startsWith(pkgPrefix) && !(dir === "." && f.startsWith("node_modules/"))
   )
+  const fileSet = new Set(inPackage)
   const sources = inPackage.filter((f) => SOURCE_FILE.test(f) || /\.vue$/i.test(f))
   const target = (f: string): boolean =>
     input.within === undefined || f === input.within || f.startsWith(`${input.within.replace(/\/$/, "")}/`)
-  const texts = new Map<string, string>()
+  const tooLarge: string[] = []
+  const unreadable: string[] = []
   const read = async (f: string): Promise<string | undefined> => {
-    if (texts.has(f)) return texts.get(f)
     try {
       const t = await s.fs.readFile(f)
-      if (t.length > MAX_FILE_BYTES) {
-        diagnostics.push(`${f} is larger than ${MAX_FILE_BYTES / 1024} KB and was not read`)
-        return undefined
-      }
-      texts.set(f, t)
-      return t
+      if (t.length <= MAX_FILE_BYTES) return t
+      tooLarge.push(f)
     } catch {
-      diagnostics.push(`${f} could not be read`)
-      return undefined
+      unreadable.push(f)
     }
+    return undefined
   }
   const info = input.recognition.project.packages.find((p) => p.dir === dir)
   const publicNames = new Set(
@@ -214,16 +222,36 @@ export async function analyzeComponents(
   )
   const storyKeys = new Set(inPackage.filter((f) => /\.stories\./i.test(f)).map(baseKey))
   const testKeys = new Set(inPackage.filter((f) => /\.(test|spec)\./i.test(f)).map(baseKey))
+  // One pass over the files. Each text is read once and reduced to what the scoring needs, so a package with tens of
+  // thousands of files does not have to fit in memory.
   const found: DetectedComponent[] = []
+  const facts = new Map<string, FileFacts>()
+  const importsOf = new Map<string, string[]>()
   for (const f of sources) {
-    if (NOT_DECLARATION.test(f) || !target(f)) continue
+    if (NOT_DECLARATION.test(f)) continue
+    const wanted = target(f)
+    if (!wanted && strategy !== "application") continue
     const text = await read(f)
-    if (text !== undefined) found.push(...detect(f, text))
+    if (text === undefined) continue
+    const specs = moduleSpecifiers(text)
+    if (wanted) {
+      const here = detect(f, text)
+      if (here.length > 0) {
+        found.push(...here)
+        facts.set(f, {
+          specs,
+          api: API_TEXT.test(text),
+          routing: ROUTING_TEXT.test(text),
+          tokens: TOKEN_TEXT.test(text),
+          accessible: A11Y_TEXT.test(text)
+        })
+      }
+    }
+    if (strategy === "application") importsOf.set(f, specs)
   }
   // Application strategy: who imports each component file, by feature area.
   const importers = new Map<string, Set<string>>()
   if (strategy === "application" && found.length > 0) {
-    const fileSet = new Set(sources)
     const resolve = (from: string, spec: string): string | undefined => {
       const base = spec.startsWith(".")
         ? posix.normalize(posix.join(posix.dirname(from), spec))
@@ -242,12 +270,9 @@ export async function analyzeComponents(
     const byDir = new Map<string, string[]>()
     for (const c of found)
       byDir.set(posix.dirname(c.file), [...(byDir.get(posix.dirname(c.file)) ?? []), c.file])
-    for (const f of sources) {
-      if (NOT_DECLARATION.test(f)) continue
-      const text = await read(f)
-      if (text === undefined) continue
+    for (const [f, specs] of importsOf) {
       const area = featureArea(f, dir)
-      for (const spec of moduleSpecifiers(text)) {
+      for (const spec of specs) {
         const to = resolve(f, spec)
         if (!to || to === f) continue
         const targets = /\/index\.[jt]sx?$/.test(to) ? [to, ...(byDir.get(posix.dirname(to)) ?? [])] : [to]
@@ -258,18 +283,18 @@ export async function analyzeComponents(
   const siblingStyle = async (f: string): Promise<string> => {
     const stem = f.replace(/\.[a-z]+$/i, "")
     for (const ext of [".css", ".scss", ".module.css", ".module.scss", ".less"])
-      if (inPackage.includes(stem + ext)) return (await read(stem + ext)) ?? ""
+      if (fileSet.has(stem + ext)) return (await read(stem + ext)) ?? ""
     return ""
   }
   const out: DiscoveredComponent[] = []
   for (const c of found) {
-    const text = texts.get(c.file) ?? ""
+    const own = facts.get(c.file)
     const negatives: string[] = []
-    const specs = moduleSpecifiers(text)
+    const specs = own?.specs ?? []
     if (specs.some((x) => SERVICE_IMPORT.test(x))) negatives.push("imports application services or stores")
     if (specs.some((x) => MODEL_IMPORT.test(x))) negatives.push("imports domain models")
-    if (API_TEXT.test(text)) negatives.push("contains API queries or mutations")
-    if (ROUTING_TEXT.test(text)) negatives.push("uses routing")
+    if (own?.api) negatives.push("contains API queries or mutations")
+    if (own?.routing) negatives.push("uses routing")
     const here = importers.get(c.file)
     const areas = new Set([...(here ?? [])].map((x) => x.split("\u0000")[0]))
     const keys = [norm(c.name), norm(c.name.replace(/Component$/, "")), baseKey(c.file)]
@@ -279,13 +304,22 @@ export async function analyzeComponents(
       public: publicNames.has(c.name),
       stories: keys.some((k) => storyKeys.has(k)),
       tests: keys.some((k) => testKeys.has(k)),
-      tokens: TOKEN_TEXT.test(text) || /var\(\s*--/.test(await siblingStyle(c.file)),
-      accessible: A11Y_TEXT.test(text),
+      tokens: own?.tokens === true || /var\(\s*--/.test(await siblingStyle(c.file)),
+      accessible: own?.accessible === true,
       negatives,
       featureAreas: areas.size,
       importers: here?.size ?? 0
     })
   }
+  // Said once per package, not once per file: a large repository can hold thousands of generated bundles.
+  if (tooLarge.length > 0)
+    diagnostics.push(
+      `${tooLarge.length} file${tooLarge.length === 1 ? " is" : "s are"} larger than ${MAX_FILE_BYTES / 1024} KB and were not read (for example ${tooLarge[0]})`
+    )
+  if (unreadable.length > 0)
+    diagnostics.push(
+      `${unreadable.length} file${unreadable.length === 1 ? "" : "s"} could not be read (for example ${unreadable[0]})`
+    )
   return { components: out, filesScanned: sources.length, diagnostics }
 }
 
@@ -516,9 +550,10 @@ export async function discoverSources(
   cwd: string,
   recognition: ProjectRecognition,
   packages: readonly PackageRole[],
-  thresholds: Thresholds = DEFAULT_THRESHOLDS
+  thresholds: Thresholds = DEFAULT_THRESHOLDS,
+  given?: Scan
 ): Promise<DiscoveryOutput> {
-  const shared = await scan(cwd)
+  const shared = given ?? (await scan(cwd))
   const candidates: DirectoryCandidate[] = []
   const diagnostics: string[] = []
   let filesScanned = 0
@@ -558,13 +593,14 @@ export async function analyzePath(
   cwd: string,
   recognition: ProjectRecognition,
   rel: string,
-  thresholds: Thresholds = DEFAULT_THRESHOLDS
+  thresholds: Thresholds = DEFAULT_THRESHOLDS,
+  shared?: Scan
 ): Promise<{ candidate: DirectoryCandidate; diagnostics: string[] } | undefined> {
   const role = [...recognition.packages]
     .filter((p) => p.dir === "." || rel === p.dir || rel.startsWith(`${p.dir}/`))
     .sort((a, b) => b.dir.length - a.dir.length)[0]
   const strategy: Strategy = role?.role === "design-system" ? "component-library" : "application"
-  const r = await analyzeComponents({ cwd, recognition, role, strategy, within: rel })
+  const r = await analyzeComponents({ cwd, recognition, role, strategy, within: rel }, shared)
   if (r.components.length === 0) return undefined
   const c = scoreDirectory(rel, r.components, strategy, role, thresholds)
   return {

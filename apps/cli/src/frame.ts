@@ -35,13 +35,16 @@ const FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "
 /** Runs `work` with a spinner on its own line while it runs, then clears the line. Static when not live. */
 export async function spin<T>(
   write: (text: string) => void,
-  label: string,
+  /** A function is read on every frame, so the label can show progress. */
+  label: string | (() => string),
   work: () => Promise<T>
 ): Promise<T> {
   if (!live) return work()
   let frame = 0
   const draw = (): void =>
-    write(`\r${line(`${paint("accent", FRAMES[frame++ % FRAMES.length] ?? "")} ${label}`)}`)
+    write(
+      `\r\x1b[2K${line(`${paint("accent", FRAMES[frame++ % FRAMES.length] ?? "")} ${typeof label === "function" ? label() : label}`)}`
+    )
   draw()
   const timer = setInterval(draw, 80)
   try {

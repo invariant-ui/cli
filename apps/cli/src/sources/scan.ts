@@ -1,38 +1,70 @@
-import { DEFAULT_IGNORED_DIRS, globToRegExp, nodeFs, type ReadonlyFs, walk } from "@invariant/compiler-core"
+import {
+  DEFAULT_IGNORED_DIRS,
+  globToRegExp,
+  nodeFs,
+  type ReadonlyFs,
+  type WalkOptions,
+  walk
+} from "@invariant/compiler-core"
 
-const MAX_FILES = 20000
 export const MAX_FILE_BYTES = 512 * 1024
 
 export interface Scan {
   fs: ReadonlyFs
   /** Project-relative POSIX paths, sorted, with ignored folders and `.gitignore`d files left out. */
   files: string[]
-  truncated: boolean
+  /** Folders read. */
+  directories: number
 }
 
-/** Directory names and file globs from a `.gitignore`. Negations and anchored subtrees are not modeled. */
-export function gitignoreRules(text: string): { dirs: Set<string>; globs: RegExp[] } {
-  const dirs = new Set<string>()
-  const globs: RegExp[] = []
+export interface IgnoreRule {
+  re: RegExp
+  /** A trailing slash in the `.gitignore`: it names folders only. */
+  dirOnly: boolean
+}
+
+/**
+ * The rules of a root `.gitignore`. A pattern with a slash in front or in the middle is anchored to the project root; one
+ * without matches at any depth, as git does. Negations (`!`) and nested `.gitignore` files are not modeled, so the scan
+ * may read more than git tracks, never less.
+ */
+export function gitignoreRules(text: string): IgnoreRule[] {
+  const rules: IgnoreRule[] = []
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim()
     if (line === "" || line.startsWith("#") || line.startsWith("!")) continue
-    const bare = line.replace(/^\//, "").replace(/\/$/, "")
-    if (!/[*?[]/.test(bare) && (line.endsWith("/") || !bare.includes(".")))
-      dirs.add(bare.split("/").pop() ?? bare)
-    else globs.push(globToRegExp(bare.includes("/") ? bare : `**/${bare}`))
+    const dirOnly = line.endsWith("/")
+    const body = line.replace(/\/+$/, "").replace(/^\//, "")
+    if (body === "") continue
+    const anchored = line.replace(/\/+$/, "").includes("/")
+    try {
+      rules.push({ re: globToRegExp(anchored ? body : `**/${body}`), dirOnly })
+    } catch {
+      // A pattern that is not a valid glob is left out: scanning more is safe, scanning less is not.
+    }
   }
-  return { dirs, globs }
+  return rules
 }
 
-/** Reads the project's files without following symlinks, skipping `node_modules`, build output and ignored paths. */
-export async function scan(cwd: string, start = "."): Promise<Scan> {
+/**
+ * Reads every file under the project (or under `start`), without following symlinks. It skips `node_modules`, build
+ * output and what the root `.gitignore` names, and nothing else: there is no limit on the number of files.
+ */
+export async function scan(cwd: string, start = ".", onProgress?: WalkOptions["onProgress"]): Promise<Scan> {
   const fs = nodeFs(cwd)
-  const rules = (await fs.exists(".gitignore")) ? gitignoreRules(await fs.readFile(".gitignore")) : undefined
-  const ignoreDirs = new Set([...DEFAULT_IGNORED_DIRS, ...(rules?.dirs ?? [])])
-  const walked = await walk(fs, { ignoreDirs, maxFiles: MAX_FILES, start })
-  const files = rules ? walked.files.filter((f) => !rules.globs.some((g) => g.test(f))) : walked.files
-  return { fs, files, truncated: walked.truncated }
+  const rules = (await fs.exists(".gitignore")) ? gitignoreRules(await fs.readFile(".gitignore")) : []
+  const walked = await walk(fs, {
+    ignoreDirs: new Set(DEFAULT_IGNORED_DIRS),
+    maxFiles: Number.POSITIVE_INFINITY,
+    start,
+    skip: (dir) => rules.some((r) => r.re.test(dir)),
+    ...(onProgress ? { onProgress } : {})
+  })
+  const files =
+    rules.length > 0
+      ? walked.files.filter((f) => !rules.some((r) => !r.dirOnly && r.re.test(f)))
+      : walked.files
+  return { fs, files, directories: walked.directories }
 }
 
 export const SOURCE_FILE = /\.(tsx|jsx|vue|ts|js)$/i

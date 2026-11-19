@@ -27,12 +27,12 @@ Run `invariant --version`. If the launcher says the CLI is being installed, wait
 Without changing anything, look for: an installed package that ships a contract (`node_modules/*/invariant/invariant.contract.json`), design system source in this repository (React, Vue or Angular components, Storybook, token files), or neither.
 Tell the person what you found and ask which is right:
 - **Our design system is a package we install** and it ships a contract. Pass `--contract <folder>` to setup.
-- **Our design system lives in this repository.** Setup finds the sources itself.
+- **Our design system lives in this repository.** Run `invariant setup --discover-only`. It only reads: it scans every folder and prints, as JSON, which directories hold components and how sure it is (`confidence`). Say each directory in plain words, with how many components it holds and why it was picked. If `confidence.level` is `low`, or the person says the directories look wrong, follow the `invariant-setup` skill (a separate skill that finds where components live, not this one) to look for them yourself. Ask which directories hold the design system's components, and do not go on before they answer. Setup approves no directory on its own.
 - **Our design system is in a different repository.** Setup has to run there first, so the contract can be published with the package. Offer to continue once they are in that repository.
 Also ask which folders hold the applications that use it, if that is not obvious. Pass them as `--paths a,b`.
 
 ## 3. Compile and look
-Run `invariant setup` with the choices from step 2. Run like this, without a terminal, it compiles and prints a plan, and changes nothing else.
+Run `invariant setup` with the choices from step 2, and the directories the person confirmed as `--include a,b` (and any they rejected as `--exclude a,b`). Run like this, without a terminal, it compiles and prints a plan, and changes nothing else.
 Summarize in plain words, using only the output: how many components were found, how many tokens (say plainly if there are none, since then colors and spacing cannot be checked), which frameworks, how many conflicts between sources (for example Storybook claiming a value the code does not have), any errors or warnings that matter, and anything it said it could not extract. If compile failed, explain why and stop.
 
 ## 4. Does this match?

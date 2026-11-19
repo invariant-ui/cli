@@ -1,12 +1,15 @@
 import type { InvariantConfig } from "../config.js"
 import { DEFAULT_THRESHOLDS, type DirectoryCandidate, discoverSources, type Thresholds } from "./discover.js"
 import { type PackageRole, type ProjectRecognition, recognizeProject } from "./recognize.js"
+import { type Scan, scan } from "./scan.js"
 
 export interface Analysis {
   recognition: ProjectRecognition
   /** The packages whose components are discovered: design-system packages, else the applications, else any with a UI framework. */
   targets: PackageRole[]
   thresholds: Thresholds
+  /** The one walk of the project that every later step reads from, so the folders are read once. */
+  scan: Scan
 }
 
 /** Which packages to look in. A design-system package is the source; without one, the applications that hold components. */
@@ -18,15 +21,22 @@ export function chooseTargets(recognition: ProjectRecognition): PackageRole[] {
   return apps.length > 0 ? apps : ui
 }
 
-export async function analyzeProject(cwd: string, config?: InvariantConfig): Promise<Analysis> {
+export async function analyzeProject(
+  cwd: string,
+  config?: InvariantConfig,
+  onProgress?: Parameters<typeof scan>[2]
+): Promise<Analysis> {
+  const walked = await scan(cwd, ".", onProgress)
   const recognition = await recognizeProject(
     cwd,
-    (config?.discovery?.packages ?? []).map((p) => ({ path: p.path, role: p.role }))
+    (config?.discovery?.packages ?? []).map((p) => ({ path: p.path, role: p.role })),
+    walked
   )
   return {
     recognition,
     targets: chooseTargets(recognition),
-    thresholds: config?.discovery?.thresholds ?? DEFAULT_THRESHOLDS
+    thresholds: config?.discovery?.thresholds ?? DEFAULT_THRESHOLDS,
+    scan: walked
   }
 }
 
@@ -35,6 +45,6 @@ export async function discoverFor(
   a: Analysis,
   targets: readonly PackageRole[] = a.targets
 ): Promise<{ candidates: DirectoryCandidate[]; diagnostics: string[] }> {
-  const out = await discoverSources(cwd, a.recognition, targets, a.thresholds)
+  const out = await discoverSources(cwd, a.recognition, targets, a.thresholds, a.scan)
   return { candidates: out.candidates, diagnostics: out.diagnostics }
 }
