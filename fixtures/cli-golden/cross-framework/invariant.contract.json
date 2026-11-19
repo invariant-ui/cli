@@ -1194,11 +1194,11 @@
   "guidelines": [],
   "integrity": {
     "algorithm": "sha256",
-    "contentHash": "92bb92147c6c62e54eabf58921b072f71f06251128fb8e034db19d49fb62c2dd"
+    "contentHash": "828bdc075ddf15188be095216f4221722c6aa006f46b25280693bca3cfeb30da"
   },
   "metadata": {
     "compiledAt": "2026-01-01T00:00:00.000Z",
-    "compilerVersion": "0.12.0",
+    "compilerVersion": "0.13.0",
     "contractId": "fixture-ds",
     "frameworks": [
       "angular",
