@@ -23,6 +23,7 @@ export {
   compile,
   toArtifactEntries
 } from "./compile.js"
+export { type DetectedComponent, moduleSpecifiers } from "./component-detect.js"
 export {
   ComponentFacts,
   cssVariableReferences,

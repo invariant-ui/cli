@@ -56,6 +56,10 @@ const OPTIONS = {
   "no-agent": { type: "boolean" },
   paths: { type: "string" },
   sources: { type: "string" },
+  include: { type: "string" },
+  exclude: { type: "string" },
+  rediscover: { type: "boolean" },
+  "discover-only": { type: "boolean" },
   contract: { type: "string" },
   ci: { type: "boolean" },
   "no-ci": { type: "boolean" },
@@ -120,6 +124,10 @@ export interface Parsed {
     "no-agent"?: boolean
     paths?: string
     sources?: string
+    include?: string
+    exclude?: string
+    rediscover?: boolean
+    "discover-only"?: boolean
     contract?: string
     ci?: boolean
     "no-ci"?: boolean

@@ -5,6 +5,7 @@ import { discoverProject, nodeFs } from "@invariant/compiler-core"
 import { nearest, RULES } from "@invariant/validation"
 import { z } from "zod"
 import { CliError } from "./errors.js"
+import { ROLES } from "./sources/recognize.js"
 
 export const CONFIG_FILE = "invariant.config.json"
 export const DEFAULT_OUTPUT = "invariant"
@@ -52,6 +53,39 @@ export const configSchema = z.strictObject({
       declarations: z.boolean().optional()
     })
   ),
+  /**
+   * The directories and files that are the design system's components, as the person confirmed them in `setup`. When
+   * any is `approved`, `compile` reads components only from those paths (minus `excluded` ones). `source` says who
+   * chose it; a path someone excluded is never approved again by a later discovery.
+   */
+  componentSources: z
+    .array(
+      z.strictObject({
+        path: relPath,
+        type: z.enum(["directory", "file"]),
+        source: z.enum(["discovered", "user", "configuration"]),
+        status: z.enum(["approved", "excluded", "pending"])
+      })
+    )
+    .optional(),
+  /** What `setup` concluded about the project, and the thresholds it scored with. Roles set here are authoritative. */
+  discovery: z
+    .strictObject({
+      mode: z.enum(["component-library", "application", "monorepo"]).optional(),
+      packages: z
+        .array(
+          z.strictObject({
+            name: z.string().min(1).optional(),
+            path: relPath,
+            role: z.enum(ROLES)
+          })
+        )
+        .optional(),
+      thresholds: z
+        .strictObject({ high: z.number().min(1).max(100), medium: z.number().min(1).max(100) })
+        .optional()
+    })
+    .optional(),
   output: z.strictObject({ directory: relPath }).optional(),
   /**
    * For an application that uses a design system it does not contain: the folder holding the contract the library
@@ -141,6 +175,16 @@ export function validateConfig(raw: unknown): InvariantConfig {
     if (ids.has(s.id)) throw new CliError(`invalid configuration: duplicate source id "${s.id}"`)
     ids.add(s.id)
   }
+  const seen = new Set<string>()
+  for (const c of parsed.data.componentSources ?? []) {
+    const key = c.path.replace(/\/$/, "")
+    if (seen.has(key))
+      throw new CliError(`invalid configuration: componentSources lists "${c.path}" more than once`)
+    seen.add(key)
+  }
+  const t = parsed.data.discovery?.thresholds
+  if (t && t.medium >= t.high)
+    throw new CliError("invalid configuration: discovery.thresholds.medium must be lower than high")
   return parsed.data
 }
 

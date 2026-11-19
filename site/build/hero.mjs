@@ -124,7 +124,7 @@ css.push(".tty{animation:tfade 18s infinite}")
 for (let k = 0; k < contractLines; k++) {
   const a = TIMES.done + 0.1 + k * 0.2
   css.push(
-    `@keyframes c${k}{0%,${pct(a)}%{opacity:.12;background:transparent}${plus(a, 0.3)}%{opacity:1;background:rgba(124,140,255,.35)}${plus(a, 1.0)}%{background:transparent}${END}%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}`
+    `@keyframes c${k}{0%,${pct(a)}%{opacity:.12;background:transparent}${plus(a, 0.3)}%{opacity:1;background:color-mix(in srgb,var(--accent) 35%,transparent)}${plus(a, 1.0)}%{background:transparent}${END}%{opacity:1}98.6%,100%{opacity:.12;background:transparent}}`
   )
   css.push(`.cl:nth-child(${k + 1}){animation:c${k} 18s infinite}`)
 }

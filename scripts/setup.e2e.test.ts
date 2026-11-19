@@ -232,24 +232,47 @@ describe("invariant setup", () => {
     expect(reviews.reviews.filter((x) => x.decision === "rejected")).toHaveLength(1)
   })
 
-  it("lets the person pick component folders and add one by path", async () => {
+  it("lets the person untick a directory, add a single component file, and see what is in it", async () => {
     const dir = project()
-    const r = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"], ["n", "src", "", "n", "n"])
-    expect(r.asked[0]).toMatch(/Keep which/)
+    // dirs: untick all. menu: add, the file. menu: view, directory 2. menu: confirm. Then the plan: yes.
+    const r = await cli(
+      dir,
+      ["setup", "--as", "ana", "--no-ci", "--no-agent", "--only", "none"],
+      ["n", "a", "src/Button.tsx", "v", "2", "c", "y"]
+    )
+    expect(r.asked[0]).toMatch(/Enter keeps the \[x\] ones/)
+    expect(r.out).toMatch(/added src\/Button\.tsx: 2 components/)
+    expect(r.out).toMatch(/Button {2}src\/Button\.tsx:\d+ {2}\(react/)
     const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
-      sources: Array<{ path?: string }>
+      componentSources: Array<Record<string, string>>
     }
-    expect(config.sources).toHaveLength(1)
-    expect(config.sources[0]?.path).toBe("src")
+    expect(config.componentSources).toContainEqual({
+      path: "src",
+      type: "directory",
+      source: "discovered",
+      status: "excluded"
+    })
+    expect(config.componentSources).toContainEqual({
+      path: "src/Button.tsx",
+      type: "file",
+      source: "user",
+      status: "approved"
+    })
+    const contract = JSON.parse(
+      readFileSync(path.join(dir, "invariant/invariant.contract.json"), "utf8")
+    ) as {
+      components: Array<{ name: string }>
+    }
+    // Only Button is in scope, and only exported components reach the contract.
+    expect(contract.components.map((x) => x.name)).toEqual(["Button"])
   })
 
-  it("uses the checklist for component folders when the terminal has one", async () => {
+  it("uses the checklist and menu when the terminal has them", async () => {
     const dir = project()
     const asked: string[] = []
-    let out = ""
     const code = await run(["setup", "--as", "ana", "--no-ci", "--no-agent", "--only", "none"], {
       cwd: dir,
-      stdout: (t) => (out += t),
+      stdout: () => {},
       stderr: () => {},
       clock: FIXED_CLOCK,
       env: {},
@@ -260,37 +283,156 @@ describe("invariant setup", () => {
       multiselect: async <T extends string>(
         _q: string,
         options: ReadonlyArray<{ value: T; label: string }>
-      ) => options.slice(0, 1).map((o) => o.value),
-      select: async () => "yes" as never
+      ) => options.map((o) => o.value),
+      select: async <T extends string>(q: string): Promise<T | undefined> =>
+        (/Next\?/.test(q) ? "confirm" : "yes") as T
     })
     expect(code).toBe(0)
-    expect(asked.some((q) => /Keep which/.test(q))).toBe(false)
+    expect(asked.some((q) => /Enter keeps the/.test(q))).toBe(false)
     const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
-      sources: unknown[]
+      componentSources: Array<{ status: string }>
     }
-    expect(config.sources).toHaveLength(1)
+    expect(config.componentSources.some((s) => s.status === "approved")).toBe(true)
   })
 
-  it("--sources names the component folders and refuses one with no components", async () => {
+  it("--include names the sources, --exclude rejects, and a path with no components is refused", async () => {
     const dir = project()
-    const r = await cli(dir, ["setup", "--yes", "--as", "ana", "--no-ci", "--no-agent", "--sources", "src"])
+    const r = await cli(dir, [
+      "setup",
+      "--as",
+      "ana",
+      "--no-ci",
+      "--no-agent",
+      "--include",
+      "src",
+      "--exclude",
+      "app/other"
+    ])
     expect(r.code).toBe(0)
     const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
-      sources: Array<{ path?: string }>
+      componentSources: Array<{ path: string; status: string; source: string }>
     }
-    expect(config.sources.map((s) => s.path)).toEqual(["src"])
+    expect(config.componentSources).toContainEqual({
+      path: "src",
+      type: "directory",
+      source: "user",
+      status: "approved"
+    })
+    expect(config.componentSources).toContainEqual({
+      path: "app/other",
+      type: "directory",
+      source: "user",
+      status: "excluded"
+    })
     const other = project()
     mkdirSync(path.join(other, "empty"))
-    const bad = await cli(other, ["setup", "--yes", "--sources", "empty", "--as", "ana"])
+    const bad = await cli(other, ["setup", "--include", "empty", "--as", "ana"])
     expect(bad.code).not.toBe(0)
-    expect(bad.err).toMatch(/no components found in empty/)
+    expect(bad.err).toMatch(/--include: no components found in empty/)
+  })
+
+  it("repeats safely: an exclusion stays excluded, an added file stays in, and the config does not change", async () => {
+    const dir = project()
+    const flags = ["--as", "ana", "--no-ci", "--no-agent", "--yes"]
+    await cli(dir, ["setup", ...flags, "--include", "src/Button.tsx", "--exclude", "src"])
+    const read = () =>
+      JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+        componentSources: unknown[]
+        discovery: unknown
+        sources: unknown[]
+      }
+    const first = read()
+    expect(first.componentSources).toEqual(
+      expect.arrayContaining([
+        { path: "src", type: "directory", source: "user", status: "excluded" },
+        { path: "src/Button.tsx", type: "file", source: "user", status: "approved" },
+        { path: "app/pages", type: "directory", source: "discovered", status: "pending" }
+      ])
+    )
+    const again = await cli(dir, ["setup", ...flags, "--rediscover"])
+    expect(again.code).toBe(0)
+    expect(read()).toEqual(first)
+  })
+
+  it("leaves out a component another one uses, without breaking the contract", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "invariant-xref-"))
+    made.push(dir)
+    mkdirSync(path.join(dir, "src"))
+    const w = (f: string, body: string) => writeFileSync(path.join(dir, f), body)
+    w(
+      "package.json",
+      JSON.stringify({
+        name: "@x/ui",
+        version: "1.0.0",
+        description: "A component library",
+        main: "src/index.ts",
+        peerDependencies: { react: "^18" }
+      })
+    )
+    w("src/index.ts", 'export * from "./Button"\nexport * from "./Card"\nexport * from "./Panel"\n')
+    w(
+      "src/Button.tsx",
+      "export function Button(p: { label: string }) { return <button>{p.label}</button> }\n"
+    )
+    w(
+      "src/Card.tsx",
+      'import { Button } from "./Button"\nexport function Card(p: { t: string }) { return <div>{p.t}<Button label="x" /></div> }\n'
+    )
+    w(
+      "src/Panel.tsx",
+      'import { Card } from "./Card"\nexport function Panel(p: { t: string }) { return <section><Card t={p.t} /></section> }\n'
+    )
+    const r = await cli(dir, [
+      "setup",
+      "--yes",
+      "--as",
+      "ana",
+      "--no-ci",
+      "--no-agent",
+      "--no-publish",
+      "--exclude",
+      "src/Button.tsx"
+    ])
+    expect(r.code).toBe(0)
+    const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+      componentSources: Array<Record<string, string>>
+    }
+    expect(config.componentSources).toContainEqual({
+      path: "src/Button.tsx",
+      type: "file",
+      source: "user",
+      status: "excluded"
+    })
+    const contract = JSON.parse(
+      readFileSync(path.join(dir, "invariant/invariant.contract.json"), "utf8")
+    ) as {
+      components: Array<{ name: string; composition: Array<{ target: string }> }>
+    }
+    expect(contract.components.map((c) => c.name)).toEqual(["Card", "Panel"])
+    expect(contract.components.find((c) => c.name === "Card")?.composition).toEqual([])
+    expect((await cli(dir, ["verify", "--fresh"])).code).toBe(0)
+  })
+
+  it("--discover-only prints what it found as JSON and writes nothing", async () => {
+    const dir = project()
+    const r = await cli(dir, ["setup", "--discover-only"])
+    expect(r.code).toBe(0)
+    const found = JSON.parse(r.out) as {
+      recognition: { kind: string; packages: Array<{ role: string }> }
+      candidates: Array<{ path: string; recommendation: string; classification: { evidence: unknown[] } }>
+    }
+    expect(found.recognition.kind).toBe("component-library")
+    expect(found.candidates.find((c) => c.path === "src")).toMatchObject({ recommendation: "recommended" })
+    expect(existsSync(path.join(dir, "invariant.config.json"))).toBe(false)
   })
 
   it("does not ask or add anything when there is no terminal and no --yes", async () => {
     const dir = project()
     const r = await cli(dir, ["setup", "--as", "ana"])
     expect(r.code).toBe(0)
-    expect(r.out).toMatch(/not asking \(no terminal\)\. Nothing was added/)
+    expect(r.out).toMatch(/need your confirmation, and there is no terminal to ask/)
+    expect(r.out).toMatch(/--yes[\s\S]*--include/)
+    expect(existsSync(path.join(dir, "invariant.config.json"))).toBe(false)
     expect(existsSync(path.join(dir, "invariant.patterns.json"))).toBe(false)
   })
 
