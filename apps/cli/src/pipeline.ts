@@ -42,7 +42,7 @@ import { renderReport } from "./report.js"
 import { hasApproved } from "./sources/approval.js"
 import { scopedToComponents } from "./sources/scope.js"
 import { loadCompiled } from "./store.js"
-import { CLI_NAME, CLI_VERSION } from "./version.js"
+import { artifactVersion, CLI_NAME } from "./version.js"
 
 const ADAPTERS: Record<InvariantConfig["sources"][number]["type"], SourceAdapter> = {
   react: reactAdapter as SourceAdapter,
@@ -244,7 +244,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
     name: config.name,
     ...(config.contractId ? { contractId: config.contractId } : {}),
     ...(config.description ? { description: config.description } : {}),
-    compilerVersion: CLI_VERSION,
+    compilerVersion: artifactVersion(),
     clock
   })
   const enriched = enrich({
@@ -291,7 +291,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
       )
     )
   const artifacts = renderArtifacts(entries, {
-    tool: { name: CLI_NAME, version: CLI_VERSION },
+    tool: { name: CLI_NAME, version: artifactVersion() },
     generatedAt: clock(),
     sources: compiled.sources
   })
@@ -343,7 +343,7 @@ export function runLayeredPipeline(input: PipelineInput): PipelineOutput {
     { path: "invariant.report.html", text: renderReport({ contract: final.contract, review, diagnostics }) }
   ]
   const artifacts = renderArtifacts(entries, {
-    tool: { name: CLI_NAME, version: CLI_VERSION },
+    tool: { name: CLI_NAME, version: artifactVersion() },
     generatedAt: clock(),
     sources: [
       {

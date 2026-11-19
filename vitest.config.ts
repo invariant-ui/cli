@@ -32,6 +32,9 @@ export default defineConfig({
     }
   },
   test: {
+    // The compiler version is part of the contract and its hash. Pinning it keeps the golden files the same across
+    // releases, so a release PR does not fail CI until something regenerates them.
+    env: { INVARIANT_COMPILER_VERSION: "0.0.0-test" },
     include: ["packages/*/src/**/*.test.ts", "apps/*/src/**/*.test.ts", "scripts/**/*.test.ts"]
   }
 })
