@@ -409,6 +409,12 @@ nav{backdrop-filter:none}
 .btn.primary:hover{filter:none;background:var(--text)}
 h1,h2{font-family:var(--serif);font-weight:500;letter-spacing:-.015em}
 h1{font-size:clamp(38px,6.2vw,68px);line-height:1.04}
+.rot{display:inline-grid;overflow:hidden;white-space:nowrap;padding-bottom:.14em;margin-bottom:-.14em}
+.rot>span{grid-area:1/1;opacity:0;transform:translateY(70%);transition:transform .6s cubic-bezier(.2,.8,.2,1),opacity .45s ease}
+.rot>span.on{opacity:1;transform:none}
+.rot>span.out{opacity:0;transform:translateY(-70%)}
+.rot-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media(prefers-reduced-motion:reduce){.rot>span{transition:none}}
 h1 em{font-style:italic;background:none;color:var(--text);-webkit-background-clip:initial;background-clip:initial}
 h2{font-size:clamp(26px,3.6vw,36px);line-height:1.18}
 .label{color:var(--muted);letter-spacing:.08em}
@@ -530,8 +536,8 @@ section .wrap>h2{align-self:start}
 
 <header class="hero" id="top">
   <div class="wrap">
-    <h1>The AI governance layer for<br><em>your design system</em></h1>
-    <p class="lead">Invariant turns your design system components, tokens and approved UX patterns into a contract that AI agents read and enforce.</p>
+    <h1>Make AI agents <span class="rot-sr">build with, verify against, and enforce</span><span class="rot" id="rot" aria-hidden="true"><span>build with</span><span>verify against</span><span class="on">enforce</span></span><br><em>your design system and UX</em></h1>
+    <p class="lead">Give AI coding agents the components, tokens and approved UX patterns they need to build consistent interfaces. Enforce those decisions throughout development and CI.</p>
     <div class="install">
       <span class="p" aria-hidden="true">$</span><code id="installcmd">npx @invariant-ui/cli setup</code>
       <button class="copy" type="button" id="copybtn" aria-label="Copy install command">Copy</button>
@@ -1170,6 +1176,18 @@ function paint(){var n=cur()==="light"?"dark":"light";b.innerHTML=n==="light"?SU
 var c=document.querySelector('meta[name=theme-color]');if(c)c.content=cur()==="light"?"#faf9f6":"#0e0e0d"}
 b.onclick=function(){var n=cur()==="light"?"dark":"light";r.dataset.theme=n;try{localStorage.setItem("theme",n)}catch(e){}paint()};
 m.addEventListener("change",paint);paint()})();
+</script>
+<script>
+// Hero: rotates build with / verify against / enforce. Stays on "enforce" without JavaScript or with reduced motion.
+(function(){var r=document.getElementById("rot");if(!r||(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches))return;
+var w=r.children,i=0;
+// start on "build with" without animating; the static markup shows "enforce" for no-JS and reduced motion
+w[w.length-1].style.transition=w[0].style.transition="none";w[w.length-1].classList.remove("on");w[0].classList.add("on");
+void r.offsetWidth;w[w.length-1].style.transition=w[0].style.transition="";
+setInterval(function(){if(document.hidden)return;var cur=w[i];i=(i+1)%w.length;var nxt=w[i];
+  cur.classList.remove("on");cur.classList.add("out");nxt.classList.add("on");
+  // once it has left, park the old word below again without animating, ready to rise next time
+  setTimeout(function(){cur.style.transition="none";cur.classList.remove("out");void cur.offsetWidth;cur.style.transition=""},700)},3200)})();
 </script>
 <script>
 // Waitlist: posts to the Apps Script endpoint and answers in place. The t field is the page load time, used server-side as a bot check.
