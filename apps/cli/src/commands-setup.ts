@@ -25,7 +25,13 @@ import {
   scanSummary,
   withSuggestion
 } from "./sources/agents.js"
-import { applyDecisions, type ComponentSource, priorDecisions } from "./sources/approval.js"
+import {
+  applyDecisions,
+  type ComponentSource,
+  hasApproved,
+  inScope,
+  priorDecisions
+} from "./sources/approval.js"
 import { assess } from "./sources/confidence.js"
 import { analyzePath, type DirectoryCandidate } from "./sources/discover.js"
 import { analyzeProject, discoverFor } from "./sources/plan.js"
@@ -204,12 +210,20 @@ export async function setup(c: Context): Promise<number> {
         for (const e of r.evidence.filter((x) => x.weight > 0).slice(0, 3)) say(`  + ${e.detail}`)
     }
     if (shown.length > SHOW) say(`+${shown.length - SHOW} more packages (see --discover-only for all)`)
+    if (shown.length > 0) say()
     // Look in every candidate package first, then keep the ones that hold components: a hooks or utility package
     // that looks like a library is not worth asking about.
     const all = await busy("looking for component directories", () => discoverFor(c.cwd, analysis))
     let targets = analysis.targets.filter((t) => all.candidates.some((x) => x.packageDir === t.dir))
     let found = all
-    if (targets.length > 1 && !yesish && includes.length === 0 && c.io.multiselect) {
+    // Asked only about packages recognized as design systems: when setup fell back to applications, the list below says more.
+    if (
+      targets.length > 1 &&
+      targets.every((t) => t.role === "design-system") &&
+      !yesish &&
+      includes.length === 0 &&
+      c.io.multiselect
+    ) {
       const picked = await c.io.multiselect(
         "Which packages belong to the design system?",
         targets.map((t, i) => ({
@@ -239,6 +253,8 @@ export async function setup(c: Context): Promise<number> {
     }
     const assessment = assess({ candidates: found.candidates, recognition, thresholds })
     const canAsk = c.io.prompt !== undefined && !yesish && includes.length === 0 && excludes.length === 0
+    // Looked for once, and only when someone can answer: an agent is never started on its own.
+    const agents = canAsk ? detectAgents(c.io.env ?? {}) : []
     let candidates = found.candidates
 
     /** One of the choices, with arrows when there is a terminal and typed numbers when there is not. */
@@ -266,13 +282,16 @@ export async function setup(c: Context): Promise<number> {
      * Asks an AI agent where the components are, then checks what it says: every directory must exist and hold components
      * setup can find itself. The agent's confidence and reason are kept with the directory. Nothing is approved here.
      */
-    const askAgent = async (agent: Agent): Promise<DirectoryCandidate[] | "stopped" | undefined> => {
+    const askAgent = async (
+      agent: Agent,
+      base: DirectoryCandidate[]
+    ): Promise<DirectoryCandidate[] | "stopped" | undefined> => {
       const prompt = scanPrompt(
         scanSummary({
           files: analysis.scan.files.length,
           directories: analysis.scan.directories,
           packages: recognition.packages,
-          candidates,
+          candidates: base,
           reasons: assessment.reasons
         })
       )
@@ -297,7 +316,7 @@ export async function setup(c: Context): Promise<number> {
         flag(`${agent.name} answered, but setup cannot use the answer: ${findings.reason}`)
         return undefined
       }
-      const next = [...candidates]
+      const next = [...base]
       let confirmed = 0
       for (const s of findings.directories) {
         const r = await addPath(s.path)
@@ -325,18 +344,30 @@ export async function setup(c: Context): Promise<number> {
       for (const p of findings.rejected)
         flag(`${agent.name} named ${p}, which is not a path inside the project`)
       if (findings.notes) say(`${agent.name} noted: ${findings.notes}`)
+      say()
       step(
         `${agent.name} named ${findings.directories.length} director${findings.directories.length === 1 ? "y" : "ies"}; ${confirmed} hold${confirmed === 1 ? "s" : ""} components setup can find`
       )
-      if (confirmed === 0) return undefined
-      candidates = next
-      return next
+      return confirmed === 0 ? undefined : next
+    }
+
+    /** Asks one of the agents found, from the review. With several, the person says which. */
+    const askAny = async (current: DirectoryCandidate[]): ReturnType<typeof askAgent> => {
+      const id =
+        agents.length === 1
+          ? agents[0]?.id
+          : await pick<AgentId>(
+              "Which agent?",
+              agents.map((a, i) => ({ value: a.id, label: a.name, key: String(i + 1) }))
+            )
+      const agent = agents.find((a) => a.id === id)
+      return agent ? askAgent(agent, current) : undefined
     }
 
     /** The scan is not sure, and someone can answer: offer the agents found on this machine, or let them choose themselves. */
     const whenUnsure = async (): Promise<"stopped" | "everything" | "review"> => {
       flag(`not confident about the component directories: ${assessment.reasons.join("; ")}`)
-      const agents = detectAgents(c.io.env ?? {})
+      say()
       if (agents.length === 0 && candidates.length > 0) {
         say(
           "No AI agent to ask was found on this machine (looked for claude, codex and cursor-agent). Review what the scan found, or add directories yourself."
@@ -347,6 +378,7 @@ export async function setup(c: Context): Promise<number> {
         say(
           `An AI agent can look through the project and point at the directories: found ${agents.map((a) => a.name).join(", ")}. It can only read files (it cannot edit them or run commands), and what it reads is sent to its provider, under your account. Setup checks what it says, and nothing is approved until you confirm it.`
         )
+      say()
       for (;;) {
         type Choose = AgentId | "review" | "everything" | "stop"
         const picked = await pick<Choose>("How do you want to go on?", [
@@ -377,9 +409,12 @@ export async function setup(c: Context): Promise<number> {
         if (picked === undefined || picked === "stop") return "stopped"
         if (picked === "review" || picked === "everything") return picked
         const agent = agents.find((a) => a.id === picked) as Agent
-        const got = await askAgent(agent)
+        const got = await askAgent(agent, candidates)
         if (got === "stopped") return "stopped"
-        if (got) return "review"
+        if (got) {
+          candidates = got
+          return "review"
+        }
       }
     }
 
@@ -399,11 +434,29 @@ export async function setup(c: Context): Promise<number> {
       return "needs-confirmation"
     }
     if (candidates.length === 0 && includes.length === 0 && !canAsk) return "nothing-found"
+    say()
     step(
       `found ${new Set(candidates.flatMap((x) => x.components.map((k) => `${k.file}#${k.name}`))).size} components in ${candidates.length} director${candidates.length === 1 ? "y" : "ies"}`
     )
     let result: ReviewResult | undefined
-    if (canAsk) result = await reviewSources(c.io, { say, flag }, { candidates, prior, addPath })
+    if (canAsk)
+      result = await reviewSources(
+        c.io,
+        { say, flag },
+        {
+          candidates,
+          prior,
+          addPath,
+          ...(agents.length > 0
+            ? {
+                askAgent: {
+                  label: `Ask ${agents.map((a) => a.name).join(" or ")} to help find them (it only reads files; what it reads is sent to its provider)`,
+                  run: askAny
+                }
+              }
+            : {})
+        }
+      )
     else {
       const include: Added[] = []
       for (const p of includes) {
@@ -425,11 +478,14 @@ export async function setup(c: Context): Promise<number> {
       }
     }
     if (!result) return "stopped"
-    const picked = result.candidates.filter((x) =>
-      result.decisions.some((d) => d.path === x.path && d.status === "approved")
+    // Counted by file, because that is what the decisions say: a directory can be approved with some of its files out.
+    const distinct = new Set(
+      result.candidates.flatMap((x) =>
+        x.components.filter((k) => inScope(k.file, result.decisions)).map((k) => `${k.file}#${k.name}`)
+      )
     )
-    const distinct = new Set(picked.flatMap((x) => x.components.map((k) => `${k.file}#${k.name}`)))
-    step(`${distinct.size} components selected across ${picked.length} path${picked.length === 1 ? "" : "s"}`)
+    const places = result.decisions.filter((d) => d.status === "approved").length
+    step(`${distinct.size} components selected across ${places} path${places === 1 ? "" : "s"}`)
     return {
       config: applyDecisions(base, {
         decisions: result.decisions,
@@ -491,7 +547,8 @@ export async function setup(c: Context): Promise<number> {
         writeConfig(configPath, detected)
       } else if (r === "everything") {
         step("compiling everything the detected sources export, as you chose")
-        writeConfig(configPath, detected)
+        // An empty list records the choice, so a later run does not ask again.
+        writeConfig(configPath, { ...detected, componentSources: [] })
       } else writeConfig(configPath, r.config)
       step(`wrote ${path.basename(configPath)}`)
     } else {
@@ -533,30 +590,44 @@ export async function setup(c: Context): Promise<number> {
       )
     }
   } else {
-    const existing = (
-      await loadConfig({
-        cwd: c.cwd,
-        file: c.args.values.config,
-        trustConfig: c.args.values["trust-config"] === true
-      })
-    )?.config
+    const loaded = await loadConfig({
+      cwd: c.cwd,
+      file: c.args.values.config,
+      trustConfig: c.args.values["trust-config"] === true
+    })
+    const existing = loaded?.config
     consumer = existing?.extends !== undefined
     const approved = (existing?.componentSources ?? []).filter((x) => x.status === "approved").length
     step(
-      `using ${path.basename(configPath)}${consumer ? ` (extends ${existing?.extends?.contract})` : ""}${approved > 0 ? `, ${approved} approved component source(s)` : ""}`
+      `using ${path.basename(configPath)}${consumer ? ` (extends ${existing?.extends?.contract})` : ""}${approved > 0 ? `, ${approved} approved component source(s) (--rediscover reviews them again)` : ""}`
     )
-    if (c.args.values.rediscover && existing && !consumer) {
-      const r = await confirmComponentSources(existing, priorDecisions(existing), { allowEverything: false })
-      if (r === "stopped" || r === "needs-confirmation") {
-        say(
-          r === "stopped"
-            ? "Stopped. The configuration was not changed."
-            : `${needsConfirmation()} The configuration was not changed.`
+    // A configuration whose components nobody confirmed (written by an older setup, or by hand) is reviewed like a first
+    // run: setup does not go on until a person has said where the components are. `componentSources: []` records that
+    // they chose to compile everything the packages export.
+    const confirmedBefore = hasApproved(existing) || existing?.componentSources?.length === 0
+    const hasUiSource = existing?.sources.some((s) => ["react", "vue", "angular"].includes(s.type)) === true
+    if (existing && !consumer && (c.args.values.rediscover === true || (!confirmedBefore && hasUiSource))) {
+      if (!loaded?.editable)
+        flag(
+          `${path.basename(configPath)} is code, so setup cannot save the component directories in it. Set componentSources there, or use ${CONFIG_FILE}.`
         )
-        print(c, outro(r === "stopped" ? "stopped" : "not confirmed", true))
-        return 0
+      else {
+        const prior = priorDecisions(existing)
+        const r = await confirmComponentSources(existing, prior, { allowEverything: prior.length === 0 })
+        if (r === "stopped" || r === "needs-confirmation") {
+          say(
+            r === "stopped"
+              ? "Stopped. The configuration was not changed."
+              : `${needsConfirmation()} The configuration was not changed.`
+          )
+          print(c, outro(r === "stopped" ? "stopped" : "not confirmed", true))
+          return 0
+        }
+        if (r === "everything") {
+          step("compiling everything the configured sources export, as you chose")
+          writeConfig(configPath, { ...existing, componentSources: [] })
+        } else if (r !== "nothing-found") writeConfig(configPath, r.config)
       }
-      if (r !== "nothing-found" && r !== "everything") writeConfig(configPath, r.config)
     }
   }
   const compiled = await busy("compiling", () => sub("compile"))

@@ -14,3 +14,7 @@ vhs docs/demo/demo.tape
 ```
 
 This writes `docs/demo/enforcement-loop.gif` (about 15 seconds, under 300 KB), which the README embeds. The tape builds off camera first, then records `pnpm demo`. Re-record it whenever the demo's output changes.
+
+## `setup-discovery.html`
+
+A replayable recording of `invariant setup` finding the components in a monorepo whose config was never confirmed: the not-confident warning, the offer to ask Claude Code, the list of every discovered component (untick a file, a directory, everything), and the confirmation. Open the file in a browser (it loads xterm.js from jsdelivr, so it needs a connection). The Claude Code reply in it is a stand-in script so the recording is repeatable; the rest is real CLI output. It is a recording, so it does not change when the CLI does: record it again after changing what setup prints.

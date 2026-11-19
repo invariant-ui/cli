@@ -3,7 +3,7 @@ import { createInterface } from "node:readline/promises"
 import { run } from "./cli.js"
 import { setColor, setLinks } from "./format.js"
 import { setLive } from "./frame.js"
-import { arrowMultiSelect, arrowSelect } from "./select.js"
+import { arrowMultiSelect, arrowSelect, arrowTree } from "./select.js"
 
 // Color only for a person at a terminal: pipes, CI and NO_COLOR get plain text (https://no-color.org).
 const interactive = Boolean(process.stdout.isTTY) && process.env.TERM !== "dumb"
@@ -38,7 +38,9 @@ const code = await run(process.argv.slice(2), {
         multiselect: <T extends string>(
           question: string,
           options: Parameters<typeof arrowMultiSelect<T>>[3]
-        ) => arrowMultiSelect(process.stdin, process.stdout, question, options)
+        ) => arrowMultiSelect(process.stdin, process.stdout, question, options),
+        tree: <T extends string>(question: string, groups: Parameters<typeof arrowTree<T>>[3]) =>
+          arrowTree(process.stdin, process.stdout, question, groups)
       }
     : {})
 })

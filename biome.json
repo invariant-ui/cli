@@ -9,7 +9,8 @@
       "!**/*.md",
       "!pnpm-lock.yaml",
       "!fixtures",
-      "!site"
+      "!site",
+      "!docs/demo/*.html"
     ]
   },
   "formatter": {

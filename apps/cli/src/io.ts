@@ -1,6 +1,6 @@
 import type { Readable, Writable } from "node:stream"
 import type { BrowserDriver, BrowserName } from "@invariant/browser-verify"
-import type { Choice, Option } from "./select.js"
+import type { Choice, Option, TreeGroup } from "./select.js"
 
 export interface Io {
   cwd: string
@@ -25,5 +25,10 @@ export interface Io {
     question: string,
     options: ReadonlyArray<Option<T>>
   ) => Promise<T[] | undefined>
+  /**
+   * A scrollable arrow-key checklist of groups of items, for lists that do not fit on a screen; resolves the ticked values,
+   * or undefined when cancelled. Absent without a terminal.
+   */
+  tree?: <T extends string>(question: string, groups: ReadonlyArray<TreeGroup<T>>) => Promise<T[] | undefined>
   browserDriver?: (browser: BrowserName, projectRoot: string) => Promise<BrowserDriver>
 }
