@@ -6,14 +6,18 @@ import { PATTERNS_FILE } from "@invariant/governance"
 import type { CandidatesFile } from "@invariant/validation"
 import { BASELINE_FILE } from "./baseline.js"
 import { run } from "./cli.js"
-import { type Context, outputDir, print } from "./commands.js"
+import { type Context, json, outputDir, print } from "./commands.js"
 import { POSTURES } from "./commands-hook.js"
 import { CONFIG_FILE, detectConfig, type InvariantConfig, loadConfig, writeConfig } from "./config.js"
 import { CliError } from "./errors.js"
 import { paint } from "./format.js"
 import { columns, done, fail, gap, intro, line, outro, spin, warn, wrap } from "./frame.js"
 import { applyPublish, planPublish } from "./publish.js"
-import { findApps, inferSource, inside, type Source } from "./setup-discovery.js"
+import { findApps, inside } from "./setup-discovery.js"
+import { applyDecisions, type ComponentSource, priorDecisions } from "./sources/approval.js"
+import { analyzePath } from "./sources/discover.js"
+import { analyzeProject, discoverFor } from "./sources/plan.js"
+import { type Added, decideWithoutAsking, type ReviewResult, reviewSources } from "./sources/review.js"
 import { type StarterRule, starterRules } from "./starter-rules.js"
 import { loadCompiled } from "./store.js"
 import { CLI_NAME } from "./version.js"
@@ -129,77 +133,113 @@ export async function setup(c: Context): Promise<number> {
     return a.startsWith("y")
   }
 
-  /** Where the components live: --sources, else what was detected, confirmed (all, some, more paths) when someone can answer. */
-  const chooseSources = async (found: Source[]): Promise<Source[]> => {
-    const custom = (list: string[]): Source[] =>
-      list.map((p) => {
-        const rel = inside(c.cwd, p)
-        if (!rel) throw new CliError(`${p} is outside the project`)
-        const hit = inferSource(c.cwd, rel)
-        if (!hit)
-          throw new CliError(`no components found in ${p} (looked for .tsx, .vue and .component.ts files)`)
-        return hit.source
-      })
-    const given = (c.args.values.sources ?? "")
+  const yesish = yes || c.args.values["confirm-contract"] === true
+  const listOf = (v: string | undefined): string[] =>
+    (v ?? "")
       .split(",")
-      .map((p) => p.trim())
+      .map((p) => p.trim().replace(/^\.\//, "").replace(/\/+$/, ""))
       .filter(Boolean)
-    let kept = found
-    if (given.length > 0) kept = custom(given)
-    else if (!yes && c.io.prompt) {
-      const describe = (s: Source): string => {
-        const n = s.path ? inferSource(c.cwd, s.path)?.files : undefined
-        return `${s.path ?? "."}  (${s.type}${n ? `, ${n} component files` : ""})`
-      }
-      if (c.io.multiselect) {
-        const picked = await c.io.multiselect(
-          "Where do your design system components live?",
-          found.map((s, i) => ({ value: String(i), label: describe(s) }))
-        )
-        kept = found.filter((_, i) => picked?.includes(String(i)))
-      } else {
-        say("Where do your design system components live?")
-        for (const [i, s] of found.entries()) say(`${i + 1}. ${describe(s)}`)
-        const a = (
-          (await c.io.prompt(
-            `${paint("accent", "◆")}  Keep which? Enter for all, numbers (like 1,3), or n for none: `
-          )) ?? ""
-        )
-          .trim()
-          .toLowerCase()
-        if (a === "n" || a === "none") kept = []
-        else if (a !== "") {
-          const pick = new Set(a.split(/[,\s]+/).map((n) => Number(n) - 1))
-          kept = found.filter((_, i) => pick.has(i))
-        }
-      }
-      for (;;) {
-        const p = (
-          (await c.io.prompt(`${paint("accent", "◆")}  Add a directory (path, or Enter to finish): `)) ?? ""
-        ).trim()
-        if (p === "") break
-        try {
-          kept = [...kept, ...custom([p])]
-          say(`added ${p}`)
-        } catch (e) {
-          flag((e as Error).message)
-        }
+  const includes = listOf(c.args.values.include ?? c.args.values.sources)
+  const excludes = listOf(c.args.values.exclude)
+
+  /**
+   * Recognizes the project, discovers the directories that hold components, and has the person confirm them (or takes
+   * `--include`, `--exclude` and `--yes`). Nothing recommended counts as approved until it is confirmed.
+   */
+  const confirmComponentSources = async (
+    base: InvariantConfig,
+    prior: ComponentSource[]
+  ): Promise<{ config: InvariantConfig } | "stopped" | "needs-confirmation" | "nothing-found"> => {
+    const analysis = await busy("analyzing the project", () => analyzeProject(c.cwd, base))
+    const { recognition, thresholds } = analysis
+    const kinds: Record<string, string> = {
+      "component-library": "a UI component library",
+      application: "an application",
+      monorepo: "a monorepo",
+      unknown: "a project with no recognizable UI package"
+    }
+    step(`identified this project as ${kinds[recognition.kind]}`)
+    const shown = recognition.packages.filter((p) => p.role !== "utility")
+    const SHOW = 8
+    for (const r of shown.slice(0, SHOW)) {
+      say(
+        `${r.name ?? r.dir}  ${r.dir}  ${r.role}${r.frameworks.length > 0 ? `  ${r.frameworks.join(", ")}` : ""}${r.role === "design-system" ? `  (${r.confidence} confidence)` : ""}`
+      )
+      if (r.role === "design-system" && shown.length <= 3)
+        for (const e of r.evidence.filter((x) => x.weight > 0).slice(0, 3)) say(`  + ${e.detail}`)
+    }
+    if (shown.length > SHOW) say(`+${shown.length - SHOW} more packages (see --discover-only for all)`)
+    // Look in every candidate package first, then keep the ones that hold components: a hooks or utility package
+    // that looks like a library is not worth asking about.
+    const all = await busy("looking for component directories", () => discoverFor(c.cwd, analysis))
+    let targets = analysis.targets.filter((t) => all.candidates.some((x) => x.packageDir === t.dir))
+    let found = all
+    if (targets.length > 1 && !yesish && includes.length === 0 && c.io.multiselect) {
+      const picked = await c.io.multiselect(
+        "Which packages belong to the design system?",
+        targets.map((t, i) => ({
+          value: String(i),
+          label: `${t.name ?? t.dir}  (${t.dir}, ${all.candidates.filter((x) => x.packageDir === t.dir).reduce((n, x) => n + x.componentCount, 0)} components)`
+        }))
+      )
+      targets = targets.filter((_, i) => picked?.includes(String(i)))
+      found = {
+        ...all,
+        candidates: all.candidates.filter((x) => targets.some((t) => t.dir === x.packageDir))
       }
     }
-    const seen = new Set<string>()
-    const ids = new Set<string>()
-    const out: Source[] = []
-    for (const s of kept) {
-      const key = `${s.type}:${s.path ?? "."}`
-      if (seen.has(key)) continue
-      seen.add(key)
-      let id = s.id
-      for (let n = 2; ids.has(id); n++) id = `${s.id}-${n}`
-      ids.add(id)
-      out.push({ ...s, id } as Source)
+    for (const d of found.diagnostics) flag(d)
+    const addPath = async (raw: string): Promise<Added | string> => {
+      const rel = inside(c.cwd, raw)
+      if (!rel) return `${raw} is outside the project`
+      const full = path.join(c.cwd, rel)
+      if (!existsSync(full)) return `${raw} does not exist`
+      const type = statSync(full).isDirectory() ? "directory" : "file"
+      if (type === "file" && !/\.(tsx|jsx|vue|ts|js)$/i.test(rel))
+        return `${raw} is not a component file (.tsx, .jsx, .vue or .ts)`
+      const r = await analyzePath(c.cwd, recognition, rel, thresholds)
+      return r
+        ? { candidate: r.candidate, type }
+        : `no components found in ${raw} (looked for React, Vue and Angular components)`
     }
-    if (out.length === 0) throw new CliError("no component folders chosen, so there is nothing to compile")
-    return out
+    if (found.candidates.length === 0 && includes.length === 0) return "nothing-found"
+    step(
+      `found ${found.candidates.reduce((n, x) => n + x.componentCount, 0)} components in ${found.candidates.length} director${found.candidates.length === 1 ? "y" : "ies"}`
+    )
+    let result: ReviewResult | undefined
+    if (c.io.prompt && !yesish && includes.length === 0 && excludes.length === 0)
+      result = await reviewSources(c.io, { say, flag }, { candidates: found.candidates, prior, addPath })
+    else {
+      const include: Added[] = []
+      for (const p of includes) {
+        const r = await addPath(p)
+        if (typeof r === "string") throw new CliError(`--include: ${r}`)
+        include.push(r)
+      }
+      const exclude = excludes.map((e) => ({
+        path: e,
+        type:
+          existsSync(path.join(c.cwd, e)) && statSync(path.join(c.cwd, e)).isFile()
+            ? ("file" as const)
+            : ("directory" as const)
+      }))
+      result = decideWithoutAsking({ candidates: found.candidates, prior, yes: yesish, include, exclude })
+      if (!result.decisions.some((d) => d.status === "approved")) return "needs-confirmation"
+    }
+    if (!result) return "stopped"
+    const picked = result.candidates.filter((x) =>
+      result.decisions.some((d) => d.path === x.path && d.status === "approved")
+    )
+    const distinct = new Set(picked.flatMap((x) => x.components.map((k) => `${k.file}#${k.name}`)))
+    step(`${distinct.size} components selected across ${picked.length} path${picked.length === 1 ? "" : "s"}`)
+    return {
+      config: applyDecisions(base, {
+        decisions: result.decisions,
+        recognition,
+        candidates: result.candidates,
+        packages: targets
+      })
+    }
   }
 
   const posture = c.args.values.posture
@@ -209,6 +249,14 @@ export async function setup(c: Context): Promise<number> {
   if (only !== undefined && only !== "none" && !/^\d+(\s*,\s*\d+)*$/.test(only))
     throw new CliError("--only takes the numbers of the patterns to add (like 1,3), or none")
 
+  if (c.args.values["discover-only"]) {
+    const analysis = await analyzeProject(c.cwd)
+    const found = await discoverFor(c.cwd, analysis)
+    const { project: _project, ...recognition } = analysis.recognition
+    json(c, { recognition, candidates: found.candidates, diagnostics: found.diagnostics })
+    return 0
+  }
+
   print(c, intro(`${CLI_NAME} setup`))
   say()
 
@@ -217,11 +265,25 @@ export async function setup(c: Context): Promise<number> {
   let consumer = false
   if (!existsSync(configPath)) {
     const detected = c.args.values.contract ? undefined : await detectConfig(c.cwd)
-    if (detected && (detected.sources.length > 0 || c.args.values.sources)) {
-      const chosen = await chooseSources(detected.sources)
-      writeConfig(configPath, { ...detected, sources: chosen })
-      step(`component sources (${chosen.length}), written to ${path.basename(configPath)}`)
-      for (const s of chosen) say(`${s.id}  ${s.type}${s.path ? `  ${s.path}` : ""}`)
+    if (detected && (detected.sources.length > 0 || includes.length > 0)) {
+      const r = await confirmComponentSources(detected, [])
+      if (r === "stopped") {
+        say("Stopped. Nothing was written.")
+        print(c, outro("stopped", true))
+        return 0
+      }
+      if (r === "needs-confirmation") {
+        say(
+          `The component directories need your confirmation, and there is no terminal to ask. Re-run with --yes to accept the recommended directories, or --include <paths> to name them (and --exclude <paths> to reject some). Nothing was written.`
+        )
+        print(c, outro("not confirmed", true))
+        return 0
+      }
+      if (r === "nothing-found") {
+        flag("no components found by reading the source, so the detected sources are used as they are")
+        writeConfig(configPath, detected)
+      } else writeConfig(configPath, r.config)
+      step(`wrote ${path.basename(configPath)}`)
     } else {
       consumer = true
       let from = c.args.values.contract?.replace(/\\/g, "/").replace(/\/+$/, "")
@@ -269,7 +331,23 @@ export async function setup(c: Context): Promise<number> {
       })
     )?.config
     consumer = existing?.extends !== undefined
-    step(`using ${path.basename(configPath)}${consumer ? ` (extends ${existing?.extends?.contract})` : ""}`)
+    const approved = (existing?.componentSources ?? []).filter((x) => x.status === "approved").length
+    step(
+      `using ${path.basename(configPath)}${consumer ? ` (extends ${existing?.extends?.contract})` : ""}${approved > 0 ? `, ${approved} approved component source(s)` : ""}`
+    )
+    if (c.args.values.rediscover && existing && !consumer) {
+      const r = await confirmComponentSources(existing, priorDecisions(existing))
+      if (r === "stopped" || r === "needs-confirmation") {
+        say(
+          r === "stopped"
+            ? "Stopped. The configuration was not changed."
+            : "The component directories need your confirmation (--yes, or --include <paths>). The configuration was not changed."
+        )
+        print(c, outro(r === "stopped" ? "stopped" : "not confirmed", true))
+        return 0
+      }
+      if (r !== "nothing-found") writeConfig(configPath, r.config)
+    }
   }
   const compiled = await busy("compiling", () => sub("compile"))
   const dir = await outputDir(c)

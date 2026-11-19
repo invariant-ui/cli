@@ -39,6 +39,8 @@ import type { JsonValue } from "@invariant/shared"
 import { DIAGNOSTICS_FILE_VERSION, type Diagnostic, DiagnosticCollector, hasErrors } from "@invariant/shared"
 import type { InvariantConfig } from "./config.js"
 import { renderReport } from "./report.js"
+import { hasApproved } from "./sources/approval.js"
+import { scopedToComponents } from "./sources/scope.js"
 import { loadCompiled } from "./store.js"
 import { CLI_NAME, CLI_VERSION } from "./version.js"
 
@@ -73,11 +75,15 @@ export function adaptersFor(config: InvariantConfig): SourceAdapter[] {
     const entries = config.sources.filter((s) => s.type === type)
     if (entries.length === 0) continue
     const unrestricted = entries.some((e) => e.path === undefined)
+    const adapter = scoped(
+      ADAPTERS[type],
+      unrestricted ? undefined : entries.flatMap((e) => (e.path === undefined ? [] : [e.path]))
+    )
+    const framework = type === "react" || type === "vue" || type === "angular"
     adapters.push(
-      scoped(
-        ADAPTERS[type],
-        unrestricted ? undefined : entries.flatMap((e) => (e.path === undefined ? [] : [e.path]))
-      )
+      framework && hasApproved(config) && config.componentSources
+        ? scopedToComponents(adapter, config.componentSources)
+        : adapter
     )
   }
   return adapters

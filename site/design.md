@@ -33,7 +33,7 @@ Fact-status colors (`--st-discovered`, `--st-documented`, `--st-inferred`, `--st
 
 Docs also use a few darker panel shades (`#1b1b19`, `#121211`, `#131312`, `#191917`, `#1d1d1a`, `#1f1f1c`). They are warm neutrals. Do not reintroduce navy-tinted shades.
 
-The marketing site and docs are dark only. A light theme for docs is a decided future item (ADR 0006), not built.
+Light theme (added 2026-11-18): both pages follow `prefers-color-scheme`, and a nav icon button (sun or moon) overrides it and stores the choice in `localStorage` key `theme`. Light values are set on `:root[data-theme=light]` and in the matching media query: `--bg #faf9f6`, `--panel #f1efe9`, `--line #dcd8cd`, `--text #1c1b18`, `--muted #66625a`, `--accent #4553d6`, `--accent2 #0f766e`, `--warn #a16207`, `--bad #b91c1c`, `--ok #15803d`. Extra tokens `--sunk`, `--p0`, `--p2`, `--p3` replace the darker panel shades and `--on-accent` is the text on accent fills. Tints use `color-mix()` on the tokens, never raw rgba. The logo's inner square stays `#7c8cff`. The generated hero keyframes (`demo:start`) still use the dark accent tint, and `hero.mjs` must emit `color-mix(in srgb,var(--accent) 35%,transparent)` instead of `rgba(124,140,255,.35)`.
 
 ## Typography
 
@@ -103,5 +103,5 @@ Constraint-frame mark: an outlined 26-unit square (2.4 stroke, 2 radius) holding
 ## Known gaps
 
 - Mobile layouts and hover states were not checked in a real browser; headless screenshots only covered desktop.
-- Docs light theme, search-index changes and the Starlight migration are pending (ADR 0006).
+- Search-index changes and the Starlight migration are pending (ADR 0006).
 - Only the hero, the "In your chat" demo and the pull request demo are animated; no other section is.

@@ -92,6 +92,8 @@ export function arrowSelect<T extends string>(
 export interface Option<T extends string> {
   value: T
   label: string
+  /** Starts ticked unless false. */
+  ticked?: boolean
 }
 
 /**
@@ -106,7 +108,7 @@ export function arrowMultiSelect<T extends string>(
 ): Promise<T[] | undefined> {
   return new Promise((resolve) => {
     let at = 0
-    const ticked = new Set(options.map((_, i) => i))
+    const ticked = new Set(options.flatMap((o, i) => (o.ticked === false ? [] : [i])))
     const height = options.length + 2
     const render = (): string =>
       [
