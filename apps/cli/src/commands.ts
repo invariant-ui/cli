@@ -29,7 +29,7 @@ import { done, fail, gap, intro, line, outro } from "./frame.js"
 import type { Io } from "./io.js"
 import { adaptersFor, type PipelineOutput, runLayeredPipeline, runPipeline } from "./pipeline.js"
 import { checkOutput, loadCompiled } from "./store.js"
-import { CLI_NAME, CLI_VERSION, NPM_PACKAGE } from "./version.js"
+import { artifactVersion, CLI_NAME, CLI_VERSION, NPM_PACKAGE } from "./version.js"
 import { watchProject } from "./watch.js"
 
 export interface Context {
@@ -160,7 +160,7 @@ export async function analyze(c: Context): Promise<number> {
   const result = await compile({ fs: nodeFs(c.cwd), adapters: adaptersFor(config), clock: c.io.clock })
   const out = path.join(await outputDir(c), "analysis")
   const artifacts = renderArtifacts(toArtifactEntries(result), {
-    tool: { name: CLI_NAME, version: CLI_VERSION },
+    tool: { name: CLI_NAME, version: artifactVersion() },
     generatedAt: c.io.clock(),
     sources: result.sources
   })
