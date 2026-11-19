@@ -25,7 +25,8 @@ export interface DiscoveryLimits {
 }
 
 export const DEFAULT_LIMITS: DiscoveryLimits = {
-  maxFiles: 50_000,
+  // No limit: a limit cuts off whatever sorts last (`packages/` after `apps/`) and the packages there are never found.
+  maxFiles: Number.POSITIVE_INFINITY,
   maxFileBytes: 1_000_000,
   maxParsedFilesPerEntry: 5000,
   maxCssVariablesPerFile: 5000,

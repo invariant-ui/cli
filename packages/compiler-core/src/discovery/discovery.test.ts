@@ -666,6 +666,18 @@ describe("limits and determinism", () => {
     expect(codes(d)).toContain("discovery.walk-truncated")
   })
 
+  it("has no limit by default: a package that sorts after 50,000 other files is still found", async () => {
+    const files: Record<string, string> = {
+      "package.json": pkg({ name: "r", workspaces: ["z/*"] }),
+      "z/ui/package.json": pkg({ name: "ui", peerDependencies: { react: "18" } })
+    }
+    for (let i = 0; i < 50_100; i++) files[`a/f${i}.md`] = ""
+    const d = await discover(files)
+    expect(d.stats.truncated).toBe(false)
+    expect(d.packages.map((p) => p.name)).toContain("ui")
+    expect(codes(d)).not.toContain("discovery.walk-truncated")
+  }, 60_000)
+
   it("produces identical output regardless of filesystem insertion order", async () => {
     const files = {
       "package.json": pkg({ name: "r", workspaces: ["p/*"] }),

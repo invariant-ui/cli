@@ -987,6 +987,38 @@ describe("setup on a project that already has a configuration", () => {
   })
 })
 
+describe("setup when confirmed components do not reach the contract", () => {
+  it("says how many did not, and why, instead of only printing a count", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "invariant-noexport-"))
+    made.push(dir)
+    mkdirSync(path.join(dir, "src/widgets"), { recursive: true })
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({
+        name: "kit",
+        version: "1.0.0",
+        main: "src/index.ts",
+        peerDependencies: { react: "^18" }
+      })
+    )
+    // The package has an entry point, but it exports none of the components.
+    writeFileSync(path.join(dir, "src/index.ts"), "export const version = 1\n")
+    for (const n of ["Alpha", "Beta", "Gamma"])
+      writeFileSync(
+        path.join(dir, `src/widgets/${n}.tsx`),
+        `import React from "react"\nexport function ${n}(props: { label: string }) { return <div>{props.label}</div> }\n`
+      )
+    const r = await cli(dir, ["setup", "--include", "src/widgets", "--as", "ana", "--no-ci", "--no-agent"])
+    expect(r.code).toBe(0)
+    const text = r.out.replace(/\s*\n│\s+/g, " ")
+    expect(text).toMatch(/only 0 of the 3 components you confirmed are in the contract/)
+    expect(text).toMatch(/components no entry point exports are left out/)
+    expect(text).toMatch(
+      /Every confirmed package has an entry point, so they do not export the other components/
+    )
+  })
+})
+
 describe("setup reads every file, however many there are", () => {
   it("finds a design system that sorts after more than 20,000 other files", async () => {
     const dir = mkdtempSync(path.join(tmpdir(), "invariant-big-"))

@@ -105,6 +105,54 @@ describe("class metadata", () => {
   })
 })
 
+describe("components a public module exports", () => {
+  const files = {
+    "package.json": manifest,
+    // The entry point exports only the module, as many NgModule-based libraries do.
+    "src/public-api.ts": `export * from "./lib/ui.module"`,
+    "src/lib/ui.module.ts": `import { NgModule } from "@angular/core"
+import { ButtonComponent } from "./button.component"
+import { HiddenComponent } from "./hidden.component"
+import { InnerModule } from "./inner.module"
+@NgModule({ declarations: [ButtonComponent, HiddenComponent], exports: [ButtonComponent, InnerModule] })
+export class UiModule {}`,
+    "src/lib/inner.module.ts": `import { NgModule } from "@angular/core"
+import { ChipComponent } from "./chip.component"
+@NgModule({ declarations: [ChipComponent], exports: [ChipComponent] })
+export class InnerModule {}`,
+    "src/lib/button.component.ts": `import { Component } from "@angular/core"
+@Component({ selector: "x-button", template: "" })
+export class ButtonComponent {}`,
+    "src/lib/chip.component.ts": `import { Component } from "@angular/core"
+@Component({ selector: "x-chip", template: "" })
+export class ChipComponent {}`,
+    "src/lib/hidden.component.ts": `import { Component } from "@angular/core"
+@Component({ selector: "x-hidden", template: "" })
+export class HiddenComponent {}`
+  }
+
+  it("counts what the module exports, through other modules too, and not what it only declares", async () => {
+    const result = await compile({ fs: memoryFs(files), adapters: [adapter], clock: FIXED_CLOCK })
+    const ir = result.irDocuments[0]
+    expect(
+      ir?.entities
+        .filter((e) => e.kind === "component")
+        .map((e) => e.name)
+        .sort()
+    ).toEqual(["ButtonComponent", "ChipComponent"])
+  })
+
+  it("claims no export name or import path for a class the entry point does not export", async () => {
+    const result = await compile({ fs: memoryFs(files), adapters: [adapter], clock: FIXED_CLOCK })
+    const ir = result.irDocuments[0]
+    const button = ir?.entities.find((e) => e.name === "ButtonComponent")
+    const paths = (ir?.facts ?? []).filter((f) => f.subject === button?.ref).map((f) => f.path)
+    expect(paths).not.toContain("implementations.angular.exportName")
+    expect(paths).not.toContain("implementations.angular.importPath")
+    expect(paths).toContain("implementations.angular.extensions.angular.exportedBy")
+  })
+})
+
 describe("inputs and outputs", () => {
   it("reads signal inputs: generics, inferred types, required, alias, transform and write types", async () => {
     const { facts } = await run({
