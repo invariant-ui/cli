@@ -284,7 +284,8 @@ describe("invariant setup", () => {
         _q: string,
         options: ReadonlyArray<{ value: T; label: string }>
       ) => options.map((o) => o.value),
-      select: async <T extends string>(q: string) => (/Next\?/.test(q) ? "confirm" : "yes") as T
+      select: async <T extends string>(q: string): Promise<T | undefined> =>
+        (/Next\?/.test(q) ? "confirm" : "yes") as T
     })
     expect(code).toBe(0)
     expect(asked.some((q) => /Enter keeps the/.test(q))).toBe(false)
