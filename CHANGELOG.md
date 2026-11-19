@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/invariant-ui/cli/compare/v0.9.0...v0.10.0) (2026-11-19)
+
+
+### Features
+
+* **cli:** recognize the project and confirm component sources in setup ([#26](https://github.com/invariant-ui/cli/issues/26)) ([4ca2035](https://github.com/invariant-ui/cli/commit/4ca203506f1b97fd921e6b4e6e837c7baf7621a8))
+
 ## [0.9.0](https://github.com/invariant-ui/cli/compare/v0.8.0...v0.9.0) (2026-11-18)
 
 
