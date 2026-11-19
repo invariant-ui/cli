@@ -78,6 +78,18 @@ Added 2026-11-19. Section `#plans` between Trust and Get started. Prices are hid
 - The booking URL is a placeholder (`cal.com/REPLACE-ME`) until the owner supplies it; the form action is the live Apps Script URL. Do not publish with placeholders.
 - The cost FAQ answer and its `FAQPage` JSON-LD entry were changed together to mention the waitlist.
 
+## Plans and waitlist
+
+Added 2026-11-19. Section `#plans` between Trust and Get started. Prices are hidden on purpose while demand is validated; do not add numbers without the owner's decision.
+
+- Standard pricing layout, the one place the "ruled columns, no box" card rule is lifted: three equal boxed columns (1px `--line` border, 3px radius, `--panel`) with tier name, large serif price slot, one-line description, CTA, a rule, then a feature list. The middle tier (Team) has an `--accent` border and a "Waitlist" tag. Each column is a flex column; the description and CTA blocks have a minimum height so the feature lists start on the same line. Below 900px the columns stack and the minimums drop.
+- The price slot shows "Free", "Planned" and "Custom", never a number. Every feature has a `✓`; all checks are green; normal text means it exists, grey text means it is planned, explained in a line under the columns. The CTA wrapper is `.plan-cta`, not `.cta` (the hero's flex class). Nothing is presented as purchasable.
+- The Team form (`#waitlist`) posts to a Google Apps Script web app that appends to a private Google Sheet (setup and script: `docs/commercialization/waitlist-apps-script.md`). This is the only place the site contacts another origin, and only when the visitor submits. A small inline script sends it with `fetch` and shows the result in place (`#waitlist-msg`: a confirmation or an inline error); without JavaScript the form posts normally. No external script, cookie or tracker. It collects an email, a hidden `plan` value and a hidden `src` value (which link led to the form: `nav`, `ci`, `patterns` or `plans`, set from `data-wl` on the link), and has a hidden honeypot field (`_gotcha`). The form is one row (email field plus button, label visually hidden) so the three CTAs are the same height. The privacy line sits in the note under the columns and must stay true: the email is used only to announce Team.
+- Founding cohort (added 2026-11-19): the Team tag reads "Founding cohort", the card has a 3px accent rule inside its top edge, and the description states "Early access for the first 25 teams on the waitlist." The cap is a promise: if the number changes, change it here and in `#plans` together, and do not show a count of signups unless it is read from the real sheet. No timers, no "spots left" claims.
+- Enterprise card hidden since 2026-11-19 (HTML comment in `#plans`; the grid is 2 columns while it is hidden). When shown, its button links to an external booking page.
+- The booking URL is a placeholder (`cal.com/REPLACE-ME`) until the owner supplies it; the form action is the live Apps Script URL. Do not publish with placeholders.
+- The cost FAQ answer and its `FAQPage` JSON-LD entry were changed together to mention the waitlist.
+
 ## Logo
 
 Constraint-frame mark: an outlined 26-unit square (2.4 stroke, 2 radius) holding a 9-unit accent square at its lower left, drawn on a 32-unit grid, beside the word `invariant` in semibold system sans. No period.
