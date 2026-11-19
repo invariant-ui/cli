@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/invariant-ui/cli/compare/v0.10.0...v0.11.0) (2026-11-19)
+
+
+### Features
+
+* **site:** add Team waitlist backed by Apps Script ([#29](https://github.com/invariant-ui/cli/issues/29)) ([cc5e022](https://github.com/invariant-ui/cli/commit/cc5e022fdf52e9bfc88e518ca75fd5255736a723))
+
 ## [0.10.0](https://github.com/invariant-ui/cli/compare/v0.9.0...v0.10.0) (2026-11-19)
 
 
