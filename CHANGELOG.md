@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/invariant-ui/cli/compare/v0.11.0...v0.12.0) (2026-11-19)
+
+
+### Features
+
+* **cli:** scan every file, and ask an AI agent when discovery is unsure ([#32](https://github.com/invariant-ui/cli/issues/32)) ([58b1322](https://github.com/invariant-ui/cli/commit/58b1322f224e037df18e94ac5eb2f65fe5c7c07a))
+
 ## [0.11.0](https://github.com/invariant-ui/cli/compare/v0.10.0...v0.11.0) (2026-11-19)
 
 
