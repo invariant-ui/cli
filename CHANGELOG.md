@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/invariant-ui/cli/compare/v0.13.0...v0.13.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **cli:** compile the whole project, count module-exported Angular components, show npx commands ([#36](https://github.com/invariant-ui/cli/issues/36)) ([ab18695](https://github.com/invariant-ui/cli/commit/ab18695dcdd412f6a98ffca5bbc6d847da938cab))
+
 ## [0.13.0](https://github.com/invariant-ui/cli/compare/v0.12.0...v0.13.0) (2026-11-19)
 
 
