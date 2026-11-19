@@ -1,0 +1,12 @@
+# ci.yml skips site/** and docs/** changes, so its required `verify` check never reports on a
+# site-only pull request. This job reports the same check name for those changes so they can merge.
+# A pull request that touches both site/docs and code runs both jobs, and both must pass.
+name: ci-docs-only
+on:
+  pull_request:
+    paths: [site/**, docs/**]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Only site or docs files changed. The code checks in ci.yml do not apply."
