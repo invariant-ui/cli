@@ -59,24 +59,12 @@ Light theme (added 2026-11-18): both pages follow `prefers-color-scheme`, and a 
 - **Command blocks:** the command blocks in Get started and the agent setup block in Connect each have a Copy button in the top-right corner, with the same confirmation and fallback as the install pill. Copy the whole block as shown, including the client name chosen in the selector.
 - **Tabs (How it works):** accessible `tablist`, arrow-key navigation, one terminal panel per tab, all panels visible without JavaScript.
 - **Fact table and filters:** status badges with confidence for inferred facts, filter buttons using `aria-pressed`. The `approved` row says there is no sample and that approval is a named person's decision in `invariant.decisions.json`.
-- **Contract explorer:** hidden since 2026-11-19 (the `#explorer` section is in an HTML comment; the data block and its script stay, and the script returns early when the section is absent). Read-only view of the `acme-ui` golden fixture. Its data is generated into `site/index.html` between the `explorer:data` markers by `node site/build/explorer.mjs` run from the repo root. Never hand-edit that JSON.
+- **Contract explorer:** read-only view of the `acme-ui` golden fixture. Its data is generated into `site/index.html` between the `explorer:data` markers by `node site/build/explorer.mjs` run from the repo root. Never hand-edit that JSON.
 - **Agent selector and PR-check mock:** the selector rewrites `invariant agent init <client>`. The PR-check panel is labeled "illustrative" and uses only findings already shown elsewhere on the page.
 - **Terminal and code blocks:** `--panel` background, 1px `--line` border, mono 13 to 13.5px, colored spans use `.p` (prompt, teal), `.c` (muted), `.ok`, `.w` (warning), `.b` (error red) and `.k` (accent).
 - **CLI output in a terminal block:** uses the clack-style frame that `invariant compile` and `invariant verify` print (drawn in `apps/cli/src/frame.ts`, no dependency). `┌` opens the frame with the command name in bold (`<b>`). Every line sits behind a `.c` bar `│`. `◇` (`.ok`) marks a completed step, `▲` (`.w`) a warning and `■` (`.bad`) an error. `└` closes it: `.ok` text when it passed, error color when it failed. The `report` line gives the path to `invariant.report.html`. Blocks copy real output from a run of the CLI on a fixture.
 - **Hero demo:** the animated terminal's output comes from real CLI output. `site/build/hero.mjs` runs `invariant init` and `invariant compile` on a scratch copy of `fixtures/react/design-system` and rewrites two regions of `site/index.html`: the keyframe block between `demo:start (generated)` and `demo:end`, and the terminal between `demo:tty:start` and `demo:tty:end`. Regenerate with `pnpm build && node site/build/hero.mjs`. Do not edit either region by hand. The contract panel is illustrative and stays hand-written.
 - **Motion:** allowed only for the hero demo typing, the chat demo in the "In your chat" section (plays once when scrolled into view, then unlocks a scripted Send turn driven by plain JS timers, labeled illustrative; its tool results come from the `page-archetypes` fixture) and the pull request demo in "Every pull request" (hand-written CSS loops, labeled illustrative), the tab/filter state changes and copy feedback. Everything respects `prefers-reduced-motion`.
-
-## Plans and waitlist
-
-Added 2026-11-19. Section `#plans` between Trust and Get started. Prices are hidden on purpose while demand is validated; do not add numbers without the owner's decision.
-
-- Standard pricing layout, the one place the "ruled columns, no box" card rule is lifted: three equal boxed columns (1px `--line` border, 3px radius, `--panel`) with tier name, large serif price slot, one-line description, CTA, a rule, then a feature list. The middle tier (Team) has an `--accent` border and a "Waitlist" tag. Each column is a flex column; the description and CTA blocks have a minimum height so the feature lists start on the same line. Below 900px the columns stack and the minimums drop.
-- The price slot shows "Free", "Planned" and "Custom", never a number. Every feature has a `✓`; all checks are green; normal text means it exists, grey text means it is planned, explained in a line under the columns. The CTA wrapper is `.plan-cta`, not `.cta` (the hero's flex class). Nothing is presented as purchasable.
-- The Team form (`#waitlist`) posts to a Google Apps Script web app that appends to a private Google Sheet (setup and script: `docs/commercialization/waitlist-apps-script.md`). This is the only place the site contacts another origin, and only when the visitor submits. A small inline script sends it with `fetch` and shows the result in place (`#waitlist-msg`: a confirmation or an inline error); without JavaScript the form posts normally. No external script, cookie or tracker. It collects an email, a hidden `plan` value and a hidden `src` value (which link led to the form: `nav`, `ci`, `patterns` or `plans`, set from `data-wl` on the link), and has a hidden honeypot field (`_gotcha`). The form is one row (email field plus button, label visually hidden) so the three CTAs are the same height. The privacy line sits in the note under the columns and must stay true: the email is used only to announce Team.
-- Founding cohort (added 2026-11-19): the Team tag reads "Founding cohort", the card has a 3px accent rule inside its top edge, and the description states "Early access for the first 25 teams on the waitlist." The cap is a promise: if the number changes, change it here and in `#plans` together, and do not show a count of signups unless it is read from the real sheet. No timers, no "spots left" claims.
-- Enterprise card hidden since 2026-11-19 (HTML comment in `#plans`; the grid is 2 columns while it is hidden). When shown, its button links to an external booking page.
-- The booking URL is a placeholder (`cal.com/REPLACE-ME`) until the owner supplies it; the form action is the live Apps Script URL. Do not publish with placeholders.
-- The cost FAQ answer and its `FAQPage` JSON-LD entry were changed together to mention the waitlist.
 
 ## Logo
 
@@ -116,7 +104,7 @@ Constraint-frame mark: an outlined 26-unit square (2.4 stroke, 2 radius) holding
 - Add gradients, glows, blur orbs, animated backgrounds, floating panels, or icon-per-card decoration.
 - Add pill shapes, 12px rounded cards, or navy-tinted surfaces.
 - Add customer logos, testimonials, invented statistics or a single aggregate score.
-- Add external fonts, scripts or network requests to the site. One exception: the waitlist form (below).
+- Add external fonts, scripts or network requests to the site.
 - Edit generated blocks by hand (hero demo, explorer data).
 - Change the logo mark or accent color without updating every asset in `site/assets/` and its PNG exports.
 
