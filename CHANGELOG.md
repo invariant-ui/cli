@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/invariant-ui/cli/compare/v0.12.0...v0.13.0) (2026-11-19)
+
+
+### Features
+
+* **cli:** review every discovered component, and review existing configs too ([#34](https://github.com/invariant-ui/cli/issues/34)) ([f224cdd](https://github.com/invariant-ui/cli/commit/f224cdda88b47149850c2429fe14da57dd4203b3))
+
 ## [0.12.0](https://github.com/invariant-ui/cli/compare/v0.11.0...v0.12.0) (2026-11-19)
 
 
