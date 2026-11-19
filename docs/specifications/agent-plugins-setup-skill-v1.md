@@ -10,7 +10,8 @@ A product, design or engineering leader who owns or sponsors an internal design 
 
 Checked against the code on 2026-11-11.
 
-- `invariant setup` run **without a terminal and without `--yes`** compiles the contract, looks at the app code for recurring structures, prints the plan, and then stops with "not asking (no terminal). Nothing was added." This is the propose step: it changes nothing beyond writing `invariant.config.json` and the compiled output.
+- `invariant setup` run **without a terminal** approves no component directory on its own: it needs `--include <paths>` (the directories the person confirmed), or `--yes` to accept the recommended ones, and otherwise says so and writes nothing (ADR 0008, ADR 0009). With a confirmed set it compiles the contract, looks at the app code for recurring structures, prints the plan, and then stops with "not asking (no terminal). Nothing was added." That is the propose step: it changes nothing beyond writing `invariant.config.json` and the compiled output.
+- `invariant setup --discover-only` only reads. It prints the packages, the directories that hold components with the evidence, what was scanned, and `confidence` (`level`, `reasons`). When the level is `low` the skill follows the `invariant-setup` skill, which is shipped beside it, to look for the directories itself.
 - `invariant setup --confirm-contract --as <name>` approves the proposed patterns, turns on starter rules as warnings, baselines existing violations, connects the AI tool and adds the CI workflow. Flags skip steps: `--no-rules`, `--no-baseline`, `--no-ci`, `--no-agent`, `--no-publish`. `--paths a,b` names the application folders; `--contract <folder>` names an installed package's shipped contract.
 - It refuses to run when there is no design system source and no installed package shipping a contract, and says what to do.
 - Approval is recorded with a name (`--as`), written into the repository, and traceable.
@@ -51,12 +52,12 @@ Run `invariant --version`. If it says the CLI is being installed, wait a moment 
 Without changing anything, look for: an installed package that ships a contract (`node_modules/*/invariant/invariant.contract.json`), design system source in this repository (React, Vue or Angular components, Storybook, token files), or neither.
 Tell the person what you found and ask which is right:
 - **Our design system is a package we install** (it ships a contract). Use `--contract <folder>`.
-- **Our design system lives in this repository.** Use the source folders you found.
+- **Our design system lives in this repository.** Run `invariant setup --discover-only` (it only reads) and say each directory, how many components it holds and why. If `confidence.level` is `low`, or the person says they look wrong, follow the `invariant-setup` skill (a separate skill that finds where components live, not this one). Ask which directories hold the design system's components and do not go on before they answer.
 - **Our design system is in a different repository.** Explain that setup must run there first (so the contract can be published with the package), and offer to continue once they are in that repository.
 Also ask which folders hold the applications that use it, if not obvious (`--paths`).
 
 ## 3. Compile and look
-Run `invariant setup` with the choices from step 2. It compiles and prints a plan, and changes nothing else.
+Run `invariant setup` with the choices from step 2 and the directories the person confirmed (`--include`, and `--exclude` for any they rejected). It compiles and prints a plan, and changes nothing else.
 Summarize in plain words, using only the output: the number of components and the kinds of tokens found, which frameworks, any errors or warnings that matter, and anything it said it could not extract. If compile failed, explain it and stop.
 
 ## 4. Does this match?

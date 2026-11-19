@@ -63,8 +63,11 @@ export const configSchema = z.strictObject({
       z.strictObject({
         path: relPath,
         type: z.enum(["directory", "file"]),
-        source: z.enum(["discovered", "user", "configuration"]),
-        status: z.enum(["approved", "excluded", "pending"])
+        /** Who chose the path: the scan, the person, the configuration, or an AI agent the person then confirmed. */
+        source: z.enum(["discovered", "user", "configuration", "agent"]),
+        status: z.enum(["approved", "excluded", "pending"]),
+        /** Why, when it is not obvious: for an agent's choice, who suggested it, how sure it was, and what it said. */
+        note: z.string().max(600).optional()
       })
     )
     .optional(),

@@ -29,7 +29,12 @@ function project(): string {
 /** Answers to the discovery questions that come first: keep all components, add none, accept the app folder, keep all 3 patterns. */
 const REVIEW = ["", "", "", "", "", ""]
 
-async function cli(cwd: string, argv: string[], answers?: string[]) {
+async function cli(
+  cwd: string,
+  argv: string[],
+  answers?: string[],
+  extra: { env?: Record<string, string>; io?: Record<string, unknown> } = {}
+) {
   let out = ""
   let err = ""
   const asked: string[] = []
@@ -38,7 +43,8 @@ async function cli(cwd: string, argv: string[], answers?: string[]) {
     stdout: (t) => (out += t),
     stderr: (t) => (err += t),
     clock: FIXED_CLOCK,
-    env: {},
+    env: extra.env ?? {},
+    ...extra.io,
     ...(answers
       ? {
           prompt: async (q: string) => {
@@ -457,6 +463,332 @@ describe("invariant setup", () => {
     expect(r.out).toMatch(/no application folder found/)
     expect(existsSync(path.join(dir, "invariant.baseline.json"))).toBe(false)
   })
+})
+
+describe("setup: a scan that is not sure, and an AI agent that helps", () => {
+  /** Five components in a folder no convention names, and nothing else to go on: the scan cannot tell it is the design system. */
+  function unsureProject(): string {
+    const dir = mkdtempSync(path.join(tmpdir(), "invariant-unsure-"))
+    made.push(dir)
+    mkdirSync(path.join(dir, "src/widgets"), { recursive: true })
+    mkdirSync(path.join(dir, "src/pages"), { recursive: true })
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({
+        name: "shop",
+        private: true,
+        version: "1.0.0",
+        main: "src/index.ts",
+        dependencies: { react: "^18" }
+      })
+    )
+    const names = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon"]
+    for (const n of names)
+      writeFileSync(
+        path.join(dir, `src/widgets/${n}.tsx`),
+        `import React from "react"\nexport function ${n}(props: { label: string }) { return <div>{props.label}</div> }\n`
+      )
+    writeFileSync(
+      path.join(dir, "src/index.ts"),
+      `${names.map((n) => `export { ${n} } from "./widgets/${n}"`).join("\n")}\n`
+    )
+    writeFileSync(
+      path.join(dir, "src/pages/Home.tsx"),
+      `import React from "react"\nimport { Alpha } from "../widgets/Alpha"\nexport function Home() { return <Alpha label="x" /> }\n`
+    )
+    return dir
+  }
+
+  /** A `claude` on PATH that records the prompt it was given and either answers or fails. */
+  function fakeAgent(behavior: { reply: object | string } | { fail: string }) {
+    const bin = mkdtempSync(path.join(tmpdir(), "invariant-bin-"))
+    made.push(bin)
+    const record = path.join(bin, "record")
+    mkdirSync(record)
+    const body =
+      "reply" in behavior
+        ? `cat > "${record}/prompt.txt"\ncat <<'EOF'\n${typeof behavior.reply === "string" ? behavior.reply : JSON.stringify(behavior.reply)}\nEOF`
+        : `cat > "${record}/prompt.txt"\necho "${behavior.fail}" >&2\nexit 1`
+    writeFileSync(path.join(bin, "claude"), `#!/bin/sh\n${body}\n`, { mode: 0o755 })
+    return {
+      env: { PATH: `${bin}:/usr/bin:/bin` },
+      ran: () => existsSync(path.join(record, "prompt.txt")),
+      prompt: () => readFileSync(path.join(record, "prompt.txt"), "utf8")
+    }
+  }
+  const config = (dir: string) =>
+    JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+      sources: unknown[]
+      componentSources?: Array<Record<string, string>>
+    }
+  /** The output with its frame removed, so a sentence the terminal wrapped reads as one. */
+  const flat = (out: string): string => out.replace(/\s*\n│\s+/g, " ")
+  const flags = [
+    "setup",
+    "--as",
+    "ana",
+    "--no-ci",
+    "--no-agent",
+    "--only",
+    "none",
+    "--no-baseline",
+    "--paths",
+    "src/pages"
+  ]
+
+  it("offers the agent, checks what it names, keeps its confidence and reason, and approves nothing before the person confirms", async () => {
+    const dir = unsureProject()
+    const agent = fakeAgent({
+      reply: {
+        version: 1,
+        directories: [
+          {
+            path: "src/widgets",
+            confidence: "high",
+            reason: "Five shared widgets, all exported from src/index.ts"
+          },
+          { path: "src/ghost", confidence: "high", reason: "made up" },
+          { path: "../outside", confidence: "high", reason: "escapes the project" }
+        ],
+        notes: "Looks like one small design system."
+      }
+    })
+    // menu: ask Claude Code. checklist: keep what is ticked. menu: confirm. plan: yes.
+    const r = await cli(dir, flags, ["1", "", "c", "y"], { env: agent.env })
+    expect(r.code).toBe(0)
+    expect(r.out).toMatch(/not confident about the component directories: no directory scored high enough/)
+    expect(r.out).toMatch(/found Claude Code/)
+    expect(flat(r.out)).toMatch(/It can only read files .* sent to its provider, under your account/)
+    expect(agent.ran()).toBe(true)
+    // The prompt is the skill plus what the scan found.
+    expect(agent.prompt()).toContain("Find where the design system's components live")
+    expect(agent.prompt()).toContain("src/widgets")
+    expect(agent.prompt()).toContain("This is an automated run")
+    // What it named is checked: a real directory is taken, the others are explained and dropped.
+    expect(r.out).toMatch(/src\/widgets {2}5 components {2}\(high\) Five shared widgets/)
+    expect(r.out).toMatch(/named src\/ghost: src\/ghost does not exist/)
+    expect(r.out).toMatch(/named \.\.\/outside, which is not a path inside the project/)
+    expect(r.out).toMatch(/Claude Code noted: Looks like one small design system\./)
+    expect(r.out).toMatch(/Claude Code named 2 directories; 1 holds components setup can find/)
+    // The saved decision says who chose it, how sure it was and why.
+    expect(config(dir).componentSources).toEqual([
+      {
+        path: "src/widgets",
+        type: "directory",
+        source: "agent",
+        status: "approved",
+        note: "suggested by Claude Code (high confidence): Five shared widgets, all exported from src/index.ts"
+      }
+    ])
+    const contract = JSON.parse(
+      readFileSync(path.join(dir, "invariant/invariant.contract.json"), "utf8")
+    ) as {
+      components: Array<{ name: string }>
+    }
+    expect(contract.components.map((x) => x.name).sort()).toEqual([
+      "Alpha",
+      "Beta",
+      "Delta",
+      "Epsilon",
+      "Gamma"
+    ])
+  })
+
+  it("does not move on until the person confirms: stopping at the menu writes nothing and runs no agent", async () => {
+    const dir = unsureProject()
+    const agent = fakeAgent({ reply: {} })
+    const r = await cli(dir, flags, ["4"], { env: agent.env })
+    expect(r.code).toBe(0)
+    expect(r.out).toMatch(/Stopped\. Nothing was written\./)
+    expect(agent.ran()).toBe(false)
+    expect(existsSync(path.join(dir, "invariant.config.json"))).toBe(false)
+    expect(existsSync(path.join(dir, "invariant"))).toBe(false)
+  })
+
+  it("shows why the agent failed and offers the choices again, and the person can name the directory themselves", async () => {
+    const dir = unsureProject()
+    const agent = fakeAgent({ fail: "Error: Authentication required. Please log in." })
+    // menu: ask Claude Code (fails). menu again: choose myself. nothing is recommended, so nothing is ticked: pick 2 (src/widgets). confirm. plan: yes.
+    const r = await cli(dir, flags, ["1", "2", "2", "c", "y"], { env: agent.env })
+    expect(r.code).toBe(0)
+    expect(r.out).toMatch(/Claude Code: Claude Code stopped with exit code 1: Error: Authentication required/)
+    expect(r.out).toMatch(/2\. \[ \] src\/widgets · 5 components · low confidence/)
+    expect(config(dir).componentSources).toEqual([
+      { path: "src/pages", type: "directory", source: "discovered", status: "excluded" },
+      { path: "src/widgets", type: "directory", source: "discovered", status: "approved" }
+    ])
+  })
+
+  it("says it cannot use an answer that is not JSON, and goes back to the choices", async () => {
+    const dir = unsureProject()
+    const agent = fakeAgent({ reply: "I looked around but I am not sure where they are." })
+    const r = await cli(dir, flags, ["1", "4"], { env: agent.env })
+    expect(r.out).toMatch(
+      /Claude Code answered, but setup cannot use the answer: the reply did not contain a JSON object/
+    )
+    expect(r.out).toMatch(/Stopped\. Nothing was written\./)
+  })
+
+  it("takes the choices from the arrow menu when the terminal has one", async () => {
+    const dir = unsureProject()
+    const agent = fakeAgent({
+      reply: {
+        version: 1,
+        directories: [{ path: "src/widgets", confidence: "medium", reason: "shared widgets" }]
+      }
+    })
+    const questions: string[] = []
+    const r = await cli(dir, flags, ["y"], {
+      env: agent.env,
+      io: {
+        multiselect: async <T extends string>(
+          _q: string,
+          options: ReadonlyArray<{ value: T; ticked?: boolean }>
+        ) => options.filter((o) => o.ticked !== false).map((o) => o.value),
+        select: async <T extends string>(
+          q: string,
+          choices: ReadonlyArray<{ value: T; label: string }>
+        ): Promise<T | undefined> => {
+          questions.push(q)
+          if (/How do you want to go on/.test(q))
+            return choices.find((c) => /Claude Code/.test(c.label))?.value
+          return (/Next\?/.test(q) ? "confirm" : "yes") as T
+        }
+      }
+    })
+    expect(r.code).toBe(0)
+    expect(questions[0]).toBe("How do you want to go on?")
+    expect(config(dir).componentSources?.[0]).toMatchObject({
+      path: "src/widgets",
+      source: "agent",
+      status: "approved"
+    })
+  })
+
+  it("never starts an agent with --yes, and without a terminal says what it needs and writes nothing", async () => {
+    const dir = unsureProject()
+    const agent = fakeAgent({ reply: { version: 1, directories: [] } })
+    const yes = await cli(dir, ["setup", "--yes", "--as", "ana", "--no-ci", "--no-agent"], undefined, {
+      env: agent.env
+    })
+    expect(yes.code).toBe(0)
+    expect(yes.out).toMatch(/need your confirmation \(no directory scored high enough to recommend/)
+    expect(flat(yes.out)).toMatch(/Nothing was recommended, so --yes had nothing to accept/)
+    expect(flat(yes.out)).toMatch(/invariant-setup skill/)
+    const bare = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"], undefined, {
+      env: agent.env
+    })
+    expect(flat(bare.out)).toMatch(
+      /there is no terminal to ask\. Re-run with --yes .* or name them with --include/
+    )
+    expect(agent.ran()).toBe(false)
+    expect(existsSync(path.join(dir, "invariant.config.json"))).toBe(false)
+  })
+
+  it("--include is the person's answer: no question, no agent", async () => {
+    const dir = unsureProject()
+    const agent = fakeAgent({ reply: {} })
+    const r = await cli(
+      dir,
+      ["setup", "--include", "src/widgets", "--as", "ana", "--no-ci", "--no-agent"],
+      undefined,
+      {
+        env: agent.env
+      }
+    )
+    expect(r.code).toBe(0)
+    expect(agent.ran()).toBe(false)
+    // The scan's other directory is recorded as pending: still undecided, never approved by a rerun.
+    expect(config(dir).componentSources).toEqual([
+      { path: "src/pages", type: "directory", source: "discovered", status: "pending" },
+      { path: "src/widgets", type: "directory", source: "user", status: "approved" }
+    ])
+  })
+
+  it("with no agent on the machine, says so and goes on to the review", async () => {
+    const dir = unsureProject()
+    // review: keep the (empty) selection, add src/widgets by hand. confirm. plan: yes.
+    const r = await cli(dir, flags, ["", "a", "src/widgets", "c", "y"], { env: { PATH: "/usr/bin:/bin" } })
+    expect(r.out).toMatch(/No AI agent to ask was found on this machine/)
+    expect(config(dir).componentSources).toContainEqual({
+      path: "src/widgets",
+      type: "directory",
+      source: "user",
+      status: "approved"
+    })
+  })
+
+  it("finds nothing to confirm: asks, and compiling everything the packages export is a choice the person makes", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "invariant-none-"))
+    made.push(dir)
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({ name: "x", version: "1.0.0", dependencies: { react: "^18" } })
+    )
+    mkdirSync(path.join(dir, "src"))
+    writeFileSync(path.join(dir, "src/index.ts"), "export const x = 1\n")
+    const noTerminal = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"])
+    expect(noTerminal.out).toMatch(/no React, Vue or Angular components were found/)
+    expect(existsSync(path.join(dir, "invariant.config.json"))).toBe(false)
+    // menu without an agent: 1 enter myself, 2 compile everything, 3 stop.
+    const chosen = await cli(
+      dir,
+      ["setup", "--as", "ana", "--no-ci", "--no-agent", "--only", "none"],
+      ["2", "n"]
+    )
+    expect(chosen.out).toMatch(/compiling everything the detected sources export, as you chose/)
+    expect(config(dir).componentSources).toBeUndefined()
+  })
+})
+
+describe("setup reads every file, however many there are", () => {
+  it("finds a design system that sorts after more than 20,000 other files", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "invariant-big-"))
+    made.push(dir)
+    // Walked first, alphabetically: this is what used to fill the limit before `packages/` was reached.
+    for (let d = 0; d < 100; d++) mkdirSync(path.join(dir, `apps/web/gen/d${d}`), { recursive: true })
+    for (let i = 0; i < 20_500; i++) writeFileSync(path.join(dir, `apps/web/gen/d${i % 100}/f${i}.txt`), "")
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({ name: "big", private: true, workspaces: ["packages/*"] })
+    )
+    mkdirSync(path.join(dir, "packages/ui/src/components"), { recursive: true })
+    writeFileSync(
+      path.join(dir, "packages/ui/package.json"),
+      JSON.stringify({
+        name: "@big/design-system",
+        version: "1.0.0",
+        description: "Component library and design system",
+        main: "src/index.ts",
+        peerDependencies: { react: "^18" },
+        scripts: { build: "tsc" }
+      })
+    )
+    const names = ["Button", "Card", "Dialog", "Input", "Select", "Table"]
+    for (const n of names)
+      writeFileSync(
+        path.join(dir, `packages/ui/src/components/${n}.tsx`),
+        `import React from "react"\nexport function ${n}(props: { label: string }) { return <div role="group">{props.label}</div> }\n`
+      )
+    writeFileSync(
+      path.join(dir, "packages/ui/src/index.ts"),
+      `${names.map((n) => `export { ${n} } from "./components/${n}"`).join("\n")}\n`
+    )
+    const r = await cli(dir, ["setup", "--yes", "--as", "ana", "--no-ci", "--no-agent", "--no-baseline"])
+    expect(r.code).toBe(0)
+    expect(r.out).toMatch(/scanned 20,5\d\d files/)
+    expect(r.out).not.toMatch(/more files than discovery reads/)
+    expect(r.out).toMatch(/found 6 components in 1 directory/)
+    expect(config(dir).componentSources).toEqual([
+      { path: "packages/ui/src/components", type: "directory", source: "discovered", status: "approved" }
+    ])
+  }, 120_000)
+
+  function config(dir: string) {
+    return JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+      componentSources?: Array<Record<string, string>>
+    }
+  }
 })
 
 describe("setup in a design system repository: publishing the contract", () => {

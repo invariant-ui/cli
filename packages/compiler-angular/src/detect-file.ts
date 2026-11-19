@@ -10,6 +10,8 @@ const decoratorName = (d: ts.Decorator): string => {
 /** Finds classes decorated with `@Component` in one `.ts` file by syntax, and says whether they declare inputs. */
 export function detectAngularComponents(file: string, text: string): DetectedComponent[] {
   if (!/\.ts$/i.test(file) || /\.d\.ts$/i.test(file)) return []
+  // Most files in a large repository are not components: skip the parse unless the decorator is there.
+  if (!/@\s*Component\b/.test(text)) return []
   const sf = ts.createSourceFile(file, text, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS)
   const out: DetectedComponent[] = []
   for (const st of sf.statements) {

@@ -8,7 +8,7 @@ import {
   type SourceAdapter,
   walk
 } from "@invariant/compiler-core"
-import { hashJson } from "@invariant/shared"
+import { type Diagnostic, hashJson } from "@invariant/shared"
 import { analyzePackage } from "./analyze.js"
 import { CAPABILITIES, emitComponent, emitModule } from "./emit.js"
 
@@ -19,6 +19,7 @@ export const ADAPTER_VERSION = "0.1.0"
 
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|html|css|scss|sass|less)$|(?:^|\/)tsconfig[^/]*\.json$/
 const MAX_FILE_BYTES = 1_000_000
+const MAX_PACKAGE_FILES = 20_000
 
 /**
  * Angular adapter. For every workspace package that declares `@angular/core` it reads decorated classes
@@ -34,12 +35,20 @@ export const angularAdapter: SourceAdapter<Config> = {
 
   async discover({ fs, project }) {
     const sources: DiscoveredSource<Config>[] = []
+    const diagnostics: Diagnostic[] = []
     const used = new Set<string>()
     for (const pkg of project.packages.filter((p) => p.frameworks.some((f) => f.name === "angular"))) {
       const others = project.packages.filter(
         (p) => p.id !== pkg.id && p.dir !== "." && (pkg.dir === "." || p.dir.startsWith(`${pkg.dir}/`))
       )
-      const { files, hashes } = await readPackageFiles(fs, pkg, others)
+      const { files, hashes, truncated } = await readPackageFiles(fs, pkg, others)
+      if (truncated)
+        diagnostics.push({
+          code: "angular.walk-truncated",
+          severity: "warning",
+          message: `${pkg.dir} holds more than ${MAX_PACKAGE_FILES} files, so only the first ${MAX_PACKAGE_FILES} were read and components in the rest are missing from the contract`,
+          location: { path: pkg.dir === "." ? "package.json" : `${pkg.dir}/package.json` }
+        })
       const slug =
         (pkg.name ?? pkg.dir)
           .toLowerCase()
@@ -57,7 +66,7 @@ export const angularAdapter: SourceAdapter<Config> = {
         inputHash: hashJson(hashes)
       })
     }
-    return { sources, diagnostics: [] }
+    return { sources, diagnostics }
   },
 
   async extract({ fs, project, source, clock }, config) {
@@ -108,7 +117,7 @@ async function readPackageFiles(
   fs: ReadonlyFs,
   pkg: PackageInfo,
   nested: readonly PackageInfo[]
-): Promise<{ files: Map<string, string>; hashes: Array<[string, string]> }> {
+): Promise<{ files: Map<string, string>; hashes: Array<[string, string]>; truncated: boolean }> {
   // An installed package (opted in through a declaration root) keeps its declaration files in build output.
   const installed = pkg.dir.split("/").includes("node_modules")
   const walked = await walk(fs, {
@@ -117,18 +126,19 @@ async function readPackageFiles(
         ? DEFAULT_IGNORED_DIRS.filter((d) => !["dist", "build", "out"].includes(d))
         : DEFAULT_IGNORED_DIRS
     ),
-    maxFiles: 20_000,
-    start: pkg.dir
+    maxFiles: MAX_PACKAGE_FILES,
+    start: pkg.dir,
+    // Another package is read as its own source, so its folders do not count against this one.
+    skip: (dir) => nested.some((n) => n.dir === dir)
   })
   const files = new Map<string, string>()
   const hashes: Array<[string, string]> = []
   for (const path of walked.files) {
-    if (!SOURCE_FILE.test(path) || nested.some((n) => path === n.dir || path.startsWith(`${n.dir}/`)))
-      continue
+    if (!SOURCE_FILE.test(path)) continue
     const text = await fs.readFile(path)
     if (text.length > MAX_FILE_BYTES) continue
     files.set(path, text)
     hashes.push([path, hashText(text)])
   }
-  return { files, hashes }
+  return { files, hashes, truncated: walked.truncated }
 }

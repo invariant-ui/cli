@@ -89,4 +89,4 @@ export {
 export { type Analysis, createAnalysis } from "./ts/program.js"
 export { type Evaluated, evaluate } from "./ts/static-eval.js"
 export { TSCONFIG_FILE, tsconfigPaths } from "./ts/tsconfig-paths.js"
-export { DEFAULT_IGNORED_DIRS, walk } from "./walk.js"
+export { DEFAULT_IGNORED_DIRS, type WalkOptions, type WalkResult, walk } from "./walk.js"

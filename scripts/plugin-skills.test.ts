@@ -1,4 +1,4 @@
-import { pluginRules, pluginSkills, SKILL_NAMES } from "@invariant/agent-kit"
+import { pluginRules, pluginSkills, SCAN_SKILL_NAME, SKILL_NAMES } from "@invariant/agent-kit"
 import { run } from "@invariant/cli"
 import { FIXED_CLOCK } from "@invariant/compiler-core/testing"
 import { describe, expect, it } from "vitest"
@@ -7,10 +7,14 @@ const skill = (client: "claude-code" | "cursor", name: string): string =>
   pluginSkills(client).find((f) => f.path === `skills/${name}/SKILL.md`)?.content as string
 
 describe("plugin skills", () => {
-  it("ship the setup skill and generic copies of every other skill, for both clients", () => {
+  it("ship the setup and scan skills and generic copies of every other skill, for both clients", () => {
     for (const client of ["claude-code", "cursor"] as const) {
       const paths = pluginSkills(client).map((f) => f.path)
-      expect(paths).toEqual([...SKILL_NAMES.map((n) => `skills/${n}/SKILL.md`), "skills/setup/SKILL.md"])
+      expect(paths).toEqual([
+        ...SKILL_NAMES.map((n) => `skills/${n}/SKILL.md`),
+        "skills/setup/SKILL.md",
+        `skills/${SCAN_SKILL_NAME}/SKILL.md`
+      ])
     }
   })
 

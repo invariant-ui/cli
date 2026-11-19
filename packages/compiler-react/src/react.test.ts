@@ -1,4 +1,4 @@
-import { compile, memoryFs, type SourceAdapter } from "@invariant/compiler-core"
+import { compile, discoverProject, memoryFs, type SourceAdapter } from "@invariant/compiler-core"
 import {
   checkAdapterConformance,
   checkCompileDeterminism,
@@ -471,6 +471,21 @@ describe("evidence and locations", () => {
 })
 
 describe("adapter behavior", () => {
+  it("warns when a package holds more files than it reads, rather than dropping the rest without a word", async () => {
+    const files: Record<string, string> = {
+      "package.json": manifest(),
+      "src/a.tsx": "export const A = () => <div />",
+      "src/index.ts": `export { A } from "./a"`
+    }
+    // Sorted before `index.ts`, so the entry point is what the limit would cut off.
+    for (let i = 0; i < 20_100; i++) files[`src/b/f${i}.ts`] = ""
+    const fs = memoryFs(files)
+    const found = await adapter.discover({ fs, project: await discoverProject({ fs }) })
+    expect(found.diagnostics).toEqual([
+      expect.objectContaining({ code: "react.walk-truncated", severity: "warning" })
+    ])
+  }, 60_000)
+
   it("discovers only packages that declare React, excluding nested workspace packages from the parent", async () => {
     const fs = memoryFs({
       "package.json": JSON.stringify({

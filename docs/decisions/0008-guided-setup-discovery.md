@@ -1,6 +1,6 @@
 # ADR 0008: Guided discovery in `setup`
 
-Status: **Accepted**. Adds optional configuration (`componentSources`, `discovery`) and scopes compilation to approved paths. The contract schema does not change.
+Status: **Accepted**. Extended by ADR 0009 (a complete scan with no file limit, and agent-assisted discovery). Adds optional configuration (`componentSources`, `discovery`) and scopes compilation to approved paths. The contract schema does not change.
 
 ## Context
 
@@ -20,11 +20,11 @@ Candidates gain an optional, inferred `archetype` (page or layout) from file pat
 
 ## Non-interactive use
 
-With no terminal, setup asks nothing and approves nothing on its own. `--yes` or `--confirm-contract` accept the recommended directories. `--include` and `--exclude` (or the older `--sources`, an alias of `--include`) name them. Without any of these it reports that confirmation is required and writes nothing. `--discover-only` prints the recognition and candidates as JSON and writes nothing. `--rediscover` runs the review again on a project that already has a config, starting from the saved decisions.
+With no terminal, setup asks nothing and approves nothing on its own. `--yes` or `--confirm-contract` accept the recommended directories. `--include` and `--exclude` (or the older `--sources`, an alias of `--include`) name them. Without any of these it reports that confirmation is required and writes nothing. The same holds when the scan finds no components in a project that has a UI framework, or recommends nothing (ADR 0009). `--discover-only` prints the recognition and candidates as JSON and writes nothing. `--rediscover` runs the review again on a project that already has a config, starting from the saved decisions.
 
 ## Consequences
 
 - Interactive runs ask about component directories first (checklist on a terminal, typed numbers otherwise), then applications, then each proposed pattern.
 - The compiled contract now holds only components in approved paths. Previously a sub-folder source compiled to nothing.
 - Syntax detection finds internal components the entry-point-based adapters do not, so a directory can be approved that holds components the contract will not list (only exported ones reach it).
-- Limits: `.gitignore` support covers directory names and simple globs, not negation or anchoring; imports are resolved for relative paths and `@/`, `~/` only (not tsconfig paths); Vue import graphs are not read; pages and layouts are classified from `.tsx` and `.jsx` only.
+- Limits: `.gitignore` support reads the root file only, and anchors patterns as git does, but does not model negation or nested files (so the scan can read more than git tracks, never less); imports are resolved for relative paths and `@/`, `~/` only (not tsconfig paths); Vue import graphs are not read; pages and layouts are classified from `.tsx` and `.jsx` only.
