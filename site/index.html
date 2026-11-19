@@ -19,7 +19,7 @@
 <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "Invariant", "alternateName": "@invariant-ui/cli", "url": "https://invariant-ui.com/", "description": "Compiles a design system and approved UX patterns into a machine-readable contract that AI coding agents read over MCP, and checks code against it in CI.", "applicationCategory": "DeveloperApplication", "applicationSubCategory": "Design system governance", "operatingSystem": "macOS, Linux, Windows (Node.js 20+)", "softwareRequirements": "Node.js 20 or newer", "license": "https://github.com/invariant-ui/cli/blob/main/LICENSE", "codeRepository": "https://github.com/invariant-ui/cli", "sameAs": ["https://github.com/invariant-ui/cli", "https://www.npmjs.com/package/@invariant-ui/cli"], "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "Invariant", "url": "https://invariant-ui.com/"}</script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Invariant?", "acceptedAnswer": {"@type": "Answer", "text": "Invariant is a source-available command-line tool that compiles a design system (components, props, tokens) and the UX patterns a team approves into one machine-readable JSON contract. AI coding agents read the contract before they write UI, and Invariant checks the resulting code against it in CI."}}, {"@type": "Question", "name": "How do I make an AI coding agent follow my design system?", "acceptedAnswer": {"@type": "Answer", "text": "Run npx @invariant-ui/cli setup in the project that holds your design system. Invariant compiles a contract, connects your AI tool (Claude Code, Cursor, Codex or Windsurf) through a read-only MCP server, and adds a CI check. The agent looks up real components, props and tokens instead of guessing, and invariant validate flags code that departs from them."}}, {"@type": "Question", "name": "Does Invariant use an LLM to read my design system?", "acceptedAnswer": {"@type": "Answer", "text": "No. Components, props, events, default values and token values are extracted statically from source code, so an LLM is never the authority for them. Anything inferred is labeled inferred with a confidence, and nothing becomes an approved rule until a person approves it."}}, {"@type": "Question", "name": "Which frameworks and design-system sources does it support?", "acceptedAnswer": {"@type": "Answer", "text": "React, Vue, Angular, Storybook and design token files. Figma and zeroheight are not supported yet. Pattern checks and pattern discovery read React only, and browser verification is early."}}, {"@type": "Question", "name": "Does Invariant send my code anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. It runs locally with no account and no network access. Source is parsed and never executed, unless you explicitly pass --trust-config for a code configuration."}}, {"@type": "Question", "name": "How is Invariant different from a Figma or Storybook MCP server?", "acceptedAnswer": {"@type": "Answer", "text": "Those servers expose one source. Invariant reconciles several sources (code, Storybook, tokens) into one contract, keeps the file and line behind every fact, reports conflicts between sources instead of choosing silently, and then enforces the contract on pull requests. It also holds the page layouts and interaction rules your team approves, which component libraries do not record."}}, {"@type": "Question", "name": "What does Invariant cost and what is the license?", "acceptedAnswer": {"@type": "Answer", "text": "It is free to run. The license is the Functional Source License (FSL-1.1-ALv2): you can read, run, modify and use it inside your company, but not use it to offer a competing product or service. Each version becomes Apache-2.0 two years after release."}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is Invariant?", "acceptedAnswer": {"@type": "Answer", "text": "Invariant is a source-available command-line tool that compiles a design system (components, props, tokens) and the UX patterns a team approves into one machine-readable JSON contract. AI coding agents read the contract before they write UI, and Invariant checks the resulting code against it in CI."}}, {"@type": "Question", "name": "How do I make an AI coding agent follow my design system?", "acceptedAnswer": {"@type": "Answer", "text": "Run npx @invariant-ui/cli setup in the project that holds your design system. Invariant compiles a contract, connects your AI tool (Claude Code, Cursor, Codex or Windsurf) through a read-only MCP server, and adds a CI check. The agent looks up real components, props and tokens instead of guessing, and invariant validate flags code that departs from them."}}, {"@type": "Question", "name": "Does Invariant use an LLM to read my design system?", "acceptedAnswer": {"@type": "Answer", "text": "No. Components, props, events, default values and token values are extracted statically from source code, so an LLM is never the authority for them. Anything inferred is labeled inferred with a confidence, and nothing becomes an approved rule until a person approves it."}}, {"@type": "Question", "name": "Which frameworks and design-system sources does it support?", "acceptedAnswer": {"@type": "Answer", "text": "React, Vue, Angular, Storybook and design token files. Figma and zeroheight are not supported yet. Pattern checks and pattern discovery read React only, and browser verification is early."}}, {"@type": "Question", "name": "Does Invariant send my code anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. It runs locally with no account and no network access. Source is parsed and never executed, unless you explicitly pass --trust-config for a code configuration."}}, {"@type": "Question", "name": "How is Invariant different from a Figma or Storybook MCP server?", "acceptedAnswer": {"@type": "Answer", "text": "Those servers expose one source. Invariant reconciles several sources (code, Storybook, tokens) into one contract, keeps the file and line behind every fact, reports conflicts between sources instead of choosing silently, and then enforces the contract on pull requests. It also holds the page layouts and interaction rules your team approves, which component libraries do not record."}}, {"@type": "Question", "name": "What does Invariant cost and what is the license?", "acceptedAnswer": {"@type": "Answer", "text": "The CLI is free to run. A hosted plan for teams is planned and has a waitlist; it is not available to buy yet. The license is the Functional Source License (FSL-1.1-ALv2): you can read, run, modify and use it inside your company, but not use it to offer a competing product or service. Each version becomes Apache-2.0 two years after release."}}]}</script>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -74,10 +74,9 @@ nav ul a:hover{color:var(--text)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .btn.primary:hover{filter:brightness(1.1)}
 .navright{display:flex;align-items:center;gap:18px}
-.doclink{font:14px var(--mono);color:var(--muted);text-decoration:none}
-.doclink:hover{color:var(--text)}
-.toplink{display:inline-flex;color:var(--muted);text-decoration:none}
-.toplink:hover{color:var(--text)}
+.btn.navwl{padding:6px 12px;border-radius:3px;border-color:var(--accent);color:var(--text);font:13px var(--mono);white-space:nowrap}
+.btn.navwl:hover{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+@media(max-width:480px){.navright{gap:10px}.btn.navwl{padding:5px 8px;font-size:12px}.navburger{margin-left:10px}}
 .btn:not(.primary):hover{border-color:var(--muted)}
 .hero{padding:96px 0 72px;text-align:center}
 h1{font-size:clamp(34px,6vw,60px);line-height:1.08;letter-spacing:-.03em;margin:0 0 20px}
@@ -476,6 +475,33 @@ section .wrap>h2{align-self:start}
 .cctally{margin-top:0;font:12.5px var(--mono);color:var(--muted)}
 .cctally b{color:var(--text)}
 .faq h3{margin:28px 0 6px;font-size:17px}.faq h3:first-child{margin-top:0}.faq p{margin:0;color:var(--muted);max-width:680px}
+.plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:32px}
+.plan{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:24px;position:relative}
+.plan.featured{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}.plan.featured .desc strong{color:var(--text);font-weight:600}
+.plan .tag{position:absolute;top:-1px;right:16px;transform:translateY(-50%);background:var(--bg);border:1px solid var(--accent);border-radius:3px;color:var(--accent);font:11px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:2px 8px}
+.plan h3{margin:0;font:600 15px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.plan .price{margin:10px 0 0;font:500 38px/1.1 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;letter-spacing:-.015em;color:var(--text)}
+.plan .price small{display:block;margin-top:6px;font:13px var(--sans);color:var(--muted);letter-spacing:0}
+.plan .desc{margin:12px 0 20px;min-height:5em;color:var(--muted);font-size:15px}
+.plan-cta{margin-bottom:24px}
+.plan-cta .btn{display:block;margin:0;text-align:center;width:100%;box-sizing:border-box}
+.plan ul{margin:0;padding:18px 0 0;border-top:1px solid var(--line);list-style:none;display:grid;gap:8px;align-content:start;color:var(--text);font-size:14.5px}
+.plan li{padding-left:22px;position:relative}
+.plan li::before{content:"\2713";position:absolute;left:0;color:var(--ok)}
+.plan li.soon{color:var(--muted)}
+.fine{margin:16px 0 0;color:var(--muted);font-size:13px}
+.wl{display:flex;gap:8px}.wl[hidden]{display:none}
+.wl input[type=email]{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:3px;color:var(--text);font:14px var(--sans);padding:10px;min-width:0}
+.wl input[type=email]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wl button{cursor:pointer;font-family:inherit;white-space:nowrap}
+.plan-cta .wl .btn{width:auto;flex:none}
+.wl button:disabled{opacity:.6;cursor:default}
+.wl-msg{margin:8px 0 0;font-size:13.5px;color:var(--muted)}.wl-msg:empty{display:none}
+.wl-msg.ok{margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:3px;background:var(--bg);color:var(--text)}
+.wl-msg.ok::before{content:"\2713  ";color:var(--ok)}
+.wl-msg.err{color:var(--bad)}
+.wl .hp,.wl .sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+@media(max-width:900px){.plans{grid-template-columns:1fr}.plan .desc{min-height:0}}
 </style>
 </head>
 <body>
@@ -490,13 +516,13 @@ section .wrap>h2{align-self:start}
       <li><a href="#how">How it works</a></li>
       <li><a href="#facts">Fact status</a></li>
       <li><a href="#patterns">Patterns</a></li>
-      <li><a href="#proof">Proof</a></li>
+      <!-- <li><a href="#proof">Proof</a></li> -->
+
       <li><a href="#trust">Trust</a></li>
       <li><a href="#start">Get started</a></li>
     </ul>
     <div class="navright">
-      <a class="doclink" href="docs/">Docs</a>
-      <a class="toplink" href="https://github.com/invariant-ui/cli" aria-label="Invariant on GitHub" title="GitHub"><svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
+      <a class="btn navwl" href="#plans" data-wl="nav">Join waitlist</a>
       <button class="themebtn" id="themebtn" type="button"></button>
     </div>
   </div>
@@ -624,6 +650,7 @@ section .wrap>h2{align-self:start}
   </div>
 </section>
 
+<!-- Explore the contract: hidden for now. Uncomment to restore; the explorer:data block below and its build script are unchanged.
 <section id="explorer">
   <div class="wrap">
     <div class="label">Explore the contract</div>
@@ -636,6 +663,7 @@ section .wrap>h2{align-self:start}
     </div>
   </div>
 </section>
+-->
 <!-- explorer:data:start -->
 <script type="application/json" id="explorer-data">{"fixture":"acme-ui","components":[{"name":"Badge","description":null,"descriptionFact":null,"props":[{"name":"tone","type":"\"info\" | \"warn\"","required":false,"status":"discovered","confidence":null,"at":"src/Badge.tsx:3","method":"compiler-api","original":"tone?: \"info\" | \"warn\""}]},{"name":"Button","description":"Triggers an action.","descriptionFact":{"status":"documented","at":"src/Button.tsx:28","method":"compiler-api","original":"Button = forwardRef\u003cHTMLButtonElement, ButtonProps>(function Button("},"props":[{"name":"children","type":"React.ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Button.tsx:17","method":"compiler-api","original":"children: React.ReactNode"},{"name":"data-testid","type":"string","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:6","method":"compiler-api","original":"\"data-testid\"?: string"},{"name":"icon","type":"React.ReactElement","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:19","method":"compiler-api","original":"icon?: React.ReactElement"},{"name":"loading","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:15","method":"compiler-api","original":"loading?: boolean"},{"name":"onPress","type":"(event: React.MouseEvent\u003cHTMLButtonElement>) => void","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:16","method":"compiler-api","original":"onPress?: (event: React.MouseEvent\u003cHTMLButtonElement>) => void"},{"name":"plain","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:14","method":"compiler-api","original":"plain?: boolean"},{"name":"size","type":"\"sm\" | \"md\" | \"lg\"","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:12","method":"compiler-api","original":"size?: \"sm\" | \"md\" | \"lg\""},{"name":"variant","type":"\"primary\" | \"secondary\" | \"ghost\"","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:11","method":"compiler-api","original":"variant?: \"primary\" | \"secondary\" | \"ghost\""}]},{"name":"Card","description":null,"descriptionFact":null,"props":[{"name":"children","type":"ReactNode","required":false,"status":"discovered","confidence":null,"at":"src/Card.tsx:7","method":"compiler-api","original":"children?: ReactNode"},{"name":"elevated","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Card.tsx:6","method":"compiler-api","original":"elevated?: boolean"}]},{"name":"Card.Body","description":null,"descriptionFact":null,"props":[{"name":"children","type":"ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Card.tsx:22","method":"compiler-api","original":"children: ReactNode"}]},{"name":"Card.Header","description":null,"descriptionFact":null,"props":[{"name":"title","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/Card.tsx:18","method":"compiler-api","original":"title: string"}]},{"name":"Icon","description":null,"descriptionFact":null,"props":[{"name":"name","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/Icon.tsx:1","method":"compiler-api","original":"name: string;"},{"name":"size","type":"number","required":false,"status":"discovered","confidence":null,"at":"src/Icon.tsx:1","method":"compiler-api","original":"size?: number"}]},{"name":"IconButton","description":null,"descriptionFact":null,"props":[{"name":"data-testid","type":"string","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:6","method":"compiler-api","original":"\"data-testid\"?: string"},{"name":"label","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/IconButton.tsx:5","method":"compiler-api","original":"label: string"},{"name":"loading","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:15","method":"compiler-api","original":"loading?: boolean"},{"name":"name","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/IconButton.tsx:5","method":"compiler-api","original":"name: string;"},{"name":"onPress","type":"(event: React.MouseEvent\u003cHTMLButtonElement>) => void","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:16","method":"compiler-api","original":"onPress?: (event: React.MouseEvent\u003cHTMLButtonElement>) => void"},{"name":"plain","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:14","method":"compiler-api","original":"plain?: boolean"},{"name":"size","type":"\"sm\" | \"md\" | \"lg\"","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:12","method":"compiler-api","original":"size?: \"sm\" | \"md\" | \"lg\""},{"name":"variant","type":"\"primary\" | \"secondary\" | \"ghost\"","required":false,"status":"discovered","confidence":null,"at":"src/Button.tsx:11","method":"compiler-api","original":"variant?: \"primary\" | \"secondary\" | \"ghost\""}]},{"name":"LazyChart","description":null,"descriptionFact":null,"props":[]},{"name":"Link","description":null,"descriptionFact":null,"props":[{"name":"children","type":"React.ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Link.tsx:1","method":"compiler-api","original":"children: React.ReactNode"},{"name":"href","type":"string","required":true,"status":"discovered","confidence":null,"at":"src/Link.tsx:1","method":"compiler-api","original":"href: string;"}]},{"name":"Modal","description":"Blocks the page until dismissed.","descriptionFact":{"status":"documented","at":"src/Modal.tsx:12","method":"compiler-api","original":"export class Modal extends Component\u003cModalProps> {"},"props":[{"name":"children","type":"React.ReactNode","required":false,"status":"discovered","confidence":null,"at":"src/Modal.tsx:8","method":"compiler-api","original":"children?: React.ReactNode"},{"name":"onClose","type":"() => void","required":false,"status":"discovered","confidence":null,"at":"src/Modal.tsx:7","method":"compiler-api","original":"onClose?: () => void"},{"name":"open","type":"boolean","required":true,"status":"discovered","confidence":null,"at":"src/Modal.tsx:4","method":"compiler-api","original":"open: boolean"},{"name":"size","type":"\"sm\" | \"lg\"","required":false,"status":"discovered","confidence":null,"at":"src/Modal.tsx:6","method":"compiler-api","original":"size?: \"sm\" | \"lg\""},{"name":"title","type":"string","required":false,"status":"discovered","confidence":null,"at":"src/Modal.tsx:5","method":"compiler-api","original":"title?: string"}]},{"name":"Select","description":null,"descriptionFact":null,"props":[{"name":"getKey","type":"(option: T) => string","required":true,"status":"discovered","confidence":null,"at":"src/Select.tsx:6","method":"compiler-api","original":"getKey: (option: T) => string"},{"name":"onChange","type":"(value: T) => void","required":false,"status":"discovered","confidence":null,"at":"src/Select.tsx:4","method":"compiler-api","original":"onChange?: (value: T) => void"},{"name":"options","type":"T[]","required":true,"status":"discovered","confidence":null,"at":"src/Select.tsx:2","method":"compiler-api","original":"options: T[]"},{"name":"placeholder","type":"string","required":false,"status":"discovered","confidence":null,"at":"src/Select.tsx:7","method":"compiler-api","original":"placeholder?: string"},{"name":"renderOption","type":"(option: T) => React.ReactNode","required":false,"status":"discovered","confidence":null,"at":"src/Select.tsx:5","method":"compiler-api","original":"renderOption?: (option: T) => React.ReactNode"},{"name":"value","type":"T","required":false,"status":"discovered","confidence":null,"at":"src/Select.tsx:3","method":"compiler-api","original":"value?: T"}]},{"name":"Stack","description":null,"descriptionFact":null,"props":[{"name":"children","type":"React.ReactNode","required":false,"status":"discovered","confidence":null,"at":"src/layout/Stack.tsx:3","method":"compiler-api","original":"children?: React.ReactNode"},{"name":"gap","type":"\"sm\" | \"md\" | \"lg\"","required":false,"status":"discovered","confidence":null,"at":"src/layout/Stack.tsx:2","method":"compiler-api","original":"gap?: \"sm\" | \"md\" | \"lg\""}]},{"name":"Text","description":null,"descriptionFact":null,"props":[{"name":"as","type":"\"p\" | \"span\"","required":false,"status":"discovered","confidence":null,"at":"src/Text.tsx:12","method":"compiler-api","original":"as?: \"p\" | \"span\""},{"name":"children","type":"React.ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Text.tsx:13","method":"compiler-api","original":"children: React.ReactNode"}]},{"name":"Tooltip","description":null,"descriptionFact":null,"props":[{"name":"children","type":"React.ReactElement","required":true,"status":"discovered","confidence":null,"at":"src/Tooltip.tsx:1","method":"compiler-api","original":"children: React.ReactElement;"},{"name":"content","type":"React.ReactNode","required":true,"status":"discovered","confidence":null,"at":"src/Tooltip.tsx:1","method":"compiler-api","original":"content: React.ReactNode;"},{"name":"open","type":"boolean","required":false,"status":"discovered","confidence":null,"at":"src/Tooltip.tsx:1","method":"compiler-api","original":"open?: boolean"}]}]}</script>
 <!-- explorer:data:end -->
@@ -668,9 +696,11 @@ section .wrap>h2{align-self:start}
       <div class="card"><h3>Layout and interaction rules</h3><p>Required children, ordering, counts and regions, plus required states like loading, error and confirm for forms, deletes and search.</p></div>
       <div class="card"><h3>Enforced, not just documented</h3><p>Approved rules become policies that <code>validate</code> checks in CI. Setup can turn on starter rules from the structures it found, as warnings, so you see them work without breaking a build.</p></div>
     </div>
+    <p class="fine">Centralized approval and review of patterns across teams is planned for Team. <a href="#plans" data-wl="patterns">Join the waitlist</a>.</p>
   </div>
 </section>
 
+<!-- Proof: hidden for now. Uncomment to restore, along with the Proof nav link.
 <section id="proof">
   <div class="wrap">
     <div class="label">Proof</div>
@@ -688,6 +718,7 @@ section .wrap>h2{align-self:start}
     <p style="margin:18px 0 0">Browser verification is early: the Playwright driver is new, so try it on your app before relying on it.</p>
   </div>
 </section>
+-->
 
 <section id="ci">
   <div class="wrap">
@@ -713,6 +744,7 @@ section .wrap>h2{align-self:start}
       <div class="card"><h3>Stale contract caught</h3><p><code>verify --fresh</code> fails when the committed contract no longer matches your sources, or was edited by hand.</p></div>
       <div class="card"><h3>Pinned and read-only</h3><p>The job pins the exact version and asks for read access only. A later release can't change what your CI does.</p></div>
     </div>
+    <p class="fine">Running this across several repositories, with shared policy and exception management, is planned for Team. <a href="#plans" data-wl="ci">Join the waitlist</a>.</p>
   </div>
 </section>
 
@@ -838,6 +870,70 @@ accepted candidate:arrangement.d70bb486, recorded in
   </div>
 </section>
 
+<section id="plans">
+  <div class="wrap">
+    <div class="label">Plans</div>
+    <h2>Free locally. Team features are planned.</h2>
+    <p class="sub">The CLI, compiler, MCP server and local validation are free and need no account. A hosted plan for teams is not built yet. Join the waitlist to tell us you want it. Nothing here is available to buy.</p>
+    <div class="plans">
+      <div class="plan">
+        <h3>Community</h3>
+        <p class="price">Free<small>No account needed</small></p>
+        <p class="desc">Everything that runs on your machine.</p>
+        <div class="plan-cta"><a class="btn primary" href="#start">Get started</a></div>
+        <ul>
+          <li>Compile, verify and validate locally</li>
+          <li>MCP server, agent hooks and plugins</li>
+          <li>Policies and patterns in your repo</li>
+          <li>GitHub, SARIF and JSON output for CI</li>
+        </ul>
+      </div>
+      <div class="plan featured">
+        <span class="tag">Founding cohort</span>
+        <h3>Team</h3>
+        <p class="price">Planned<small>Price not decided</small></p>
+        <p class="desc">Shared governance across your applications. <strong>Early access for the first 25 teams on the waitlist.</strong></p>
+        <div class="plan-cta">
+          <form class="wl" id="waitlist" method="post" action="https://script.google.com/macros/s/AKfycbwzlDj2HL-LRRUWx3Ny-1XMtabUvNsyov9B5LT7UNb3VquuDLagWpaaAxZX0yZIF8kx0Q/exec">
+            <label class="sr" for="wl-email">Work email</label>
+            <input id="wl-email" name="email" type="email" required maxlength="254" autocomplete="email" placeholder="Work email">
+            <input type="hidden" name="plan" value="team"><input type="hidden" name="t" value=""><input type="hidden" name="src" value="plans">
+            <div class="hp" aria-hidden="true"><label>Leave empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"></label></div>
+            <button class="btn primary" type="submit">Join waitlist</button>
+          </form>
+          <p class="wl-msg" role="status" aria-live="polite"></p>
+        </div>
+        <ul>
+          <li>Everything in Community</li>
+          <li class="soon">Shared organizational policy management</li>
+          <li class="soon">Multiple application repositories</li>
+          <li class="soon">Centralized approval and review workflows</li>
+          <li class="soon">Team compliance dashboard</li>
+          <li class="soon">Historical validation results</li>
+          <li class="soon">Exception management and policy rollouts</li>
+        </ul>
+      </div>
+      <!-- Enterprise card: hidden for now. To restore: uncomment, set .plans back to repeat(3,...), replace the booking link, and add Enterprise back to the cost FAQ (both copies).
+      <div class="plan">
+        <h3>Enterprise</h3>
+        <p class="price">Custom<small>For your organization</small></p>
+        <p class="desc">Security, deployment and contract requirements.</p>
+        <div class="plan-cta">
+          <a class="btn" href="https://cal.com/REPLACE-ME">Book a call</a>
+        </div>
+        <ul>
+          <li class="soon">Everything in Team</li>
+          <li class="soon">Security and deployment reviews</li>
+          <li class="soon">Support and contract terms</li>
+          <li class="soon">Onboarding help for your teams</li>
+        </ul>
+      </div>
+      -->
+    </div>
+    <p class="fine">Items in grey text are planned and are not available yet. Waitlist emails are used only to tell you when Team opens.</p>
+  </div>
+</section>
+
 <section id="start">
   <div class="wrap">
     <div class="label">Get started</div>
@@ -891,7 +987,7 @@ invariant --help</pre></div>
       <h3>How is Invariant different from a Figma or Storybook MCP server?</h3>
       <p>Those servers expose one source. Invariant reconciles several sources (code, Storybook, tokens) into one contract, keeps the file and line behind every fact, reports conflicts between sources instead of choosing silently, and then enforces the contract on pull requests. It also holds the page layouts and interaction rules your team approves, which component libraries do not record.</p>
       <h3>What does Invariant cost and what is the license?</h3>
-      <p>It is free to run. The license is the Functional Source License (FSL-1.1-ALv2): you can read, run, modify and use it inside your company, but not use it to offer a competing product or service. Each version becomes Apache-2.0 two years after release.</p>
+      <p>The CLI is free to run. A hosted plan for teams is planned and has a waitlist; it is not available to buy yet. The license is the Functional Source License (FSL-1.1-ALv2): you can read, run, modify and use it inside your company, but not use it to offer a competing product or service. Each version becomes Apache-2.0 two years after release.</p>
     </div>
   </div>
 </section>
@@ -965,6 +1061,7 @@ invariant --help</pre></div>
     try { data = JSON.parse(document.getElementById('explorer-data').textContent); } catch (e) { return; }
     if (!data.components) return;
     var tree = document.getElementById('extree'), pane = document.getElementById('expane');
+    if (!tree || !pane) return;
     var cls = { discovered: 'd', documented: 'm', inferred: 'i', approved: 'a' };
     var el = (tag, text, c) => { var n = document.createElement(tag); if (text != null) n.textContent = text; if (c) n.className = c; return n; };
     var badge = (s, conf) => {
@@ -1073,6 +1170,23 @@ function paint(){var n=cur()==="light"?"dark":"light";b.innerHTML=n==="light"?SU
 var c=document.querySelector('meta[name=theme-color]');if(c)c.content=cur()==="light"?"#faf9f6":"#0e0e0d"}
 b.onclick=function(){var n=cur()==="light"?"dark":"light";r.dataset.theme=n;try{localStorage.setItem("theme",n)}catch(e){}paint()};
 m.addEventListener("change",paint);paint()})();
+</script>
+<script>
+// Waitlist: posts to the Apps Script endpoint and answers in place. The t field is the page load time, used server-side as a bot check.
+(function(){if(!window.fetch)return;
+var src="plans";document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[data-wl]");if(a)src=a.dataset.wl});
+document.querySelectorAll("form.wl").forEach(function(f){var msg=f.nextElementSibling,btn=f.querySelector("button"),label=btn.textContent,loaded=Date.now();
+function say(text,cls){msg.textContent=text;msg.className="wl-msg "+cls}
+f.addEventListener("submit",function(e){e.preventDefault();
+  btn.disabled=true;btn.textContent="Joining…";say("","");f.elements.t.value=loaded;f.elements.src.value=src;
+  fetch(f.action,{method:"POST",body:new URLSearchParams(new FormData(f))})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      if(d&&d.ok){f.hidden=true;say("You’re on the list. We’ll email you when Team opens.","ok");return}
+      say(d&&d.error==="invalid-email"?"That email address doesn’t look right.":d&&d.error==="busy"?"Lots of signups right now. Please try again in an hour.":"Something went wrong. Please try again.","err");
+      btn.disabled=false;btn.textContent=label})
+    .catch(function(){say("Couldn’t reach the waitlist. Please try again in a moment.","err");btn.disabled=false;btn.textContent=label});
+});});})();
 </script>
 </body>
 </html>
