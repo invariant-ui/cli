@@ -38,7 +38,7 @@ import { analyzeProject, discoverFor } from "./sources/plan.js"
 import { type Added, decideWithoutAsking, type ReviewResult, reviewSources } from "./sources/review.js"
 import { type StarterRule, starterRules } from "./starter-rules.js"
 import { loadCompiled } from "./store.js"
-import { CLI_NAME } from "./version.js"
+import { CLI_NAME, CLI_VERSION, NPM_PACKAGE } from "./version.js"
 import { installStepsFor, WORKFLOW_PATH, workflowYaml } from "./workflow.js"
 
 const TOP = 5
@@ -71,6 +71,9 @@ function whoIs(c: Context): string | undefined {
     return undefined
   }
 }
+
+/** A command a person can run without installing anything. `invariant <command>` works only once the CLI is installed. */
+const npx = (args: string): string => `npx ${NPM_PACKAGE}@${CLI_VERSION} ${args}`
 
 const slugId = (name: string, category = "composition"): string =>
   `${category}.${name
@@ -163,6 +166,10 @@ export async function setup(c: Context): Promise<number> {
 
   /** Why the last discovery was not sure, for the message when there is no one to ask. */
   let unsure: string[] = []
+  /** What the person confirmed, to compare with what the compile produced. */
+  let confirmedSet:
+    | { components: number; packages: Array<{ name: string; dir: string; entries: number }> }
+    | undefined
   const needsConfirmation = (): string =>
     `The component directories need your confirmation${unsure.length > 0 ? ` (${unsure.join("; ")})` : ""}, and there is no terminal to ask. ${
       yesish
@@ -486,6 +493,19 @@ export async function setup(c: Context): Promise<number> {
     )
     const places = result.decisions.filter((d) => d.status === "approved").length
     step(`${distinct.size} components selected across ${places} path${places === 1 ? "" : "s"}`)
+    const owners = new Map<string, { name: string; dir: string; entries: number }>()
+    for (const d of result.decisions.filter((x) => x.status === "approved")) {
+      const owner = [...recognition.project.packages]
+        .filter((p) => p.dir === "." || d.path === p.dir || d.path.startsWith(`${p.dir}/`))
+        .sort((a, b) => b.dir.length - a.dir.length)[0]
+      if (owner)
+        owners.set(owner.dir, {
+          name: owner.name ?? owner.dir,
+          dir: owner.dir,
+          entries: owner.entryPoints.length
+        })
+    }
+    confirmedSet = { components: distinct.size, packages: [...owners.values()] }
     return {
       config: applyDecisions(base, {
         decisions: result.decisions,
@@ -640,6 +660,46 @@ export async function setup(c: Context): Promise<number> {
     `${consumer ? "compiled with your own patterns on top" : "compiled"}: ${contract.components.length} components${names.length > 0 ? ` (${names.slice(0, 6).join(", ")}${names.length > 6 ? `, +${names.length - 6} more` : ""})` : ""}, ${contract.tokens.length} tokens, ${contract.conflicts.length} conflicts`
   )
   if (compiled.code === 1) flag("compile reported errors; see invariant/invariant.diagnostics.json")
+  // Setup finds components by reading the code, but the compile reads the ones a package exports from its entry points.
+  // When most of what the person confirmed did not reach the contract, say so and say why, instead of reporting a count.
+  if (confirmedSet && contract.components.length * 2 < confirmedSet.components) {
+    const without = confirmedSet.packages.filter((p) => p.entries === 0).map((p) => p.name)
+    let lost = false
+    let shown: string[] = []
+    try {
+      const found = (
+        JSON.parse(readFileSync(path.join(dir, "invariant.diagnostics.json"), "utf8")) as {
+          diagnostics?: Array<{ severity: string; code: string; message: string }>
+        }
+      ).diagnostics
+      const first = ["cli.source-matched-nothing", "discovery.walk-truncated"]
+      const all = (found ?? []).filter((d) => d.severity !== "error" && !d.code.startsWith("tokens."))
+      lost = all.some((d) => first.includes(d.code))
+      shown = [
+        ...new Set(
+          [...all]
+            .sort((a, b) => Number(first.includes(b.code)) - Number(first.includes(a.code)))
+            .map((d) => `${d.code}: ${d.message}`)
+        )
+      ]
+    } catch {
+      // The diagnostics file is a convenience here.
+    }
+    if (lost)
+      flag(
+        `only ${contract.components.length} of the ${confirmedSet.components} components you confirmed are in the contract, because the compile did not find the sources setup configured for them.`
+      )
+    else
+      flag(
+        `only ${contract.components.length} of the ${confirmedSet.components} components you confirmed are in the contract. The compile reads the components a package exports from its entry points, and components no entry point exports are left out. ${
+          without.length > 0
+            ? `No entry point was found for ${without.slice(0, 6).join(", ")}${without.length > 6 ? `, +${without.length - 6} more` : ""} (looked for package.json main or exports, an ng-package.json entryFile, src/public-api.ts and src/index.ts).`
+            : "Every confirmed package has an entry point, so they do not export the other components."
+        }`
+      )
+    for (const w of shown.slice(0, 4)) say(`  ${w.slice(0, 220)}`)
+    say("The rest of the diagnostics are in invariant/invariant.diagnostics.json.")
+  }
 
   // 2. Gather everything the plan needs. Nothing here changes the project except the compile output and the candidates file.
   const by = whoIs(c)
@@ -874,7 +934,7 @@ export async function setup(c: Context): Promise<number> {
 
   if (mode === "stop") {
     say(
-      `Stopped. Nothing was approved or added. The contract is compiled in ${path.relative(c.cwd, dir) || "."}/. If it looks wrong, check ${path.basename(configPath)} (or pass --paths, --contract) and run ${CLI_NAME} setup again.`
+      `Stopped. Nothing was approved or added. The contract is compiled in ${path.relative(c.cwd, dir) || "."}/. If it looks wrong, check ${path.basename(configPath)} (or pass --paths, --contract) and run ${npx("setup")} again.`
     )
     print(c, outro("stopped", true))
     return 0
@@ -1020,7 +1080,7 @@ export async function setup(c: Context): Promise<number> {
     did.push(
       approved > 0
         ? `patterns   ${approved} approved by ${by}. They guide agents.`
-        : `patterns   ${promoted.length} added as proposals (not approved). Approve with \`${CLI_NAME} review\` once you have read them.`
+        : `patterns   ${promoted.length} added as proposals (not approved). Approve with \`${npx("review")}\` once you have read them.`
     )
     if (rulesOn > 0) did.push(`rules      ${rulesOn} starter rule(s), as warnings`)
   }
@@ -1046,7 +1106,7 @@ export async function setup(c: Context): Promise<number> {
     }
   else if (c.args.values["no-agent"] !== true && clients.length === 0)
     did.push(
-      `agents     none detected. Run \`${CLI_NAME} agent init <claude-code|cursor|codex|windsurf>\` when you use one.`
+      `agents     none detected. Run \`${npx("agent init <claude-code|cursor|codex|windsurf>")}\` when you use one.`
     )
 
   if (baselineWanted && wantBaseline) {
@@ -1072,7 +1132,7 @@ export async function setup(c: Context): Promise<number> {
         /^\/?invariant\/?$/m.test(readFileSync(path.join(c.cwd, f), "utf8"))
     )
     did.push(
-      `publish    ${publish.name}: ${edits.join(" and ") || "already set up"}. Apps that install it can run ${CLI_NAME} setup.${ignored.length > 0 ? ` Warning: ${ignored.join(" and ")} ignores invariant/, so it would not be published.` : ""}`
+      `publish    ${publish.name}: ${edits.join(" and ") || "already set up"}. Apps that install it can run ${npx("setup")}.${ignored.length > 0 ? ` Warning: ${ignored.join(" and ")} ignores invariant/, so it would not be published.` : ""}`
     )
   }
 
@@ -1104,13 +1164,16 @@ export async function setup(c: Context): Promise<number> {
     promoted.length > 0 && withRules ? rulesFor((promoted[0] as { cand: Cand }).cand)[0] : undefined
   if (first && appPaths.length > 0)
     say(
-      `\nSee it work: break this, then run ${CLI_NAME} validate ${appPaths.join(" ")}\n  "${first.description}"`
+      `\nSee it work: break this, then run ${npx(`validate ${appPaths.join(" ")}`)}\n  "${first.description}"`
     )
   if (!hasCi)
     say(
-      `Add this to CI: ${CLI_NAME} verify --fresh && ${CLI_NAME} validate ${appPaths.length > 0 ? appPaths.join(" ") : "src/"}`
+      `Add this to CI: ${npx("verify --fresh")} && ${npx(`validate ${appPaths.length > 0 ? appPaths.join(" ") : "src/"}`)}`
     )
-  say(`Review: ${CLI_NAME} patterns list`)
+  say(`Review: ${npx("patterns list")}`)
+  say(
+    `These commands need nothing installed. The shorter \`${CLI_NAME} <command>\` works only after you install the CLI: npm install -g ${NPM_PACKAGE}`
+  )
   print(c, outro(`done in ${Math.max(1, Math.round((Date.now() - started) / 1000))}s`, true))
   return 0
 }

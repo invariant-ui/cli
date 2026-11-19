@@ -117,7 +117,26 @@ export function analyzePackage(input: {
     }
   }
 
-  const publicComponents = [...publicClasses.keys()].flatMap((decl) => {
+  // A component or directive that a public NgModule exports is part of the library's API, although the entry point does
+  // not export the class: consumers import the module and use the selector. It has no export name or import path of its
+  // own (nothing is claimed that is not true); the modules that expose it are recorded as `exportedBy`.
+  const byClass = new Map<string, ts.ClassDeclaration>()
+  for (const [decl, meta] of metas) byClass.set(`${meta.file}#${meta.name}`, decl)
+  const viaModule = new Set<ts.ClassDeclaration>()
+  const walked = new Set<ts.ClassDeclaration>()
+  const pending = [...publicClasses.keys()].filter((d) => metas.get(d)?.kind === "module")
+  for (let next = pending.pop(); next; next = pending.pop()) {
+    if (walked.has(next)) continue
+    walked.add(next)
+    for (const ref of metas.get(next)?.exports ?? []) {
+      const target = byClass.get(`${ref.file}#${ref.localName}`)
+      const kind = target ? metas.get(target)?.kind : undefined
+      if (!target || !kind) continue
+      if (kind === "module") pending.push(target)
+      else if (!publicClasses.has(target)) viaModule.add(target)
+    }
+  }
+  const publicComponents = [...new Set([...publicClasses.keys(), ...viaModule])].flatMap((decl) => {
     const meta = metas.get(decl)
     return meta && meta.kind !== "module" ? [{ decl, meta }] : []
   })
