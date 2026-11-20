@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/invariant-ui/cli/compare/v0.14.0...v0.15.0) (2026-11-20)
+
+
+### Features
+
+* **cli:** set up in a local browser page, offered first ([#41](https://github.com/invariant-ui/cli/issues/41)) ([9d22148](https://github.com/invariant-ui/cli/commit/9d22148337befe24c6fe846c9d045f0c406845e1))
+
 ## [0.14.0](https://github.com/invariant-ui/cli/compare/v0.13.1...v0.14.0) (2026-11-20)
 
 
