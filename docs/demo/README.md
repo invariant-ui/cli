@@ -21,9 +21,9 @@ A replayable recording of `invariant setup` in a monorepo whose config was never
 
 ## The browser setup recording
 
-`pnpm demo:web` records `invariant setup` in the browser: the real CLI and the real local page, driven in headless Chrome over the DevTools protocol, on a scratch copy of `fixtures/storybook/acme-ui` plus the app from `fixtures/pattern-discovery`. It scans, ticks and unticks components, confirms the patterns, confirms the plan, and scrolls through the finish. A small pointer is drawn so the clicks can be followed. It needs Chrome (set `CHROME` to its path if it is not in the default place) and `ffmpeg`.
+`pnpm demo:web` records `invariant setup` in the browser: the real CLI and the real local page, driven in headless Chrome over the DevTools protocol, on a scratch copy of `fixtures/storybook/acme-ui` plus the app from `fixtures/pattern-discovery`. It scans, ticks and unticks components, confirms the patterns, confirms the plan, reviews a conflict (uses one source, applies it, goes on), and scrolls through the finish. A small pointer is drawn so the clicks can be followed. It needs Chrome (set `CHROME` to its path if it is not in the default place) and `ffmpeg`.
 
-It writes `setup-web.mp4` (about 1.4 MB, 1280x800, about 59 seconds), `setup-web.webm` and `setup-web-poster.png`. Every run is the same real output, so record it again after the page or what setup prints changes. On the site it would go in as:
+It writes `setup-web.mp4` (about 1.4 MB, 1280x800, about 51 seconds), `setup-web.webm` and `setup-web-poster.png`. Every run is the same real output, so record it again after the page or what setup prints changes. On the site it would go in as:
 
 ```html
 <video autoplay muted loop playsinline poster="setup-web-poster.png" width="1280" height="800">
@@ -32,4 +32,4 @@ It writes `setup-web.mp4` (about 1.4 MB, 1280x800, about 59 seconds), `setup-web
 </video>
 ```
 
-For the recording only, the page reaches the real server through a small proxy inside the script that hands over the server's events one at a time with pauses (1.7 s per step, a fraction of a second per log line, about a second per question and per finishing task). The scan on this small project would otherwise finish in a moment and skip the step animations, which a large project shows for longer. The server, the setup code and every answer are the real ones; only the arrival of the events is spaced out, and the product has no such delay. Change the `PAUSE` table in `scripts/demo-web-setup.ts` to speed it up or slow it down.
+For the recording only, the page reaches the real server through a small proxy inside the script that hands over the server's events one at a time with pauses (1.1 s per step, under a third of a second per log line, 0.7 s per question and per finishing task). The scan on this small project would otherwise finish in a moment and skip the step animations, which a large project shows for longer. The server, the setup code and every answer are the real ones; only the arrival of the events is spaced out, and the product has no such delay. Change the `PAUSE` table in `scripts/demo-web-setup.ts` to speed it up or slow it down.
