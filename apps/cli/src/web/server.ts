@@ -1,8 +1,10 @@
-import { randomBytes, timingSafeEqual } from "node:crypto"
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
 import type { AddressInfo } from "node:net"
 import type { Choice, Option, TreeGroup } from "../select.js"
+import { makeGuard, PAGE_HEADERS, PAGE_HEADERS_FRAMEABLE, PAGE_HEADERS_WITH_FRAMES } from "./guard.js"
 import { PAGE_HTML } from "./page.js"
+import { REVIEW_PAGE_HTML } from "./review-page.js"
+import { type ReviewApi, reviewRoutes } from "./review-server.js"
 
 /** What the browser is told. Every field is plain data; the page renders text with `textContent` only. */
 export type WebEvent =
@@ -15,7 +17,7 @@ export type WebEvent =
   | {
       type: "ask"
       id: string
-      kind: "select" | "multiselect" | "tree" | "prompt"
+      kind: "select" | "multiselect" | "tree" | "prompt" | "review"
       question: string
       choices?: Array<{ value: string; label: string; key: string }>
       options?: Array<{ value: string; label: string; ticked: boolean }>
@@ -45,6 +47,8 @@ export interface WebSession {
   select<T extends string>(question: string, choices: ReadonlyArray<Choice<T>>): Promise<T | undefined>
   multiselect<T extends string>(question: string, options: ReadonlyArray<Option<T>>): Promise<T[] | undefined>
   tree<T extends string>(question: string, groups: ReadonlyArray<TreeGroup<T>>): Promise<T[] | undefined>
+  /** Shows the review of conflicts and inferred facts in the page, and waits until the person goes on. */
+  review(question: string): Promise<"continue" | undefined>
   emit(event: WebEvent): void
   /** True once the person pressed Stop in the browser. Every later question answers "cancelled". */
   readonly stopped: boolean
@@ -69,16 +73,15 @@ export const plainQuestion = (q: string): string =>
     .join("\n")
     .trim()
 
-const MAX_BODY = 2 * 1024 * 1024
-
 /**
  * A local web page that answers the questions `invariant setup` would ask in the terminal. It listens on the loopback
  * address only, needs the random token in the link, checks the Host and Origin headers (so a page on another site cannot
  * drive it), and validates every answer against the question that was asked. It serves one fixed page and relays answers;
  * it reads no file and runs nothing.
  */
-export async function startWebServer(options: { port?: number } = {}): Promise<WebSession> {
-  const token = randomBytes(24).toString("hex")
+export async function startWebServer(
+  options: { port?: number; review?: ReviewApi } = {}
+): Promise<WebSession> {
   const events: Array<{ id: number; event: WebEvent }> = []
   const clients = new Set<ServerResponse>()
   const pending = new Map<string, Pending>()
@@ -107,51 +110,28 @@ export async function startWebServer(options: { port?: number } = {}): Promise<W
     server.listen(options.port ?? 0, "127.0.0.1", resolve)
   })
   const port = (server.address() as AddressInfo).port
-  const hosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`])
-
-  const tokenOk = (given: string | null): boolean => {
-    if (!given || given.length !== token.length) return false
-    return timingSafeEqual(Buffer.from(given), Buffer.from(token))
-  }
-  const refuse = (res: ServerResponse, code: number, why: string): void => {
-    res.writeHead(code, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" })
-    res.end(`${why}\n`)
-  }
-  const readBody = (req: IncomingMessage): Promise<string | undefined> =>
-    new Promise((resolve) => {
-      const chunks: Buffer[] = []
-      let size = 0
-      req.on("data", (d: Buffer) => {
-        size += d.length
-        if (size > MAX_BODY) {
-          req.destroy()
-          resolve(undefined)
-        } else chunks.push(d)
-      })
-      req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")))
-      req.on("error", () => resolve(undefined))
-    })
+  const guard = makeGuard(port)
+  const reviewHandler = options.review ? reviewRoutes(options.review, guard) : undefined
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    if (!hosts.has(req.headers.host ?? "")) return refuse(res, 403, "wrong host")
-    const url = new URL(req.url ?? "/", `http://${req.headers.host}`)
-    const origin = req.headers.origin
-    if (origin !== undefined && !hosts.has(origin.replace(/^https?:\/\//, "")))
-      return refuse(res, 403, "wrong origin")
-    if (!tokenOk(url.searchParams.get("t")))
-      return refuse(res, 403, "Open the link that invariant setup printed in your terminal.")
+    const url = guard.admit(req, res)
+    if (!url) return
+    const { refuse, readBody } = guard
 
     if (req.method === "GET" && url.pathname === "/") {
-      res.writeHead(200, {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-        "content-security-policy":
-          "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-        "referrer-policy": "no-referrer",
-        "x-content-type-options": "nosniff"
-      })
+      res.writeHead(200, reviewHandler ? PAGE_HEADERS_WITH_FRAMES : PAGE_HEADERS)
       res.end(PAGE_HTML)
       return
+    }
+    // The review of conflicts, when setup was given a way to read and decide them: its page (shown in a frame of the
+    // setup page, same origin) and its API.
+    if (reviewHandler) {
+      if (req.method === "GET" && url.pathname === "/review") {
+        res.writeHead(200, PAGE_HEADERS_FRAMEABLE)
+        res.end(REVIEW_PAGE_HTML)
+        return
+      }
+      if (await reviewHandler(req, res, url)) return
     }
     if (req.method === "GET" && url.pathname === "/api/events") {
       res.writeHead(200, {
@@ -232,7 +212,7 @@ export async function startWebServer(options: { port?: number } = {}): Promise<W
         : { ok: false }
 
   const session: WebSession = {
-    url: `http://127.0.0.1:${port}/?t=${token}`,
+    url: guard.url,
     get stopped() {
       return stopped
     },
@@ -296,6 +276,11 @@ export async function startWebServer(options: { port?: number } = {}): Promise<W
           }))
         }),
         subsetOf(new Set<string>(groups.flatMap((g) => g.items.map((i) => i.value))))
+      ),
+    review: (question) =>
+      ask<"continue">(
+        (id) => ({ type: "ask", id, kind: "review", question: plainQuestion(question) }),
+        (v) => (v === "continue" ? { ok: true, value: v } : { ok: false })
       ),
     async finish(code, error) {
       if (error) emit({ type: "error", message: error })

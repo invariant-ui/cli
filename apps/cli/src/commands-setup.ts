@@ -20,6 +20,7 @@ import { CliError } from "./errors.js"
 import { paint } from "./format.js"
 import { columns, done, gap, intro, line, outro, spin, warn, wrap } from "./frame.js"
 import { applyPublish, planPublish } from "./publish.js"
+import { reviewState } from "./review-data.js"
 import type { Choice } from "./select.js"
 import { inside } from "./setup-discovery.js"
 import {
@@ -1293,6 +1294,23 @@ export async function setup(c: Context): Promise<number> {
     worked()
   }
   const hasCi = ciAdded || existsSync(workflowFile)
+
+  // In the browser, what still needs a human decision (conflicts between sources, inferred facts) is reviewed here, before
+  // the summary, instead of being left to a later `review list`. A person can skip it; nothing is decided for them.
+  if (c.io.review) {
+    const open = await reviewState(c).then(
+      (s) => s.rows.length,
+      () => 0
+    )
+    if (open > 0) {
+      say()
+      phase("review", "Review")
+      step(
+        `${open} item${open === 1 ? "" : "s"} need${open === 1 ? "s" : ""} a decision: conflicts between sources and facts nobody confirmed`
+      )
+      await c.io.review(open)
+    }
+  }
 
   say()
   phase("done", "Done")

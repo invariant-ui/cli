@@ -193,6 +193,55 @@ describe("the local setup server", () => {
   })
 })
 
+describe("the review inside setup", () => {
+  const api = {
+    state: async () => ({
+      project: "demo",
+      contract: { name: "x", components: 0, tokens: 0, patterns: 0, guidelines: 0 },
+      decisionsFile: "invariant.decisions.json",
+      rows: []
+    }),
+    decide: async () => ({ ok: true as const }),
+    apply: async () => ({ ok: true as const })
+  }
+
+  it("serves the review page and its API from the setup server, framed by the setup page only", async () => {
+    const s = await startWebServer({ review: api })
+    open.push(s)
+    const { origin, token } = parts(s)
+    const setup = await fetch(`${origin}/?t=${token}`)
+    expect(setup.headers.get("content-security-policy")).toMatch(/frame-src 'self'/)
+    expect(setup.headers.get("content-security-policy")).toMatch(/frame-ancestors 'none'/)
+    const review = await fetch(`${origin}/review?t=${token}`)
+    expect(review.status).toBe(200)
+    expect(review.headers.get("content-security-policy")).toMatch(/frame-ancestors 'self'/)
+    expect((await fetch(`${origin}/review`)).status).toBe(403)
+    expect((await fetch(`${origin}/api/state?t=${token}`)).status).toBe(200)
+    expect((await raw(s, `/api/state?t=${token}`, { host: "evil.example:80" })).status).toBe(403)
+  })
+
+  it("has no review page or API without one", async () => {
+    const s = await start()
+    const { origin, token } = parts(s)
+    expect((await fetch(`${origin}/review?t=${token}`)).status).toBe(404)
+    expect((await fetch(`${origin}/api/state?t=${token}`)).status).toBe(404)
+    expect((await fetch(`${origin}/?t=${token}`)).headers.get("content-security-policy")).not.toMatch(
+      /frame-src/
+    )
+  })
+
+  it("asks to go on, and only accepts that answer", async () => {
+    const s = await startWebServer({ review: api })
+    open.push(s)
+    const went = s.review("Review what needs a decision")
+    const ask = (await nextEvent(s, "ask")) as { id: string; kind: string }
+    expect(ask.kind).toBe("review")
+    expect((await answer(s, ask.id, "skip")).status).toBe(400)
+    expect((await answer(s, ask.id, "continue")).status).toBe(204)
+    expect(await went).toBe("continue")
+  })
+})
+
 describe("question text", () => {
   it("is plain: no color codes and no frame glyphs", () => {
     expect(plainQuestion("\u001b[36m◆\u001b[0m  Looks right? [Y/n] ")).toBe("Looks right? [Y/n]")

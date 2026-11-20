@@ -13,7 +13,7 @@ const root = fileURLToPath(new URL("..", import.meta.url))
 const { run } = (await import(path.join(root, "apps/cli/dist/index.js"))) as {
   run: (argv: string[], io: never) => Promise<number>
 }
-const out = path.join(root, "docs/demo")
+const out = process.env.DEMO_OUT ?? path.join(root, "docs/demo")
 const CHROME = process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 const W = 1280
 const H = 800
@@ -135,7 +135,7 @@ async function click(selector: string, text?: string): Promise<boolean> {
   await evaluate(
     `(() => { const c = document.getElementById("demoCursor"); c.style.left = "${at.x}px"; c.style.top = "${at.y}px"; })()`
   )
-  await sleep(650)
+  await sleep(450)
   await cdp("Input.dispatchMouseEvent", {
     type: "mousePressed",
     x: at.x,
@@ -153,6 +153,38 @@ async function click(selector: string, text?: string): Promise<boolean> {
   await sleep(250)
   return true
 }
+// A click on something inside the review frame: the element's place in the frame plus the frame's place in the page.
+async function clickInFrame(selector: string): Promise<void> {
+  const at = await evaluate<{ x: number; y: number } | null>(`(() => {
+    const f = document.querySelector(".rframe");
+    const el = f.contentDocument.querySelector(${JSON.stringify(selector)});
+    if (!el) return null;
+    el.scrollIntoView({ block: "nearest" });
+    const fr = f.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return { x: Math.round(fr.left + r.left + Math.min(r.width / 2, 40)), y: Math.round(fr.top + r.top + r.height / 2) };
+  })()`)
+  if (!at) return
+  await evaluate(CURSOR)
+  await evaluate(
+    `(() => { const c = document.getElementById("demoCursor"); c.style.left = "${at.x}px"; c.style.top = "${at.y}px"; })()`
+  )
+  await sleep(450)
+  await cdp("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: at.x,
+    y: at.y,
+    button: "left",
+    clickCount: 1
+  })
+  await cdp("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: at.x,
+    y: at.y,
+    button: "left",
+    clickCount: 1
+  })
+  await sleep(250)
+}
 const waitFor = async (expression: string, ms = 60000): Promise<void> => {
   const end = Date.now() + ms
   while (Date.now() < end) {
@@ -166,7 +198,7 @@ const type = async (selector: string, text: string): Promise<void> => {
   for (const ch of text) {
     await cdp("Input.dispatchKeyEvent", { type: "keyDown", text: ch })
     await cdp("Input.dispatchKeyEvent", { type: "keyUp", text: ch })
-    await sleep(90)
+    await sleep(60)
   }
 }
 
@@ -191,7 +223,7 @@ const real = new URL(await pageUrl)
 // For the recording only: the page reaches the real server through a small proxy that hands over the server's events
 // one at a time, with pauses, so each step reads as work being done. The server, the setup code and every answer are
 // the real ones; only the arrival of the events is spaced out. Product code has no such delay.
-const PAUSE: Record<string, number> = { phase: 1700, log: 420, ask: 1100, progress: 1000, done: 800 }
+const PAUSE: Record<string, number> = { phase: 1100, log: 280, ask: 700, progress: 700, done: 600 }
 const proxy = createServer((req, res) => {
   const headers = { ...req.headers, host: real.host }
   if (headers.origin) headers.origin = real.origin
@@ -247,7 +279,7 @@ await cdp("Page.navigate", { url })
 await waitFor(`document.getElementById("title")?.textContent`)
 startCapture()
 await evaluate(CURSOR)
-await sleep(1800)
+await sleep(1200)
 
 // Answer whatever is asked, the way a person accepting the sensible choices would, with pauses to read.
 let asks = 0
@@ -257,6 +289,7 @@ void cli.then(() => {
 })
 while (!finished) {
   const kind = await evaluate<string>(`(() => {
+    if (document.querySelector("#ask .rframe")) return "review";
     if (document.querySelector("#ask .tree")) return "tree:" + document.getElementById("title").textContent;
     if (document.querySelector("#ask .choices")) return "choice";
     if (document.querySelector("#ask input.field")) return "prompt";
@@ -265,40 +298,58 @@ while (!finished) {
   if (kind)
     if (kind.startsWith("tree:")) {
       asks++
-      await sleep(1600)
+      await sleep(1000)
       if (asks === 1) {
         // Components: look for one, clear the filter, untick a component, then confirm.
         await click("#ask input.field")
         await type("#ask input.field", "Button")
-        await sleep(1400)
+        await sleep(900)
         await evaluate(
           `(() => { const f = document.querySelector("#ask input.field"); f.value = ""; f.dispatchEvent(new Event("input")); })()`
         )
-        await sleep(900)
+        await sleep(600)
         await click("#ask .item input[type=checkbox]")
-        await sleep(900)
+        await sleep(600)
         // The poster: the component list, with one unticked and the count in the footer.
         const shot = (await cdp("Page.captureScreenshot", { format: "png" })) as { data?: string }
         mkdirSync(out, { recursive: true })
         if (shot.data) writeFileSync(path.join(out, "setup-web-poster.png"), Buffer.from(shot.data, "base64"))
-      } else await sleep(1200)
+      } else await sleep(800)
+      await click("#foot .btn.primary")
+    } else if (kind === "review") {
+      asks++
+      // The review of conflicts, in a frame: read the report, say who is deciding, use one source for the first conflict,
+      // apply it, and go on.
+      await waitFor(
+        `document.querySelector(".rframe")?.contentDocument?.querySelector(".claims .btn")`,
+        20000
+      )
+      await sleep(1500)
+      await evaluate(
+        `(() => { const d = document.querySelector(".rframe").contentDocument; const b = d.getElementById("by"); b.value = "ana"; b.dispatchEvent(new Event("input")); })()`
+      )
+      await sleep(600)
+      await clickInFrame(".claims .btn")
+      await sleep(1500)
+      await clickInFrame("#apply")
+      await sleep(2200)
       await click("#foot .btn.primary")
     } else if (kind === "choice") {
-      await sleep(1200)
+      await sleep(800)
       await click("#ask .choices .btn.primary")
     } else if (kind === "prompt") {
-      await sleep(800)
+      await sleep(500)
       await click("#ask .actions .btn.primary")
     } else await sleep(150)
 }
 await waitFor(`document.querySelector("#next li")`, 60000)
-await sleep(2500)
+await sleep(1500)
 // Scroll through the summary and the next steps.
 for (let i = 0; i < 6; i++) {
   await evaluate(`window.scrollBy({ top: 260, behavior: "smooth" })`)
-  await sleep(900)
+  await sleep(700)
 }
-await sleep(1500)
+await sleep(1000)
 recording = false
 await capture
 await cli
@@ -344,5 +395,7 @@ console.log(`recorded ${frames.length} frames over ${((frames.at(-1)?.at ?? 0) /
 
 proxy.close()
 chrome.kill()
-rmSync(work, { recursive: true, force: true })
+await new Promise((r) => chrome.once("exit", r))
+// Chrome may still be writing its profile for a moment.
+rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 })
 process.exit(0)
