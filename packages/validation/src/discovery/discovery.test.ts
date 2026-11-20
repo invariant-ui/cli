@@ -37,6 +37,38 @@ const run = (
 ) => discover({ ds: ds(), files, options, reviews })
 const arrangements = (r: CandidatesFile): Candidate[] => r.candidates.filter((c) => c.kind === "arrangement")
 
+describe("templates in other frameworks", () => {
+  const markup =
+    "<Stack><Card><Card.Header><Text>t</Text></Card.Header><Card.Body><Button>go</Button></Card.Body></Card></Stack>"
+  const vue = (i: number) => ({
+    file: `app/p${i}.vue`,
+    code: `<template>${markup}</template>\n<script setup></script>`
+  })
+  const html = (i: number) => ({ file: `app/p${i}.component.html`, code: markup })
+  const inline = (i: number) => ({
+    file: `app/p${i}.component.ts`,
+    code: `import { Component } from "@angular/core"\n@Component({ selector: "p-${i}", template: \`${markup}\` })\nexport class P${i} {}`
+  })
+  const key = "stack(card(card.header(text),card.body(button)))"
+
+  it("reads Vue, Angular and HTML templates as well as JSX", () => {
+    for (const make of [vue, html, inline]) {
+      const found = arrangements(run([1, 2, 3].map(make))).find((c) => c.structure.key === key)
+      expect(found?.support.files, make.name).toBe(3)
+    }
+  })
+
+  it("counts a structure across frameworks as one", () => {
+    const mixed = [vue(1), html(2), inline(3), file("app/p4.tsx", `<Stack>${CARD}</Stack>`)]
+    expect(arrangements(run(mixed)).find((c) => c.structure.key === key)?.support.files).toBe(4)
+  })
+
+  it("ignores a TypeScript file that has no component template", () => {
+    const result = run([{ file: "app/util.ts", code: "export const x = 1" }, ...[1, 2, 3].map(html)])
+    expect(arrangements(result).length).toBeGreaterThan(0)
+  })
+})
+
 describe("recurring arrangements", () => {
   const three = [1, 2, 3].map((i) => file(`app/p${i}.tsx`, `<Stack>${CARD}</Stack>`))
 
@@ -193,7 +225,7 @@ describe("determinism and diagnostics", () => {
   it("says what it skipped", () => {
     const result = run([
       ...files,
-      { file: "app/Thing.vue", code: "<template><div/></template>" },
+      { file: "app/styles.css", code: "a { color: red }" },
       { file: "app/plain.tsx", code: "export const y = <div/>" }
     ])
     const codes = result.diagnostics.map((d) => d.code)

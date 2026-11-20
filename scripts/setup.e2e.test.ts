@@ -26,8 +26,8 @@ function project(): string {
   return dir
 }
 
-/** Answers to the discovery questions that come first: keep all components, add none, accept the app folder, keep all 3 patterns. */
-const REVIEW = ["", "", "", "", "", ""]
+/** Answers to the discovery questions that come first: keep the ticked components and confirm them, keep the ticked patterns, rename none. */
+const REVIEW = ["", "", "", ""]
 
 async function cli(
   cwd: string,
@@ -182,11 +182,16 @@ describe("invariant setup", () => {
   it("asks once. Yes confirms the contract and does the whole plan", async () => {
     const dir = project()
     const r = await cli(dir, ["setup", "--as", "ana"], [...REVIEW, "y"])
-    expect(r.asked).toHaveLength(7)
+    expect(r.asked).toHaveLength(5)
     expect(r.asked.filter((q) => /Looks right\?/.test(q))).toHaveLength(1)
     expect(r.out).toMatch(/Plan\. Yes confirms the contract above is right/)
     expect(r.out).toMatch(/approved by ana/)
     expect(r.out).toMatch(/starter rule\(s\) as warnings/)
+    // The walkthrough: what to do next, with commands that work without installing anything.
+    const text = r.out.replace(/\s*\n│\s+/g, " ")
+    expect(text).toMatch(/what to do next/)
+    expect(text).toMatch(/Use it in your AI tool/)
+    expect(text).toMatch(/Keep the contract current\. .* npx @invariant-ui\/cli@[\d.]+ compile/)
     expect(patterns(dir).patterns.every((p) => p.approval?.approvedBy === "ana")).toBe(true)
   })
 
@@ -194,7 +199,7 @@ describe("invariant setup", () => {
     const dir = project()
     const r = await cli(dir, ["setup", "--as", "ana"], [...REVIEW, ""])
     expect(patterns(dir).patterns.every((p) => p.approval?.approvedBy === "ana")).toBe(true)
-    expect(r.asked).toHaveLength(7)
+    expect(r.asked).toHaveLength(5)
   })
 
   it("no stops: nothing is approved, added or written", async () => {
@@ -220,22 +225,24 @@ describe("invariant setup", () => {
     expect(list.every((p) => p.approval === undefined)).toBe(true)
   })
 
-  it("lets the person deny a pattern, and rename and re-categorise another", async () => {
+  it("lets the person untick a pattern, and rename and re-categorise another", async () => {
     const dir = project()
-    // components: all, none added. apps: accept. pattern 1 deny, 2 edit (name, category), 3 keep. Then the plan: yes.
+    // components: keep, confirm. patterns: untick 1. rename: pattern 1 (name, category), then go on. Then the plan: yes.
     const r = await cli(
       dir,
       ["setup", "--as", "ana", "--no-ci", "--no-agent"],
-      ["", "", "", "d", "e", "Account home", "layout", "", "y"]
+      ["", "", "1", "1", "Account home", "layout", "", "y"]
     )
     expect(r.code).toBe(0)
+    expect(r.out).toMatch(/found 3 recurring structures/)
     const list = patterns(dir).patterns
     expect(list).toHaveLength(2)
     expect(list.some((p) => p.id.startsWith("layout.account-home"))).toBe(true)
+    // An unticked pattern stays a proposal; it is not recorded as rejected.
     const reviews = JSON.parse(readFileSync(path.join(dir, "invariant.candidate-reviews.json"), "utf8")) as {
       reviews: Array<{ decision: string }>
     }
-    expect(reviews.reviews.filter((x) => x.decision === "rejected")).toHaveLength(1)
+    expect(reviews.reviews.filter((x) => x.decision === "rejected")).toHaveLength(0)
   })
 
   it("lets the person untick a directory, add a single component file, and see what is in it", async () => {
@@ -513,14 +520,13 @@ describe("invariant setup", () => {
     expect(existsSync(path.join(dir2, ".cursor/mcp.json"))).toBe(false)
   })
 
-  it("says so when it finds no application folder", async () => {
+  it("says so when no file uses the components", async () => {
     const dir = project()
     rmSync(path.join(dir, "app"), { recursive: true })
     const r = await cli(dir, ["setup", "--yes", "--as", "ana"])
     expect(r.code).toBe(0)
-    expect(r.out).toMatch(/skipped src: it holds the design system's own components/)
-    expect(r.out).toMatch(/no application folder found/)
-    expect(existsSync(path.join(dir, "invariant.baseline.json"))).toBe(false)
+    expect(r.out).toMatch(/\d+ of \d+ template and component files use your components/)
+    expect(r.out).toMatch(/no structure recurs often enough to propose/)
   })
 })
 
@@ -1019,6 +1025,70 @@ describe("setup when confirmed components do not reach the contract", () => {
   })
 })
 
+describe("setup finds patterns wherever the components are used", () => {
+  it("reads Angular templates in an application folder no convention names, and the files its own components are defined in are left out", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "invariant-ng-"))
+    made.push(dir)
+    const w = (rel: string, text: string) => {
+      mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true })
+      writeFileSync(path.join(dir, rel), text)
+    }
+    const lib = "shared/ui/projects/ui-core"
+    w(
+      `${lib}/package.json`,
+      JSON.stringify({
+        name: "@acme/ui-core",
+        version: "1.0.0",
+        peerDependencies: { "@angular/core": "^17" }
+      })
+    )
+    w(`${lib}/ng-package.json`, JSON.stringify({ lib: { entryFile: "src/public-api.ts" } }))
+    w(
+      `${lib}/src/public-api.ts`,
+      "export * from './lib/card.component'\nexport * from './lib/button.component'\n"
+    )
+    for (const n of ["Card", "Button"])
+      w(
+        `${lib}/src/lib/${n.toLowerCase()}.component.ts`,
+        `import { Component } from '@angular/core';\n@Component({ selector: 'ui-${n.toLowerCase()}', template: '<ng-content></ng-content>' })\nexport class ${n}Component {}\n`
+      )
+    // The consumer lives in a folder setup has no reason to know: there is no src, app, pages or apps.
+    for (const page of ["home", "billing", "settings"])
+      w(
+        `a3-web/projects/shell/features/${page}/${page}.component.html`,
+        "<ui-card><ui-button>go</ui-button></ui-card>\n"
+      )
+    w(
+      "a3-web/projects/shell/features/inline/inline.component.ts",
+      "import { Component } from '@angular/core';\n@Component({ selector: 'x-inline', template: `<ui-card><ui-button>go</ui-button></ui-card>` })\nexport class InlineComponent {}\n"
+    )
+    const r = await cli(dir, [
+      "setup",
+      "--include",
+      `${lib}/src`,
+      "--yes",
+      "--as",
+      "ana",
+      "--no-ci",
+      "--no-agent",
+      "--no-publish",
+      "--no-baseline"
+    ])
+    expect(r.code).toBe(0)
+    const text = r.out.replace(/\s*\n│\s+/g, " ")
+    expect(text).toMatch(/4 of \d+ template and component files use your components/)
+    expect(text).toMatch(/used in: a3-web/)
+    expect(text).toMatch(/found 1 recurring structure/)
+    expect(patterns(dir).patterns.length).toBeGreaterThan(0)
+    const contract = JSON.parse(
+      readFileSync(path.join(dir, "invariant/invariant.contract.json"), "utf8")
+    ) as {
+      patterns: Array<{ id: string }>
+    }
+    expect(contract.patterns.length).toBeGreaterThan(0)
+  })
+})
+
 describe("setup reads every file, however many there are", () => {
   it("finds a design system that sorts after more than 20,000 other files", async () => {
     const dir = mkdtempSync(path.join(tmpdir(), "invariant-big-"))
@@ -1201,7 +1271,7 @@ describe("setup: GitHub Action", () => {
     const dir = project()
     mkdirSync(path.join(dir, ".git"))
     const r = await cli(dir, ["setup", "--as", "ana"], [...REVIEW, "y"])
-    expect(r.asked).toHaveLength(7)
+    expect(r.asked).toHaveLength(5)
     expect(r.out).toContain(`add ${wf}, which checks every pull request commit`)
     expect(existsSync(path.join(dir, wf))).toBe(true)
   })
