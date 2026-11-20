@@ -22,6 +22,7 @@
     "build:plugins": "pnpm build && node scripts/build-plugins.ts --zip",
     "plugin:bump": "pnpm build && node scripts/build-plugins.ts --zip --bump",
     "demo": "pnpm build && node scripts/demo.ts",
+    "demo:web": "pnpm build && node scripts/demo-web-setup.ts",
     "build:npm": "tsc -b && node scripts/build-npm.ts",
     "pack:check": "pnpm build:npm && cd dist-npm && npm pack --dry-run"
   },
