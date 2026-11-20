@@ -122,7 +122,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 .foot .btn{justify-self:end}
 .scene{margin-top:6px}
 .pane{display:none;position:relative;overflow:hidden;min-height:200px;padding:12px;border:1px solid var(--muted);border-radius:3px;background:var(--panel)}
-.scene[data-on=scan] .pane.scn,.scene[data-on=components] .pane.comp,.scene[data-on=patterns] .pane.pat{display:block}
+.scene[data-on=scan] .pane.scn,.scene[data-on=components] .pane.comp,.scene[data-on=patterns] .pane.pat,.scene[data-on=setup] .pane.set{display:block}
 .pane .cap{display:flex;justify-content:space-between;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .sweep{position:absolute;top:0;bottom:0;left:0;width:2px;background:var(--accent2);animation:sweep 4.8s linear infinite}
 @keyframes sweep{0%{left:0;opacity:1}69%{left:100%;opacity:1}70%,100%{left:100%;opacity:0}}
@@ -176,7 +176,31 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 @keyframes tag{0%,40%{opacity:0}52%,80%{opacity:1}92%,100%{opacity:0}}
 .scenetext{margin:10px 0 0;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
 .scenetext b{color:var(--accent2);font-weight:400}
-@media (prefers-reduced-motion:reduce){.cell,.cell:before,.pcard,.sweep,.scan-line,.tr,.tr em,.pmatch,.cmeta .tag{animation:none}.tr em,.pmatch{opacity:1}.cell{border-color:var(--accent2)}.pcard{border-color:var(--accent)}.sweep,.scan-line{display:none}}
+.sk{display:block;height:9px;border-radius:2px;background:var(--line);animation:pulse 1.6s ease-in-out infinite;animation-delay:var(--d,0s)}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.95}}
+#sumSkel{margin-top:22px}
+#sumSkel .kicker,#nextSkel .kicker{margin:0 0 8px}
+#nextSkel .kicker{margin-top:26px}
+.sum .r .sk{align-self:center}
+.skstep{display:grid;grid-template-columns:36px minmax(0,1fr);border-top:1px solid var(--line);padding:14px 0 12px}
+.skstep .no{width:22px;height:18px;border:1px solid var(--line);border-radius:3px}
+.skstep .sk.t{height:12px;width:34%;margin:3px 0 12px}
+.skstep .sk.l{width:78%;margin-bottom:12px}
+.skstep .skcmd{height:34px;max-width:72ch;border:1px solid var(--line);border-radius:3px;background:var(--panel);display:flex;align-items:center;padding:0 12px;gap:10px}
+.skstep .skcmd .sk{height:7px;width:62%}
+.sheets{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.sheet{padding:8px 10px 10px;border:1px solid var(--line);border-radius:3px;background:var(--bg)}
+.sheet .th{display:flex;justify-content:space-between;font:10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+.sheet .th b{font-weight:400;color:var(--accent2);opacity:0;animation:okmark 4.8s infinite;animation-delay:var(--d,0s)}
+.sheet .ln{height:5px;margin-top:8px;border-radius:2px;background:var(--line);width:var(--w,80%);transform:scaleX(0);transform-origin:left;animation:typed 4.8s infinite;animation-delay:calc(var(--d,0s) + var(--k,0) * .32s)}
+.sheet .ln.hl{background:var(--muted)}
+@keyframes typed{0%{transform:scaleX(0);opacity:1}14%,84%{transform:scaleX(1);opacity:1}94%,100%{transform:scaleX(1);opacity:0}}
+@keyframes okmark{0%,40%{opacity:0}48%,84%{opacity:1}94%,100%{opacity:0}}
+.rail{position:relative;height:9px;margin-top:14px;border-top:1px dashed var(--muted)}
+.rail i{position:absolute;top:-5px;left:0;width:9px;height:9px;border-radius:2px;background:var(--accent);animation:flow 4.8s ease-in-out infinite}
+@keyframes flow{0%{left:0;opacity:1}85%{left:calc(100% - 9px);opacity:1}95%,100%{left:calc(100% - 9px);opacity:0}}
+.railcap{display:flex;justify-content:space-between;margin-top:6px;font:10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.sk{animation:none;opacity:.7}.sheet .ln,.sheet .th b,.rail i{animation:none}.sheet .ln{transform:none}.sheet .th b{opacity:1}.rail i{display:none}.cell,.cell:before,.pcard,.sweep,.scan-line,.tr,.tr em,.pmatch,.cmeta .tag{animation:none}.tr em,.pmatch{opacity:1}.cell{border-color:var(--accent2)}.pcard{border-color:var(--accent)}.sweep,.scan-line{display:none}}
 .fin{padding:12px;border:1px solid var(--muted);border-radius:3px;background:var(--panel);margin-top:6px}
 .fin .cap{display:flex;justify-content:space-between;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .pg{height:8px;margin-top:12px;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--sunk)}
@@ -207,6 +231,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 <div class="pane scn"><div class="cap"><span>Scan</span><span>reading every folder</span></div><div class="trows"><div class="tr"><i class="f"></i><i class="n" style="--w:30%"></i></div><div class="tr"><i class="f"></i><i class="n" style="--w:46%"></i><em>12 files</em></div><div class="tr d1"><i class="f"></i><i class="n" style="--w:38%"></i></div><div class="tr d1"><i class="f"></i><i class="n" style="--w:52%"></i><em>31 files</em></div><div class="tr d2"><i class="f"></i><i class="n" style="--w:34%"></i></div><div class="tr d2"><i class="f"></i><i class="n" style="--w:44%"></i></div><div class="tr"><i class="f"></i><i class="n" style="--w:40%"></i><em>96 files</em></div><div class="tr d1"><i class="f"></i><i class="n" style="--w:28%"></i></div></div><div class="scan-line"></div></div>
 <div class="pane comp"><div class="cap"><span>Components</span><span>finding the UI parts</span></div><div class="cells" id="cells"></div><div class="cmeta"><span>buttons, inputs, toggles, tabs, badges</span><span class="tag">matches your exports</span></div><div class="sweep"></div></div>
 <div class="pane pat"><div class="cap"><span>Patterns</span><span>finding what repeats</span></div><div class="pgroups"><div class="pgroup"><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><span class="tag pmatch">&times;3 same structure</span></div><div class="pgroup g2"><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><span class="tag pmatch">&times;2 same structure</span></div></div></div>
+<div class="pane set"><div class="cap"><span>Setting things up</span><span>drafting your plan</span></div><div class="sheets"><div class="sheet" style="--d:0s"><div class="th"><span>config</span><b>&#10003;</b></div><div class="ln hl" style="--w:48%;--k:0"></div><div class="ln" style="--w:86%;--k:1"></div><div class="ln" style="--w:70%;--k:2"></div><div class="ln" style="--w:78%;--k:3"></div><div class="ln" style="--w:56%;--k:4"></div></div><div class="sheet" style="--d:0.9s"><div class="th"><span>patterns</span><b>&#10003;</b></div><div class="ln hl" style="--w:40%;--k:0"></div><div class="ln" style="--w:82%;--k:1"></div><div class="ln" style="--w:64%;--k:2"></div><div class="ln" style="--w:88%;--k:3"></div><div class="ln" style="--w:52%;--k:4"></div></div><div class="sheet" style="--d:1.8s"><div class="th"><span>checks</span><b>&#10003;</b></div><div class="ln hl" style="--w:52%;--k:0"></div><div class="ln" style="--w:74%;--k:1"></div><div class="ln" style="--w:90%;--k:2"></div><div class="ln" style="--w:60%;--k:3"></div><div class="ln" style="--w:68%;--k:4"></div></div></div><div class="rail"><i></i></div><div class="railcap"><span>what you confirmed</span><span>the plan</span></div></div>
 </div>
 <p class="scenetext" id="sceneText"></p>
 </div>
@@ -219,8 +244,10 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 </div>
 <div id="ask"></div>
 <div id="summary" hidden></div>
+<div id="sumSkel" hidden role="status" aria-live="polite"><span class="sr">Preparing your summary</span><p class="kicker">What setup did</p><div class="sum"><div class="r"><span class="sk" style="width:70px;--d:0.0s"></span><span class="sk" style="width:46%;--d:0.0s"></span></div><div class="r"><span class="sk" style="width:62px;--d:0.1s"></span><span class="sk" style="width:70%;--d:0.1s"></span></div><div class="r"><span class="sk" style="width:40px;--d:0.3s"></span><span class="sk" style="width:34%;--d:0.3s"></span></div><div class="r"><span class="sk" style="width:66px;--d:0.4s"></span><span class="sk" style="width:58%;--d:0.4s"></span></div><div class="r"><span class="sk" style="width:52px;--d:0.6s"></span><span class="sk" style="width:82%;--d:0.6s"></span></div></div></div>
 <p class="kicker" id="nextHead" hidden>What to do next</p>
 <ol class="next" id="next" hidden></ol>
+<div id="nextSkel" hidden aria-hidden="true"><p class="kicker">What to do next</p><ul style="list-style:none;margin:0;padding:0"><li class="skstep"><span class="no sk" style="--d:0.0s"></span><div><span class="sk t" style="--d:0.0s"></span><span class="sk l" style="--d:0.0s"></span><span class="skcmd"><span class="sk" style="--d:0.0s"></span></span></div></li><li class="skstep"><span class="no sk" style="--d:0.2s"></span><div><span class="sk t" style="--d:0.2s"></span><span class="sk l" style="--d:0.2s"></span><span class="skcmd"><span class="sk" style="--d:0.2s"></span></span></div></li><li class="skstep"><span class="no sk" style="--d:0.4s"></span><div><span class="sk t" style="--d:0.4s"></span><span class="sk l" style="--d:0.4s"></span><span class="skcmd"><span class="sk" style="--d:0.4s"></span></span></div></li></ul></div>
 <div id="notice"></div>
 </main>
 <aside class="act" aria-label="Activity">
@@ -241,7 +268,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     plan: ["Apply the setup", "One plan. Yes confirms the contract and does everything in it."],
     done: ["Setup finished", "Here is what setup did, and what to do next."]
   };
-  function fresh() { return { phase: "scan", counts: {}, live: null, logs: {}, busy: null, ask: null, next: [], summary: [], ended: false, error: null, stopped: false, lost: false, widget: null, restarting: false, applying: false, progress: { done: 0, total: 0 }, stages: [] }; }
+  function fresh() { return { phase: "scan", counts: {}, live: null, logs: {}, busy: null, ask: null, next: [], summary: [], ended: false, error: null, stopped: false, lost: false, widget: null, restarting: false, applying: false, componentsDone: false, patternsDone: false, progress: { done: 0, total: 0 }, stages: [] }; }
   var state = fresh();
 
   function h(tag, props, kids) {
@@ -300,7 +327,15 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     render();
   });
 
-  function current() { return state.ended ? "done" : state.phase; }
+  // The step shown: it moves on when the person confirms the last thing in a step, before setup reports the next one.
+  function current() {
+    if (state.ended) return "done";
+    if (!state.ask) {
+      if (state.phase === "components" && state.componentsDone) return "patterns";
+      if (state.phase === "patterns" && state.patternsDone) return "plan";
+    }
+    return state.phase;
+  }
 
   function renderSteps() {
     var cur = STEPS.map(function (s) { return s[0]; }).indexOf(current());
@@ -396,6 +431,9 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     var id = state.ask.id;
     if (state.ask.kind === "tree" || state.ask.kind === "multiselect") state.counts[state.phase] = value.length;
     if (state.phase === "plan") state.applying = true;
+    // The components are settled once the last confirmation is given; the patterns once their list is confirmed.
+    if (state.phase === "components" && state.ask.kind === "select" && value === "confirm") state.componentsDone = true;
+    if (state.phase === "patterns" && state.ask.kind === "tree") state.patternsDone = true;
     state.ask = null; state.widget = null; state.live = null; state.busy = "Working";
     post("/api/answer", { id: id, value: value });
     render();
@@ -515,10 +553,16 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
   }
   function renderScene() {
     renderFinalizing();
-    var show = !state.ask && !state.ended && !state.stopped && (state.phase === "scan" || state.phase === "components" || state.phase === "patterns");
+    // One scene per piece of work: what is being read, found, found again, and then planned.
+    var scene = null;
+    if (state.phase === "scan") scene = "scan";
+    else if (state.phase === "components") scene = state.componentsDone ? "patterns" : "components";
+    else if (state.phase === "patterns") scene = state.patternsDone ? "setup" : "patterns";
+    else if (state.phase === "plan" && !state.applying) scene = "setup";
+    var show = !state.ask && !state.ended && !state.stopped && scene !== null;
     $("scene").hidden = !show;
     if (!show) return;
-    $("sceneGrid").setAttribute("data-on", state.phase);
+    $("sceneGrid").setAttribute("data-on", scene);
     var t = $("sceneText"); clear(t);
     t.appendChild(h("b", { text: "\u25CF " }));
     t.appendChild(document.createTextNode(state.busy || "Working"));
@@ -575,6 +619,10 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     var next = $("next"); clear(next);
     var showNext = v === "done" && state.next.length > 0;
     next.hidden = !showNext; $("nextHead").hidden = !showNext;
+    // On the last step the summary and the next steps arrive a little after the step starts: hold their places.
+    var waiting = v === "done" && !state.ended && !state.stopped && !state.error;
+    $("sumSkel").hidden = !(waiting && state.summary.length === 0);
+    $("nextSkel").hidden = !(waiting && state.next.length === 0);
     if (showNext) state.next.forEach(function (n) {
       var note = n.title === "About these commands";
       var body = h("div", {}, [h("h3", { text: n.title })].concat(n.lines.map(line)));
