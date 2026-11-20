@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
 import type { AddressInfo } from "node:net"
 import type { ReviewState } from "../review-data.js"
-import { makeGuard, PAGE_HEADERS } from "./guard.js"
+import { type Guard, makeGuard, PAGE_HEADERS } from "./guard.js"
 import { REVIEW_PAGE_HTML } from "./review-page.js"
 
 export const ACTIONS = ["approve", "reject", "resolve", "accept", "dismiss"] as const
@@ -41,6 +41,76 @@ const short = (v: unknown, max: number): string | undefined =>
  * checks, a CSP with no external request). It reads what the CLI already reads and records decisions through the same
  * commands a person would type: it adds no way to write files that those commands do not have.
  */
+/**
+ * The routes of the review page's API, for any local server that has a guard: state, decide, apply and close. The
+ * setup server mounts the same routes, so the review inside setup is the same page with the same checks.
+ */
+export function reviewRoutes(
+  api: ReviewApi,
+  guard: Guard,
+  onClose: () => void = () => {}
+): (req: IncomingMessage, res: ServerResponse, url: URL) => Promise<boolean> {
+  const send = (res: ServerResponse, code: number, body: unknown): void => {
+    res.writeHead(code, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" })
+    res.end(JSON.stringify(body))
+  }
+  return async (req, res, url) => {
+    if (req.method === "GET" && url.pathname === "/api/state") {
+      send(res, 200, await api.state())
+      return true
+    }
+    if (req.method === "POST" && url.pathname === "/api/decide") {
+      let data: Record<string, unknown>
+      try {
+        data = JSON.parse((await guard.readBody(req)) ?? "") as Record<string, unknown>
+      } catch {
+        guard.refuse(res, 400, "not JSON")
+        return true
+      }
+      const action = ACTIONS.find((a) => a === data.action)
+      const id = short(data.id, 300)
+      const by = short(data.by, 200)
+      if (!action || !id) {
+        guard.refuse(res, 400, "that is not a decision")
+        return true
+      }
+      if (!by) {
+        send(res, 200, { ok: false, message: "Say who is deciding (your name) first." })
+        return true
+      }
+      const note = short(data.note, 2000)
+      const source = short(data.source, 100)
+      const role = short(data.role, 200)
+      const reference = short(data.reference, 500)
+      send(
+        res,
+        200,
+        await api.decide({
+          id,
+          action,
+          by,
+          ...(note ? { note } : {}),
+          ...(source ? { source } : {}),
+          ...(role ? { role } : {}),
+          ...(reference ? { reference } : {})
+        })
+      )
+      return true
+    }
+    if (req.method === "POST" && url.pathname === "/api/apply") {
+      send(res, 200, await api.apply())
+      return true
+    }
+    if (req.method === "POST" && url.pathname === "/api/close") {
+      res.writeHead(204)
+      res.end()
+      onClose()
+      return true
+    }
+    return false
+  }
+}
+
 export async function startReviewServer(api: ReviewApi): Promise<ReviewServer> {
   let finish: () => void = () => {}
   const closed = new Promise<void>((resolve) => {
@@ -57,11 +127,7 @@ export async function startReviewServer(api: ReviewApi): Promise<ReviewServer> {
     server.listen(0, "127.0.0.1", resolve)
   })
   const guard = makeGuard((server.address() as AddressInfo).port)
-
-  const send = (res: ServerResponse, code: number, body: unknown): void => {
-    res.writeHead(code, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" })
-    res.end(JSON.stringify(body))
-  }
+  const routes = reviewRoutes(api, guard, () => finish())
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = guard.admit(req, res)
@@ -71,44 +137,7 @@ export async function startReviewServer(api: ReviewApi): Promise<ReviewServer> {
       res.end(REVIEW_PAGE_HTML)
       return
     }
-    if (req.method === "GET" && url.pathname === "/api/state") return send(res, 200, await api.state())
-    if (req.method === "POST" && url.pathname === "/api/decide") {
-      let data: Record<string, unknown>
-      try {
-        data = JSON.parse((await guard.readBody(req)) ?? "") as Record<string, unknown>
-      } catch {
-        return guard.refuse(res, 400, "not JSON")
-      }
-      const action = ACTIONS.find((a) => a === data.action)
-      const id = short(data.id, 300)
-      const by = short(data.by, 200)
-      if (!action || !id) return guard.refuse(res, 400, "that is not a decision")
-      if (!by) return send(res, 200, { ok: false, message: "Say who is deciding (your name) first." })
-      const note = short(data.note, 2000)
-      const source = short(data.source, 100)
-      const role = short(data.role, 200)
-      const reference = short(data.reference, 500)
-      return send(
-        res,
-        200,
-        await api.decide({
-          id,
-          action,
-          by,
-          ...(note ? { note } : {}),
-          ...(source ? { source } : {}),
-          ...(role ? { role } : {}),
-          ...(reference ? { reference } : {})
-        })
-      )
-    }
-    if (req.method === "POST" && url.pathname === "/api/apply") return send(res, 200, await api.apply())
-    if (req.method === "POST" && url.pathname === "/api/close") {
-      res.writeHead(204)
-      res.end()
-      finish()
-      return
-    }
+    if (await routes(req, res, url)) return
     guard.refuse(res, 404, "not found")
   }
 

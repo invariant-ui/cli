@@ -4,6 +4,7 @@ import { CONFIG_FILE } from "../config.js"
 import { CliError } from "../errors.js"
 import type { Io } from "../io.js"
 import { snapshot } from "./clean.js"
+import { reviewApi } from "./review-run.js"
 import { startWebServer } from "./server.js"
 
 /**
@@ -12,7 +13,7 @@ import { startWebServer } from "./server.js"
  * what happened.
  */
 export async function runInBrowser(c: Context, setup: (c: Context) => Promise<number>): Promise<number> {
-  const session = await startWebServer()
+  const session = await startWebServer({ review: reviewApi(c) })
   print(c, `Setup is open in your browser: ${session.url}`)
   print(c, "Only this computer can open that link. Press Ctrl+C here to stop.")
   if (c.io.openUrl) c.io.openUrl(session.url)
@@ -33,8 +34,12 @@ export async function runInBrowser(c: Context, setup: (c: Context) => Promise<nu
     select: (q, choices) => session.select(q, choices),
     multiselect: (q, options) => session.multiselect(q, options),
     tree: (q, groups) => session.tree(q, groups),
+    review: async () => {
+      await session.review("Review what needs a decision")
+    },
     phase: (id, title) => {
-      finishing = id === "done"
+      // From the review on, the setup is applied: a restart would not undo it.
+      finishing = id === "done" || id === "review"
       session.emit({ type: "phase", id, title })
     },
     report: (e) => {

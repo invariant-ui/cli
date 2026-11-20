@@ -1084,6 +1084,8 @@ describe("setup in the browser", () => {
       return ask.groups?.flatMap((g) => g.items.filter((i) => i.ticked).map((i) => i.value))
     if (ask.kind === "multiselect") return ask.options?.filter((o) => o.ticked).map((o) => o.value)
     if (ask.kind === "prompt") return ""
+    // The review of conflicts is skipped here: this project has some, and a person may go on without deciding them.
+    if (ask.kind === "review") return "continue"
     const want = /Next\?/.test(ask.question)
       ? "confirm"
       : /Looks right/.test(ask.question)
@@ -1127,6 +1129,65 @@ describe("setup in the browser", () => {
     expect(r.code).toBe(0)
   })
 
+  it("reviews the conflicts in the page before the summary: a decision is recorded, applied, and leaves the queue", async () => {
+    const dir = project()
+    let before = 0
+    let after = 0
+    let recorded: { ok: boolean } | undefined
+    let applied: { ok: boolean } | undefined
+    let reviewPage: Response | undefined
+    const b = browser(async (ask) => {
+      if (ask.kind !== "review") return accept(ask)
+      const { base, token } = b.link
+      const json = async (p: string, body?: unknown) =>
+        (await fetch(`${base}${p}?t=${token}`, {
+          ...(body === undefined
+            ? {}
+            : {
+                method: "POST",
+                headers: { "content-type": "application/json", origin: base },
+                body: JSON.stringify(body)
+              })
+        })) as Response
+      // The page that setup frames, and its API, are served by the setup server itself.
+      reviewPage = await json("/review")
+      const state = (await (await json("/api/state")).json()) as {
+        rows: Array<{ id: string; kind: string; claims?: Array<{ sourceId: string }> }>
+      }
+      before = state.rows.length
+      const conflict = state.rows.find((r) => r.kind === "conflict")
+      recorded = (await (
+        await json("/api/decide", {
+          id: conflict?.id,
+          action: "resolve",
+          by: "ana",
+          source: conflict?.claims?.[0]?.sourceId
+        })
+      ).json()) as { ok: boolean }
+      applied = (await (await json("/api/apply", {})).json()) as { ok: boolean }
+      after = ((await (await json("/api/state")).json()) as { rows: unknown[] }).rows.length
+      return "continue"
+    })
+    const r = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"], [], {
+      io: {
+        openUrl: b.open,
+        select: async <T extends string>(_q: string, choices: ReadonlyArray<{ value: T }>) =>
+          (choices.find((c) => c.value === ("web" as string)) ?? choices[0])?.value
+      }
+    })
+    await b.finished.promise
+    expect(r.code).toBe(0)
+    expect(reviewPage?.status).toBe(200)
+    expect(reviewPage?.headers.get("content-security-policy")).toMatch(/frame-ancestors 'self'/)
+    expect(before).toBeGreaterThan(0)
+    expect(recorded?.ok).toBe(true)
+    expect(applied?.ok).toBe(true)
+    expect(after).toBeLessThan(before)
+    const phases = b.seen.flatMap((e) => (e.type === "phase" ? [e.id] : []))
+    expect(phases.slice(-2)).toEqual(["review", "done"])
+    expect(existsSync(path.join(dir, "invariant.decisions.json"))).toBe(true)
+  })
+
   it("start over removes what the run wrote and scans again from the first step", async () => {
     const dir = project()
     let trees = 0
@@ -1162,6 +1223,7 @@ describe("setup in the browser", () => {
       "components",
       "patterns",
       "plan",
+      "review",
       "done"
     ])
     expect(after.filter((e) => e.type === "ask" && e.kind === "tree")).toHaveLength(2)
@@ -1246,7 +1308,7 @@ describe("setup in the browser", () => {
     expect(r.out).toMatch(/Setup is open in your browser: http:\/\/127\.0\.0\.1:\d+\/\?t=/)
     // The steps arrive in order.
     const phases = b.seen.flatMap((e) => (e.type === "phase" ? [e.id] : []))
-    expect(phases).toEqual(["scan", "components", "patterns", "plan", "done"])
+    expect(phases).toEqual(["scan", "components", "patterns", "plan", "review", "done"])
     // The work after the plan is counted: the progress only moves forward, the total does not change, and it never passes it.
     const progress = b.seen.flatMap((e) => (e.type === "progress" ? [e] : []))
     expect(progress.length).toBeGreaterThan(1)

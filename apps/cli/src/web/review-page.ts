@@ -92,6 +92,17 @@ textarea.field{width:100%;min-height:64px;resize:vertical}
 .foot .msg.bad{color:var(--bad)}
 .foot .msg.ok{color:var(--ok)}
 .gone{padding:60px 0;color:var(--muted)}
+.embed{height:100vh;overflow:hidden}
+.embed header,.embed h1,.embed .lead,.embed .about{display:none}
+.embed #app{display:flex;flex-direction:column;height:calc(100vh - 56px);max-width:none}
+.embed .top{padding:12px 0 0;flex:none}
+.embed .stats{margin:0;gap:12px}
+.embed .stat b{font-size:22px}
+.embed .bar{margin:12px 0 10px;padding:8px 0;flex:none}
+.embed .grid{flex:1;min-height:0;padding-bottom:0;align-items:stretch}
+.embed .list,.embed .detail{min-height:0;max-height:100%;overflow:auto}
+.embed .detail{position:static}
+.embed .foot{position:static}
 </style>
 </head>
 <body>
@@ -122,6 +133,8 @@ textarea.field{width:100%;min-height:64px;resize:vertical}
   var KIND_NAME = { "conflict": "conflict", "inferred-fact": "inferred fact", "pattern-fact": "pattern fact" };
   var ORDER = { high: 0, medium: 1, low: 2 };
   var KIND_ORDER = { "conflict": 0, "inferred-fact": 1, "pattern-fact": 2 };
+  var embedded = new URLSearchParams(location.search).get("embed") === "1";
+  if (embedded) document.body.classList.add("embed");
   var state = { data: null, q: "", kind: "all", prio: "all", show: "open", selected: null, by: "", busy: false, msg: null, closed: false };
 
   function h(tag, props, kids) {
@@ -343,6 +356,8 @@ textarea.field{width:100%;min-height:64px;resize:vertical}
     }
     if (!state.data) return;
     renderTop(); renderBar(); renderList(); renderDetail(); renderFoot();
+    // Shown inside the setup page, which asks how many decisions are waiting before it goes on.
+    if (embedded && window.parent !== window) window.parent.postMessage({ invariantReview: { pending: state.data.rows.filter(function (r) { return r.decision; }).length } }, location.origin);
   }
   function load() {
     return api("/api/state").then(function (d) { state.data = d; render(); });

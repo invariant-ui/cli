@@ -1,14 +1,14 @@
 import { run } from "../cli.js"
 import { type Context, print } from "../commands.js"
 import { reviewState } from "../review-data.js"
-import { type DecideInput, type Outcome, startReviewServer } from "./review-server.js"
+import { type DecideInput, type Outcome, type ReviewApi, startReviewServer } from "./review-server.js"
 
 /**
  * Runs the review page: the person reads each open item with its evidence and decides it, and every decision is recorded
  * by running `invariant review <action>` itself, so the page and the terminal cannot disagree about what is allowed.
  * "Apply" runs `invariant compile`, which is what makes recorded decisions take effect.
  */
-export async function runReviewPage(c: Context): Promise<number> {
+export function reviewApi(c: Context): ReviewApi {
   const carry = [
     ...(c.args.values.config ? ["--config", c.args.values.config] : []),
     ...(c.args.values.dir ? ["--dir", c.args.values.dir] : []),
@@ -35,7 +35,7 @@ export async function runReviewPage(c: Context): Promise<number> {
       .split("\n")
       .find((l) => l.trim() !== "") ?? ""
 
-  const server = await startReviewServer({
+  return {
     state: () => reviewState({ ...c, args: { ...c.args } }),
     async decide(d: DecideInput): Promise<Outcome> {
       const argv = [
@@ -64,7 +64,11 @@ export async function runReviewPage(c: Context): Promise<number> {
         }
       return { ok: false, message: first(r.err) || first(r.out) || "compile failed" }
     }
-  })
+  }
+}
+
+export async function runReviewPage(c: Context): Promise<number> {
+  const server = await startReviewServer(reviewApi(c))
   print(c, `The review is open in your browser: ${server.url}`)
   print(c, "Only this computer can open that link. Press Ctrl+C here to stop.")
   if (c.io.openUrl) c.io.openUrl(server.url)

@@ -16,6 +16,8 @@ Status: accepted
 
 **D4. State is the decisions file.** An item with a decision in `invariant.decisions.json` that a compile has not yet applied is shown as recorded, so a reload or a second run shows the same thing. Nothing else is stored.
 
+**D5. It is also a step of the browser setup** (ADR 0010, D6): the same page, framed by the setup page, with the header and report text left out and the list and detail panes scrolling on their own. The frame reports how many decisions are recorded but not applied, so setup can say so before the person continues.
+
 ## Consequences
 
 - Reviewing is one place: read, decide, apply.

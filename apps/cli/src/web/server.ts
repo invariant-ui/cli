@@ -1,8 +1,10 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
 import type { AddressInfo } from "node:net"
 import type { Choice, Option, TreeGroup } from "../select.js"
-import { makeGuard, PAGE_HEADERS } from "./guard.js"
+import { makeGuard, PAGE_HEADERS, PAGE_HEADERS_FRAMEABLE, PAGE_HEADERS_WITH_FRAMES } from "./guard.js"
 import { PAGE_HTML } from "./page.js"
+import { REVIEW_PAGE_HTML } from "./review-page.js"
+import { type ReviewApi, reviewRoutes } from "./review-server.js"
 
 /** What the browser is told. Every field is plain data; the page renders text with `textContent` only. */
 export type WebEvent =
@@ -15,7 +17,7 @@ export type WebEvent =
   | {
       type: "ask"
       id: string
-      kind: "select" | "multiselect" | "tree" | "prompt"
+      kind: "select" | "multiselect" | "tree" | "prompt" | "review"
       question: string
       choices?: Array<{ value: string; label: string; key: string }>
       options?: Array<{ value: string; label: string; ticked: boolean }>
@@ -45,6 +47,8 @@ export interface WebSession {
   select<T extends string>(question: string, choices: ReadonlyArray<Choice<T>>): Promise<T | undefined>
   multiselect<T extends string>(question: string, options: ReadonlyArray<Option<T>>): Promise<T[] | undefined>
   tree<T extends string>(question: string, groups: ReadonlyArray<TreeGroup<T>>): Promise<T[] | undefined>
+  /** Shows the review of conflicts and inferred facts in the page, and waits until the person goes on. */
+  review(question: string): Promise<"continue" | undefined>
   emit(event: WebEvent): void
   /** True once the person pressed Stop in the browser. Every later question answers "cancelled". */
   readonly stopped: boolean
@@ -75,7 +79,9 @@ export const plainQuestion = (q: string): string =>
  * drive it), and validates every answer against the question that was asked. It serves one fixed page and relays answers;
  * it reads no file and runs nothing.
  */
-export async function startWebServer(options: { port?: number } = {}): Promise<WebSession> {
+export async function startWebServer(
+  options: { port?: number; review?: ReviewApi } = {}
+): Promise<WebSession> {
   const events: Array<{ id: number; event: WebEvent }> = []
   const clients = new Set<ServerResponse>()
   const pending = new Map<string, Pending>()
@@ -105,6 +111,7 @@ export async function startWebServer(options: { port?: number } = {}): Promise<W
   })
   const port = (server.address() as AddressInfo).port
   const guard = makeGuard(port)
+  const reviewHandler = options.review ? reviewRoutes(options.review, guard) : undefined
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = guard.admit(req, res)
@@ -112,9 +119,19 @@ export async function startWebServer(options: { port?: number } = {}): Promise<W
     const { refuse, readBody } = guard
 
     if (req.method === "GET" && url.pathname === "/") {
-      res.writeHead(200, PAGE_HEADERS)
+      res.writeHead(200, reviewHandler ? PAGE_HEADERS_WITH_FRAMES : PAGE_HEADERS)
       res.end(PAGE_HTML)
       return
+    }
+    // The review of conflicts, when setup was given a way to read and decide them: its page (shown in a frame of the
+    // setup page, same origin) and its API.
+    if (reviewHandler) {
+      if (req.method === "GET" && url.pathname === "/review") {
+        res.writeHead(200, PAGE_HEADERS_FRAMEABLE)
+        res.end(REVIEW_PAGE_HTML)
+        return
+      }
+      if (await reviewHandler(req, res, url)) return
     }
     if (req.method === "GET" && url.pathname === "/api/events") {
       res.writeHead(200, {
@@ -259,6 +276,11 @@ export async function startWebServer(options: { port?: number } = {}): Promise<W
           }))
         }),
         subsetOf(new Set<string>(groups.flatMap((g) => g.items.map((i) => i.value))))
+      ),
+    review: (question) =>
+      ask<"continue">(
+        (id) => ({ type: "ask", id, kind: "review", question: plainQuestion(question) }),
+        (v) => (v === "continue" ? { ok: true, value: v } : { ok: false })
       ),
     async finish(code, error) {
       if (error) emit({ type: "error", message: error })

@@ -11,6 +11,24 @@ export const PAGE_HEADERS = {
   "x-content-type-options": "nosniff"
 } as const
 
+/** The setup page also frames the review page (same origin), so it may load a frame from itself. */
+export const PAGE_HEADERS_WITH_FRAMES = {
+  ...PAGE_HEADERS,
+  "content-security-policy": PAGE_HEADERS["content-security-policy"].replace(
+    "base-uri 'none'",
+    "frame-src 'self'; base-uri 'none'"
+  )
+} as const
+
+/** The review page, when it is shown inside the setup page: the same rules, but that one parent may frame it. */
+export const PAGE_HEADERS_FRAMEABLE = {
+  ...PAGE_HEADERS,
+  "content-security-policy": PAGE_HEADERS["content-security-policy"].replace(
+    "frame-ancestors 'none'",
+    "frame-ancestors 'self'"
+  )
+} as const
+
 export const MAX_BODY = 2 * 1024 * 1024
 
 export interface Guard {

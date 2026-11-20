@@ -188,6 +188,10 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 .skstep .sk.l{width:78%;margin-bottom:12px}
 .skstep .skcmd{height:34px;max-width:72ch;border:1px solid var(--line);border-radius:3px;background:var(--panel);display:flex;align-items:center;padding:0 12px;gap:10px}
 .skstep .skcmd .sk{height:7px;width:62%}
+.shell.wide{grid-template-columns:170px minmax(0,1fr)}
+.shell.wide .act{display:none}
+@media (max-width:960px){.shell.wide{grid-template-columns:minmax(0,1fr)}}
+.rframe{display:block;width:100%;height:calc(100vh - 235px);min-height:480px;border:1px solid var(--line);border-radius:3px;background:var(--bg)}
 .sheets{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
 .sheet{padding:8px 10px 10px;border:1px solid var(--line);border-radius:3px;background:var(--bg)}
 .sheet .th{display:flex;justify-content:space-between;font:10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
@@ -260,15 +264,16 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 <script>
 (function () {
   var token = new URLSearchParams(location.search).get("t") || "";
-  var STEPS = [["scan", "Scan"], ["components", "Components"], ["patterns", "Patterns"], ["plan", "Plan"], ["done", "Done"]];
+  var STEPS = [["scan", "Scan"], ["components", "Components"], ["patterns", "Patterns"], ["plan", "Plan"], ["review", "Review"], ["done", "Done"]];
   var COPY = {
     scan: ["Scanning your project", "Setup reads every folder. Dependencies, build output and .gitignore entries are skipped."],
     components: ["Choose the design system's components", "Every component setup found is listed, grouped by directory. Tick the ones that belong to your design system."],
     patterns: ["Choose the patterns", "Patterns are structures that recur where your components are used. They stay proposals until you approve them."],
     plan: ["Apply the setup", "One plan. Yes confirms the contract and does everything in it."],
+    review: ["Review what needs a decision", "Conflicts between sources and facts nobody has confirmed. Nothing inferred or conflicting becomes authoritative until you decide it. Skip any of them: they stay in the queue."],
     done: ["Setup finished", "Here is what setup did, and what to do next."]
   };
-  function fresh() { return { phase: "scan", counts: {}, live: null, logs: {}, busy: null, ask: null, next: [], summary: [], ended: false, error: null, stopped: false, lost: false, widget: null, restarting: false, applying: false, componentsDone: false, patternsDone: false, progress: { done: 0, total: 0 }, stages: [] }; }
+  function fresh() { return { phase: "scan", counts: {}, live: null, logs: {}, busy: null, ask: null, next: [], summary: [], ended: false, error: null, stopped: false, lost: false, widget: null, restarting: false, applying: false, componentsDone: false, patternsDone: false, sawReview: false, reviewPending: 0, progress: { done: 0, total: 0 }, stages: [] }; }
   var state = fresh();
 
   function h(tag, props, kids) {
@@ -343,6 +348,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     STEPS.forEach(function (s, i) {
       var status = state.ended || i < cur ? "done" : i === cur ? "current" : "next";
       var count = status === "current" ? (state.stopped ? "stopped" : state.live) : status === "done" ? state.counts[s[0]] : null;
+      if (s[0] === "review" && status === "done" && !state.sawReview) count = "none";
       var done = status === "done" && count == null;
       list.appendChild(h("li", { class: "st-" + status, "aria-current": status === "current" ? "step" : false }, [
         h("span", { text: (i + 1) + " " + s[1] }),
@@ -418,7 +424,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     return [{ label: "", bare: true, collapsed: false, items: ask.options }];
   }
   function newWidget(ask) {
-    if (ask.kind === "select" || ask.kind === "prompt") return { text: "" };
+    if (ask.kind === "select" || ask.kind === "prompt" || ask.kind === "review") return { text: "" };
     var ticked = {}, folded = {}, total = 0;
     groupsOf(ask).forEach(function (g, gi) {
       folded[gi] = !!g.collapsed && !g.bare;
@@ -568,17 +574,44 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     t.appendChild(document.createTextNode(state.busy || "Working"));
   }
 
+  // The review of conflicts is the review page in a frame of this page (same origin). Drawing this page again must not
+  // reload it, so while that question is open the frame is left alone.
+  var reviewNote = null;
+  function paintReviewNote() {
+    if (!reviewNote) return;
+    var n = state.reviewPending;
+    reviewNote.textContent = n > 0 ? n + " decision" + (n === 1 ? "" : "s") + " recorded but not applied. Press Apply in the review first, or they apply at the next compile." : "Decide what you want now. Whatever you leave stays in the queue: run review list later.";
+  }
+  function renderReview(panel, ask) {
+    var frame = h("iframe", { class: "rframe", title: "Review what needs a decision", src: "/review?embed=1&t=" + encodeURIComponent(token) });
+    panel.appendChild(frame);
+    window.addEventListener("message", function (e) {
+      if (e.origin !== location.origin || e.source !== frame.contentWindow) return;
+      var d = e.data;
+      if (d && d.invariantReview && typeof d.invariantReview.pending === "number") { state.reviewPending = d.invariantReview.pending; paintReviewNote(); }
+    });
+    reviewNote = h("span", { class: "count" });
+    paintReviewNote();
+    var foot = $("footin");
+    foot.appendChild(h("span", {})); foot.appendChild(reviewNote);
+    foot.appendChild(h("button", { class: "btn primary", type: "button", text: "Continue to the summary", onclick: function () { answer("continue"); } }));
+    $("foot").hidden = false;
+  }
   function renderAsk() {
+    var keep = $("ask").firstChild;
+    if (state.ask && state.ask.kind === "review" && keep && keep.getAttribute("data-ask") === state.ask.id) return;
     var box = $("ask"); clear(box);
     clear($("footin")); $("foot").hidden = true;
     var ask = state.ask;
     if (!ask) return;
     if (!state.widget) state.widget = newWidget(ask);
     var lines = ask.question.split("\\n");
-    var panel = h("section", { class: "ask", "aria-label": "Question" }, [h("h3", { text: lines[0] })]);
+    // The review says what it is in the step title; its frame needs no second heading.
+    var panel = h("section", { class: "ask", "aria-label": "Question", "data-ask": ask.id }, [ask.kind === "review" ? null : h("h3", { text: lines[0] })]);
     if (lines.length > 1) panel.appendChild(h("p", { class: "q", text: lines.slice(1).join("\\n") }));
     box.appendChild(panel);
-    if (ask.kind === "select") renderSelect(panel, ask);
+    if (ask.kind === "review") renderReview(panel, ask);
+    else if (ask.kind === "select") renderSelect(panel, ask);
     else if (ask.kind === "prompt") renderPrompt(panel, ask, state.widget);
     else renderList(panel, ask, state.widget);
   }
@@ -601,7 +634,8 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     var banner = $("banner"); clear(banner);
     if (state.error) banner.appendChild(h("div", { class: "banner", role: "alert", text: state.error }));
     $("stop").hidden = state.ended || state.stopped;
-    $("restart").hidden = state.ended || state.stopped;
+    $("restart").hidden = state.ended || state.stopped || state.phase === "review" || state.phase === "done";
+    document.querySelector(".shell").classList.toggle("wide", !!(state.ask && state.ask.kind === "review"));
     $("restart").disabled = state.restarting;
     var notice = $("notice"); clear(notice);
     if (state.restarting && !state.ended) notice.appendChild(h("div", { class: "notice", text: "Starting over. Setup finishes what it is doing, removes what it wrote so far, then scans again." }));
@@ -633,6 +667,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
   }
 
   function on(e) {
+    if (e.type === "phase" && e.id === "review") state.sawReview = true;
     if (e.type === "project") $("proj").textContent = " / " + e.name;
     else if (e.type === "reset") state = fresh();
     else if (e.type === "phase") { state.phase = e.id; state.live = null; }
