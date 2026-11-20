@@ -1,7 +1,7 @@
-import { randomBytes, timingSafeEqual } from "node:crypto"
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http"
 import type { AddressInfo } from "node:net"
 import type { Choice, Option, TreeGroup } from "../select.js"
+import { makeGuard, PAGE_HEADERS } from "./guard.js"
 import { PAGE_HTML } from "./page.js"
 
 /** What the browser is told. Every field is plain data; the page renders text with `textContent` only. */
@@ -69,8 +69,6 @@ export const plainQuestion = (q: string): string =>
     .join("\n")
     .trim()
 
-const MAX_BODY = 2 * 1024 * 1024
-
 /**
  * A local web page that answers the questions `invariant setup` would ask in the terminal. It listens on the loopback
  * address only, needs the random token in the link, checks the Host and Origin headers (so a page on another site cannot
@@ -78,7 +76,6 @@ const MAX_BODY = 2 * 1024 * 1024
  * it reads no file and runs nothing.
  */
 export async function startWebServer(options: { port?: number } = {}): Promise<WebSession> {
-  const token = randomBytes(24).toString("hex")
   const events: Array<{ id: number; event: WebEvent }> = []
   const clients = new Set<ServerResponse>()
   const pending = new Map<string, Pending>()
@@ -107,49 +104,15 @@ export async function startWebServer(options: { port?: number } = {}): Promise<W
     server.listen(options.port ?? 0, "127.0.0.1", resolve)
   })
   const port = (server.address() as AddressInfo).port
-  const hosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`])
-
-  const tokenOk = (given: string | null): boolean => {
-    if (!given || given.length !== token.length) return false
-    return timingSafeEqual(Buffer.from(given), Buffer.from(token))
-  }
-  const refuse = (res: ServerResponse, code: number, why: string): void => {
-    res.writeHead(code, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" })
-    res.end(`${why}\n`)
-  }
-  const readBody = (req: IncomingMessage): Promise<string | undefined> =>
-    new Promise((resolve) => {
-      const chunks: Buffer[] = []
-      let size = 0
-      req.on("data", (d: Buffer) => {
-        size += d.length
-        if (size > MAX_BODY) {
-          req.destroy()
-          resolve(undefined)
-        } else chunks.push(d)
-      })
-      req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")))
-      req.on("error", () => resolve(undefined))
-    })
+  const guard = makeGuard(port)
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    if (!hosts.has(req.headers.host ?? "")) return refuse(res, 403, "wrong host")
-    const url = new URL(req.url ?? "/", `http://${req.headers.host}`)
-    const origin = req.headers.origin
-    if (origin !== undefined && !hosts.has(origin.replace(/^https?:\/\//, "")))
-      return refuse(res, 403, "wrong origin")
-    if (!tokenOk(url.searchParams.get("t")))
-      return refuse(res, 403, "Open the link that invariant setup printed in your terminal.")
+    const url = guard.admit(req, res)
+    if (!url) return
+    const { refuse, readBody } = guard
 
     if (req.method === "GET" && url.pathname === "/") {
-      res.writeHead(200, {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-        "content-security-policy":
-          "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-        "referrer-policy": "no-referrer",
-        "x-content-type-options": "nosniff"
-      })
+      res.writeHead(200, PAGE_HEADERS)
       res.end(PAGE_HTML)
       return
     }
@@ -232,7 +195,7 @@ export async function startWebServer(options: { port?: number } = {}): Promise<W
         : { ok: false }
 
   const session: WebSession = {
-    url: `http://127.0.0.1:${port}/?t=${token}`,
+    url: guard.url,
     get stopped() {
       return stopped
     },

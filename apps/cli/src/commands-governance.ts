@@ -18,10 +18,12 @@ import { CliError } from "./errors.js"
 import { shortValue, table } from "./format.js"
 import { loadCompiled } from "./store.js"
 import { CLI_NAME } from "./version.js"
+import { runReviewPage } from "./web/review-run.js"
 
 type Entity = { id: string; facts?: Record<string, unknown> }
 
-function items(contract: Contract): ReviewItem[] {
+/** Everything that needs a person: open conflicts and inferred facts. Shared by `review list` and the review page. */
+export function items(contract: Contract): ReviewItem[] {
   const { integrity: _i, ...draft } = contract
   return buildReviewQueue(draft)
 }
@@ -45,6 +47,16 @@ export async function review(c: Context): Promise<number> {
   if (sub === "list") {
     const kind = c.args.values.kind
     const rows = queue.filter((i) => !kind || i.kind === kind)
+    // On a terminal the list is a page in the browser: a report of the contract and a place to decide each item.
+    // `--terminal` and `--json` keep the table; `--web` opens the page even where it would not be offered.
+    const interactive = c.io.select !== undefined && c.io.prompt !== undefined
+    if (
+      !c.args.values.json &&
+      c.args.values.terminal !== true &&
+      (c.args.values.web === true || interactive) &&
+      queue.length > 0
+    )
+      return runReviewPage(c)
     if (c.args.values.json) json(c, rows)
     else
       print(

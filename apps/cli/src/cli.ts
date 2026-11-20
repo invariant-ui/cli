@@ -36,7 +36,7 @@ usage: ${CLI_NAME} <command> [options]
   verify                        check the compiled output itself [--fresh recompiles and compares]
   rules                         list the validation rules
   policy list                   list approved policies (written in invariant.policies.json)
-  review list | show <id>       what needs a human decision
+  review list | show <id>       what needs a human decision (list opens a page in your browser on a terminal; --terminal prints a table)
   review approve|reject|resolve|accept|dismiss <id> --as <name>   record a decision in invariant.decisions.json
   export --to <dir>             write a portable copy of the artifacts
   mcp                           serve the compiled contract to AI tools over stdio (read-only)
