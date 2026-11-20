@@ -11,6 +11,7 @@ export type WebEvent =
   | { type: "busy"; text: string | null }
   | { type: "next"; title: string; lines: string[] }
   | { type: "summary"; rows: Array<{ label: string; text: string }> }
+  | { type: "progress"; done: number; total: number; label: string }
   | {
       type: "ask"
       id: string
