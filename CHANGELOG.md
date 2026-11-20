@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/invariant-ui/cli/compare/v0.18.0...v0.19.0) (2026-11-20)
+
+
+### Features
+
+* **cli:** a review page for `review list`, and the review as a step of the browser setup ([#49](https://github.com/invariant-ui/cli/issues/49)) ([0495599](https://github.com/invariant-ui/cli/commit/049559996b201293bf3ced34a1537fce7da9f543))
+
 ## [0.18.0](https://github.com/invariant-ui/cli/compare/v0.17.0...v0.18.0) (2026-11-20)
 
 
