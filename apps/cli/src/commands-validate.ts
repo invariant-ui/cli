@@ -28,7 +28,8 @@ import { CLI_NAME, CLI_VERSION } from "./version.js"
 
 /** File types `validate` and `hook` read. */
 export const EXTENSIONS = /\.(tsx|jsx|ts|js|mjs|cjs|vue|html)$/i
-const MAX_FILES = 5000
+// Generous: a large application has tens of thousands of source files, and cutting the list off would skip some.
+const MAX_FILES = 100_000
 const FRAMEWORKS: readonly string[] = ["react", "vue", "angular", "html"]
 const FORMATS = ["text", "json", "github", "sarif"] as const
 const FAIL_ON: readonly string[] = ["error", "warning", "never"]

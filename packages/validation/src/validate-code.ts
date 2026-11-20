@@ -197,7 +197,10 @@ export function buildTree(ds: DesignSystem, code: string, filename: string): Tre
   const index = tagIndex(ds)
   const modules = designSystemModules(ds)
   const isDs = (m: string): boolean => modules.some((p) => m === p || m.startsWith(`${p}/`))
-  const { uses, imports } = scanJsx(code, filename)
+  // Vue, Angular and HTML templates have no imports to read: an element is a component by its name or selector.
+  const { uses, imports } = /\.(tsx|jsx)$/i.test(filename)
+    ? scanJsx(code, filename)
+    : { uses: templateUses(code, filename), imports: new Map<string, ImportBinding>() }
   const components: Array<Component | undefined> = []
   const kinds: UseKind[] = []
   for (const use of uses) {
@@ -206,6 +209,19 @@ export function buildTree(ds: DesignSystem, code: string, filename: string): Tre
     kinds.push(kindOf(r, use))
   }
   return { uses, components, kinds }
+}
+
+/** The elements of a template file: a `.vue` or `.html` file as it is, an Angular component's inline `template`. */
+function templateUses(code: string, filename: string): ScannedUse[] {
+  if (/\.(vue|html?)$/i.test(filename)) return scanMarkup(code)
+  if (!/\.ts$/i.test(filename) || !/@Component\b/.test(code)) return []
+  const out: ScannedUse[] = []
+  for (const m of code.matchAll(/\btemplate\s*:\s*(?:`([\s\S]*?)`|"([^"\n]*)"|'([^'\n]*)')/g)) {
+    const offset = out.length
+    for (const u of scanMarkup(m[1] ?? m[2] ?? m[3] ?? ""))
+      out.push({ ...u, parent: u.parent === undefined ? undefined : u.parent + offset })
+  }
+  return out
 }
 
 function resolveUse(

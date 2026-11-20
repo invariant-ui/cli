@@ -32,11 +32,11 @@ export interface DiscoverInput {
   reviews?: ReviewsFile | undefined
 }
 
-const READABLE = /\.(tsx|jsx)$/i
+const READABLE = /\.(tsx|jsx|vue|html?|ts)$/i
 
 /**
- * Finds structures that recur in application code, as candidates for people to review. It reads React JSX by
- * syntax and runs nothing. It resolves elements to the contract's components, so it needs a compiled contract.
+ * Finds structures that recur in application code, as candidates for people to review. It reads React JSX and
+ * Vue, Angular and HTML templates by syntax and runs nothing. It resolves elements to the contract's components, so it needs a compiled contract.
  * The result is the same for the same files, contract and options. Nothing it produces is approved or enforced.
  */
 export function discover(input: DiscoverInput): CandidatesFile {
@@ -60,7 +60,7 @@ export function discover(input: DiscoverInput): CandidatesFile {
     diagnostics.push({
       code: "discovery-unsupported-files",
       severity: "info",
-      message: `${unreadable} file(s) were skipped: discovery reads .tsx and .jsx files only. Vue, Angular, HTML and plain script files are not analyzed.`
+      message: `${unreadable} file(s) were skipped: discovery reads React (.tsx, .jsx), Vue (.vue), Angular (.html templates and inline templates in .ts) and HTML files only.`
     })
   if (empty > 0)
     diagnostics.push({

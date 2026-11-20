@@ -63,7 +63,8 @@ describe("discovering patterns in application code", () => {
     expect(found.candidates.every((c) => c.status === "proposed")).toBe(true)
     expect(found.candidates.map((c) => c.structure.key)).toContain("modal(button)")
     expect(found.candidates.map((c) => c.kind)).toContain("similar-files")
-    expect(found.diagnostics.map((d) => d.code)).toContain("discovery-unsupported-files")
+    // Vue, Angular and HTML templates are read now, so a file of those kinds is no longer reported as skipped.
+    expect(found.diagnostics.map((d) => d.code)).not.toContain("discovery-unsupported-files")
     expect(existsSync(path.join(dir, "invariant.patterns.json"))).toBe(false)
     expect(existsSync(path.join(dir, "invariant.candidate-reviews.json"))).toBe(false)
   })

@@ -4,18 +4,24 @@ import path from "node:path"
 import { scanPrompt } from "@invariant/agent-kit"
 import { PATTERN_CATEGORIES } from "@invariant/contract"
 import { PATTERNS_FILE } from "@invariant/governance"
-import type { CandidatesFile } from "@invariant/validation"
+import {
+  CANDIDATES_FILE,
+  type CandidatesFile,
+  parseReviews,
+  REVIEWS_FILE,
+  type ReviewsFile
+} from "@invariant/validation"
 import { BASELINE_FILE } from "./baseline.js"
 import { run } from "./cli.js"
-import { type Context, json, outputDir, print } from "./commands.js"
+import { type Context, json, outputDir, print, writableDir } from "./commands.js"
 import { POSTURES } from "./commands-hook.js"
 import { CONFIG_FILE, detectConfig, type InvariantConfig, loadConfig, writeConfig } from "./config.js"
 import { CliError } from "./errors.js"
 import { paint } from "./format.js"
-import { columns, done, fail, gap, intro, line, outro, spin, warn, wrap } from "./frame.js"
+import { columns, done, gap, intro, line, outro, spin, warn, wrap } from "./frame.js"
 import { applyPublish, planPublish } from "./publish.js"
 import type { Choice } from "./select.js"
-import { findApps, inside } from "./setup-discovery.js"
+import { inside } from "./setup-discovery.js"
 import {
   type Agent,
   type AgentId,
@@ -36,13 +42,14 @@ import { assess } from "./sources/confidence.js"
 import { analyzePath, type DirectoryCandidate } from "./sources/discover.js"
 import { analyzeProject, discoverFor } from "./sources/plan.js"
 import { type Added, decideWithoutAsking, type ReviewResult, reviewSources } from "./sources/review.js"
+import type { Scan } from "./sources/scan.js"
+import { definitionFiles, findPatterns } from "./sources/usage.js"
 import { type StarterRule, starterRules } from "./starter-rules.js"
 import { loadCompiled } from "./store.js"
 import { CLI_NAME, CLI_VERSION, NPM_PACKAGE } from "./version.js"
 import { installStepsFor, WORKFLOW_PATH, workflowYaml } from "./workflow.js"
 
 const TOP = 5
-const APP_DIRS = ["src", "app", "pages", "apps"]
 const CLIENT_DIRS: Array<[string, string]> = [
   [".claude", "claude-code"],
   [".cursor", "cursor"],
@@ -167,6 +174,8 @@ export async function setup(c: Context): Promise<number> {
   /** Why the last discovery was not sure, for the message when there is no one to ask. */
   let unsure: string[] = []
   /** What the person confirmed, to compare with what the compile produced. */
+  /** What the component review looked at, so the pattern review need not read the project again. */
+  let projectInfo: { scan: Scan; packages: string[] } | undefined
   let confirmedSet:
     | { components: number; packages: Array<{ name: string; dir: string; entries: number }> }
     | undefined
@@ -197,6 +206,7 @@ export async function setup(c: Context): Promise<number> {
         })
     )
     const { recognition, thresholds } = analysis
+    projectInfo = { scan: analysis.scan, packages: recognition.project.packages.map((p) => p.dir) }
     step(
       `scanned ${num(analysis.scan.files.length)} files in ${num(analysis.scan.directories)} folders (dependencies, build output and .gitignore entries are skipped)`
     )
@@ -713,125 +723,162 @@ export async function setup(c: Context): Promise<number> {
   const sourcePaths = (config?.sources ?? [])
     .map((s) => ("path" in s && typeof s.path === "string" ? s.path.replace(/^\.\//, "") : ""))
     .filter((p) => p !== "" && p !== ".")
-  const isDir = (p: string): boolean =>
-    existsSync(path.join(c.cwd, p)) && statSync(path.join(c.cwd, p)).isDirectory()
-  // A folder that holds the design system's own component files is the design system, not an application.
-  const implFiles = contract.components.flatMap((x) =>
-    x.implementations.flatMap((i) => {
-      const file = (i.extensions as { react?: { file?: unknown } } | undefined)?.react?.file
-      return typeof file === "string" ? sourcePaths.map((p) => `${p}/${file}`).concat(file) : []
-    })
-  )
-  const holdsDesignSystem = (d: string): boolean => !consumer && implFiles.some((f) => f.startsWith(`${d}/`))
-  const skipped: string[] = []
-  let appPaths = c.args.values.paths
-    ? c.args.values.paths
-        .split(",")
-        .map((p) => p.trim())
-        .filter(Boolean)
-    : await (async () => {
-        const apps = await findApps(c.cwd, sourcePaths)
-        if (apps.length > 0) return apps
-        return APP_DIRS.filter((d) => {
-          if (!isDir(d) || sourcePaths.some((s) => s === d)) return false
-          if (!holdsDesignSystem(d)) return true
-          skipped.push(d)
-          return false
-        })
-      })()
-  if (
-    c.args.values.paths === undefined &&
-    appPaths.length > 0 &&
-    !yes &&
-    c.args.values["confirm-contract"] !== true &&
-    c.io.prompt
-  ) {
-    say(`Applications that use your components: ${appPaths.join(", ")}`)
-    const a = (
-      (await c.io.prompt(
-        `${paint("accent", "◆")}  Look for page and layout patterns there? Enter to accept, paths (like apps/web,apps/admin) to use instead, n to skip: `
-      )) ?? ""
-    ).trim()
-    if (a.toLowerCase() === "n") appPaths = []
-    else if (a !== "")
-      appPaths = a
-        .split(",")
-        .map((p) => inside(c.cwd, p.trim()))
-        .filter((p): p is string => p !== undefined && isDir(p))
-  }
-  if (skipped.length > 0) say(`skipped ${skipped.join(", ")}: it holds the design system's own components`)
-
+  // Patterns come from how the confirmed components are used, wherever that is: every file in the project that can use
+  // one is looked at, not only application folders.
   type Cand = CandidatesFile["candidates"][number]
-  let top: Cand[] = []
-  if (appPaths.length === 0)
-    flag("no application folder found (looked for src, app, pages, apps). Pass --paths a,b to look elsewhere")
-  else {
-    const found = await busy("looking for recurring structures", () => sub("discover", ...appPaths, "--json"))
-    if (found.code === 0) {
-      const file = JSON.parse(found.out) as CandidatesFile
-      top = file.candidates
-        .filter((x) => x.status === "proposed" && x.subsumedBy === undefined)
-        .sort(
-          (a, b) =>
-            Number(b.archetype !== undefined) - Number(a.archetype !== undefined) ||
-            b.support.files - a.support.files ||
-            (a.id < b.id ? -1 : 1)
-        )
-        .slice(0, TOP)
-      if (top.length === 0)
-        step(`looked in ${appPaths.join(", ")}: no structure recurs often enough to propose (needs 3 files)`)
-      else {
-        step(`found ${top.length} recurring structure(s) in ${appPaths.join(", ")}`)
-        say(`${file.summary.filesAnalyzed} of ${file.summary.files} file(s) use your components`)
-        for (const [i, x] of top.entries())
-          say(
-            `${i + 1}. ${x.suggestedName}  (${x.support.files} files)${x.archetype ? `  looks like a ${x.archetype.category}: ${x.archetype.reason}` : ""}`
-          )
-      }
-    } else print(c, fail(`discovery failed: ${found.err.trim()}`))
+  const explicitPaths = (c.args.values.paths ?? "")
+    .split(",")
+    .map((p) => p.trim().replace(/^\.\//, ""))
+    .filter(Boolean)
+  const info =
+    projectInfo ??
+    (await busy("scanning every folder", async () => {
+      const a = await analyzeProject(c.cwd, config)
+      return { scan: a.scan, packages: a.recognition.project.packages.map((p) => p.dir) }
+    }))
+  const compiledNow = loadCompiled(dir)
+  const reviewsFile = path.resolve(c.cwd, config?.governance?.candidateReviewsFile ?? REVIEWS_FILE)
+  let priorReviews: ReviewsFile | undefined
+  if (existsSync(reviewsFile)) {
+    const parsedReviews = parseReviews(readFileSync(reviewsFile, "utf8"), path.basename(reviewsFile))
+    if (parsedReviews.ok) priorReviews = parsedReviews.value
   }
-  // Confirm, deny or direct each one. Asked only when someone can answer and nothing already decided.
+  const definitions = definitionFiles(compiledNow.contract, sourcePaths)
+  let readSoFar = 0
+  const usage = await busy(
+    () => `looking for how your components are used: ${num(readSoFar)} files read`,
+    () =>
+      findPatterns({
+        scan: info.scan,
+        compiled: compiledNow,
+        within: explicitPaths,
+        exclude: definitions,
+        reviews: priorReviews,
+        onProgress: (n) => {
+          readSoFar = n
+        }
+      })
+  )
+  const writable = await writableDir(c)
+  mkdirSync(writable, { recursive: true })
+  writeFileSync(path.join(writable, CANDIDATES_FILE), `${JSON.stringify(usage.candidates, null, 2)}\n`)
+  // Where the usage is: the package that holds it, else its top folder. Where the components are defined does not count.
+  const holdsDefinitions = (d: string): boolean => [...definitions].some((f) => f.startsWith(`${d}/`))
+  const usageDirs = [
+    ...new Set(
+      usage.usageFiles.map((f) => {
+        const owner = info.packages
+          .filter((d) => d !== "." && f.startsWith(`${d}/`))
+          .sort((x, y) => y.length - x.length)[0]
+        return owner ?? f.split("/")[0] ?? "."
+      })
+    )
+  ].sort()
+  const consumers = usageDirs.filter((d) => !holdsDefinitions(d))
+  const appPaths = explicitPaths.length > 0 ? explicitPaths : consumers.length > 0 ? consumers : usageDirs
+  const total = info.scan.files.length
+  step(
+    `${num(usage.usageFiles.length)} of ${num(usage.filesRead)} template and component files use your components (${num(total)} files in the project)`
+  )
+  if (appPaths.length > 0)
+    say(
+      `used in: ${appPaths.slice(0, 8).join(", ")}${appPaths.length > 8 ? `, +${appPaths.length - 8} more` : ""}`
+    )
+  for (const d of usage.candidates.diagnostics.filter((x) => x.severity === "warning")) flag(d.message)
+
+  const all = usage.candidates.candidates
+    .filter((x) => x.status === "proposed" && x.subsumedBy === undefined)
+    .sort(
+      (a, b) =>
+        Number(b.archetype !== undefined) - Number(a.archetype !== undefined) ||
+        b.support.files - a.support.files ||
+        (a.id < b.id ? -1 : 1)
+    )
+  // The strongest start ticked: pages and layouts first, then the most repeated.
+  let top: Cand[] = all.slice(0, TOP)
+  if (all.length === 0)
+    step("no structure recurs often enough to propose (a pattern needs to appear in 3 files)")
+  else step(`found ${all.length} recurring structure${all.length === 1 ? "" : "s"}`)
+
+  // Tick the ones that should guide AI tools, then rename or recategorize. Asked only when someone can answer.
   const directed = new Map<string, { name?: string; category?: string }>()
   const denied: Cand[] = []
+  const describe = (x: Cand): string =>
+    `${x.suggestedName}  ${x.support.files} files · ${x.support.occurrences} uses${x.archetype ? ` · looks like a ${x.archetype.category}: ${x.archetype.reason}` : ""}`
   if (
-    top.length > 0 &&
+    all.length > 0 &&
     !yes &&
     only === undefined &&
     c.args.values["confirm-contract"] !== true &&
     c.io.prompt
   ) {
     say()
-    say("Review each pattern: Enter keeps it, d denies it, e lets you rename it or set its category.")
-    for (const [i, x] of top.entries()) {
-      const guess = x.archetype ? ` (looks like a ${x.archetype.category}, inferred)` : ""
+    const ticked = new Set(top.map((x) => x.id))
+    const groups = [
+      { label: "Pages", items: all.filter((x) => x.archetype?.category === "page") },
+      { label: "Layouts", items: all.filter((x) => x.archetype?.category === "layout") },
+      { label: "Other recurring structures", items: all.filter((x) => x.archetype === undefined) }
+    ]
+      .filter((g) => g.items.length > 0)
+      .map((g) => ({
+        label: `${g.label} (${g.items.length})`,
+        collapsed: all.length > 200,
+        items: g.items.map((x) => ({ value: x.id, label: describe(x), ticked: ticked.has(x.id) }))
+      }))
+    let chosen: string[] | undefined
+    if (c.io.tree) chosen = await c.io.tree("Which patterns should guide AI tools?", groups)
+    else {
+      say("Which patterns should guide AI tools? They are proposals until you approve them.")
+      const numbered = groups.flatMap((g) => g.items)
+      for (const [i, it] of numbered.entries()) say(`${i + 1}. [${it.ticked ? "x" : " "}] ${it.label}`)
       const a = (
         (await c.io.prompt(
-          `${paint("accent", "◆")}  ${i + 1}. ${x.suggestedName}${guess}: keep, deny or edit? [K/d/e] `
+          `${paint("accent", "◆")}  Enter keeps the [x] ones, a ticks all, n clears, numbers or ranges (like 2,5-9) toggle: `
         )) ?? ""
       )
         .trim()
         .toLowerCase()
-      if (a.startsWith("d")) denied.push(x)
-      else if (a.startsWith("e")) {
-        const name = (
-          (await c.io.prompt(`${paint("accent", "◆")}  Name [${x.suggestedName}]: `)) ?? ""
-        ).trim()
-        const cat = (
-          (await c.io.prompt(
-            `${paint("accent", "◆")}  Category (${PATTERN_CATEGORIES.join(", ")}) [${x.archetype?.category ?? "composition"}]: `
-          )) ?? ""
-        )
-          .trim()
-          .toLowerCase()
-        if (cat !== "" && !(PATTERN_CATEGORIES as readonly string[]).includes(cat))
-          flag(`${cat} is not a category, so it keeps ${x.archetype?.category ?? "composition"}`)
-        directed.set(x.id, {
-          ...(name !== "" ? { name } : {}),
-          ...(cat !== "" && (PATTERN_CATEGORIES as readonly string[]).includes(cat) ? { category: cat } : {})
-        })
+      const on = new Set(ticked)
+      for (const t of a.split(/[,\s]+/).filter(Boolean)) {
+        const range = /^(\d+)(?:-(\d+))?$/.exec(t)
+        if (t === "a" || t === "all") for (const it of numbered) on.add(it.value)
+        else if (t === "n" || t === "none") on.clear()
+        else if (range)
+          for (let i = Number(range[1]); i <= Number(range[2] ?? range[1]); i++) {
+            const it = numbered[i - 1]
+            if (it !== undefined && !on.delete(it.value)) on.add(it.value)
+          }
       }
+      chosen = [...on]
     }
-    top = top.filter((x) => !denied.includes(x))
+    top = all.filter((x) => chosen?.includes(x.id))
+    for (;;) {
+      if (top.length === 0) break
+      const a = (
+        (await c.io.prompt(
+          `${paint("accent", "◆")}  Rename one or change its category? Its number from the list below, or Enter to go on:\n${top.map((x, i) => `${paint("muted", "│")}  ${i + 1}. ${x.suggestedName}`).join("\n")}\n${paint("accent", "◆")}  Number: `
+        )) ?? ""
+      ).trim()
+      const x = top[Number(a) - 1]
+      if (!x) break
+      const name = ((await c.io.prompt(`${paint("accent", "◆")}  Name [${x.suggestedName}]: `)) ?? "").trim()
+      const cat = (
+        (await c.io.prompt(
+          `${paint("accent", "◆")}  Category (${PATTERN_CATEGORIES.join(", ")}) [${x.archetype?.category ?? "composition"}]: `
+        )) ?? ""
+      )
+        .trim()
+        .toLowerCase()
+      if (cat !== "" && !(PATTERN_CATEGORIES as readonly string[]).includes(cat))
+        flag(`${cat} is not a category, so it keeps ${x.archetype?.category ?? "composition"}`)
+      directed.set(x.id, {
+        ...(name !== "" ? { name } : {}),
+        ...(cat !== "" && (PATTERN_CATEGORIES as readonly string[]).includes(cat) ? { category: cat } : {})
+      })
+    }
+  } else if (top.length > 0) {
+    // Nobody to ask: the strongest are proposed, numbered so --only can pick among them.
+    for (const [i, x] of top.entries()) say(`${i + 1}. ${describe(x)}`)
   }
   const categoryOf = (x: Cand): string =>
     directed.get(x.id)?.category ?? x.archetype?.category ?? "composition"
@@ -1069,7 +1116,13 @@ export async function setup(c: Context): Promise<number> {
       const rules = withRules ? rulesFor(hit.cand) : []
       if (rules.length > 0) {
         def.constraints = rules
-        def.appliesTo = { paths: globs, frameworks: ["react"] }
+        // The frameworks the pattern was seen in, from the files that show it.
+        const seen = new Set(
+          hit.cand.evidence.map((e) =>
+            /\.vue$/i.test(e.file) ? "vue" : /\.(html?|ts)$/i.test(e.file) ? "angular" : "react"
+          )
+        )
+        def.appliesTo = { paths: globs, frameworks: [...seen].sort() }
         rulesOn += rules.length
       }
     }
@@ -1166,11 +1219,61 @@ export async function setup(c: Context): Promise<number> {
     say(
       `\nSee it work: break this, then run ${npx(`validate ${appPaths.join(" ")}`)}\n  "${first.description}"`
     )
-  if (!hasCi)
-    say(
-      `Add this to CI: ${npx("verify --fresh")} && ${npx(`validate ${appPaths.length > 0 ? appPaths.join(" ") : "src/"}`)}`
+
+  // What setup did is above. This is the rest of the way: the steps that make the contract useful, in order.
+  const out = path.relative(c.cwd, dir) || "invariant"
+  const connected = wantAgents && clients.length > 0
+  const unapproved = promoted.length > 0 && approved < promoted.length
+  say()
+  step("what to do next")
+  let n = 0
+  const next = (title: string, ...lines: string[]): void => {
+    say(`${++n}. ${title}`)
+    for (const l of lines) say(l)
+    say()
+  }
+  next(
+    "Check the contract.",
+    `Open ${out}/invariant.report.html: the components, tokens and patterns it found, and any conflicts between sources.`,
+    `Conflicts need a person to decide: ${npx("review list")}`
+  )
+  if (unapproved)
+    next(
+      "Approve the patterns you agree with.",
+      `Patterns are proposals until approved, and only approved ones guide AI tools. See them: ${npx("patterns list")}`,
+      `Approve one: ${npx("review approve <id> --as <your name>")}`
     )
-  say(`Review: ${npx("patterns list")}`)
+  next(
+    "Use it in your AI tool.",
+    ...(connected
+      ? [
+          `${clients.join(", ")} is connected: restart it, and approve the invariant MCP server when it asks. The server is read-only and serves this contract.`
+        ]
+      : [`Connect your tool: ${npx("agent init <claude-code|cursor|codex|windsurf>")}`]),
+    "Skills teach it how to use the contract: invariant-build-ui (build screens from your real components and approved patterns), invariant-layout-composition, invariant-component-discovery, invariant-design-review and invariant-refactor-ui.",
+    'Try: "Build a settings page with our design system", then ask it to review the result.'
+  )
+  next(
+    "Keep the contract current.",
+    `After components, tokens or patterns change, run ${npx("compile")} (add --watch while you work) and commit the ${out}/ folder with the change.`,
+    `${npx("verify --fresh")} recompiles and shows what changed, so a pull request can show what it does to the contract.`
+  )
+  next(
+    "Check code as it is written and merged.",
+    ...(connected
+      ? [
+          "Files your AI tool writes are checked against the contract as it writes them (enforcement.hooks in invariant.config.json: gate-errors blocks, warn only reports, off checks nothing)."
+        ]
+      : []),
+    hasCi
+      ? `Commit ${WORKFLOW_PATH} with the ${out}/ folder. It checks every pull request commit.`
+      : `Add this to CI: ${npx("verify --fresh")} && ${npx(`validate ${appPaths.length > 0 ? appPaths.join(" ") : "src/"}`)}`,
+    `Check code yourself any time: ${npx(`validate ${appPaths.length > 0 ? appPaths.join(" ") : "src/"}`)}`
+  )
+  next(
+    "See what it caught.",
+    `${npx("enforcement report")} shows the findings and fixes of your AI sessions.`
+  )
   say(
     `These commands need nothing installed. The shorter \`${CLI_NAME} <command>\` works only after you install the CLI: npm install -g ${NPM_PACKAGE}`
   )
