@@ -120,51 +120,74 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 .foot .wrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding-top:9px;padding-bottom:9px}
 .foot .count{text-align:center;font-family:inherit;font-size:12.5px}
 .foot .btn{justify-self:end}
-.scene{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
-@media (max-width:640px){.scene{grid-template-columns:1fr}}
-.pane{position:relative;overflow:hidden;min-height:176px;padding:12px;border:1px solid var(--line);border-radius:3px;background:var(--panel);opacity:.5;transition:opacity .3s}
-.scene[data-on=both] .pane,.scene[data-on=components] .pane.comp,.scene[data-on=patterns] .pane.pat{opacity:1;border-color:var(--muted)}
+.scene{margin-top:6px}
+.pane{display:none;position:relative;overflow:hidden;min-height:200px;padding:12px;border:1px solid var(--muted);border-radius:3px;background:var(--panel)}
+.scene[data-on=scan] .pane.scn,.scene[data-on=components] .pane.comp,.scene[data-on=patterns] .pane.pat{display:block}
 .pane .cap{display:flex;justify-content:space-between;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .sweep{position:absolute;top:0;bottom:0;left:0;width:2px;background:var(--accent2);animation:sweep 4.8s linear infinite}
 @keyframes sweep{0%{left:0;opacity:1}69%{left:100%;opacity:1}70%,100%{left:100%;opacity:0}}
-.cells{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:12px}
-.cell{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:3px;animation:found 4.8s infinite}
-.cell:after{content:"";position:absolute;left:20%;right:36%;top:46%;height:2px;background:var(--line);border-radius:1px}
-@keyframes found{0%{border-color:var(--line);background:transparent}4%,70%{border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 16%,transparent)}90%,100%{border-color:var(--line);background:transparent}}
-.pcards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.scan-line{position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent2);animation:down 4.8s linear infinite}
+@keyframes down{0%{top:36px;opacity:1}88%{top:calc(100% - 4px);opacity:1}90%,100%{top:calc(100% - 4px);opacity:0}}
+.trows{margin-top:12px;display:flex;flex-direction:column;gap:7px}
+.tr{display:flex;align-items:center;gap:8px;height:12px;animation:read 4.8s infinite}
+.tr i{display:block;height:6px;border-radius:2px;background:var(--line)}
+.tr i.f{width:9px;height:9px;border:1px solid var(--muted);background:transparent;border-radius:2px}
+.tr.d1{padding-left:16px}
+.tr.d2{padding-left:32px}
+.tr i.n{width:var(--w,40%)}
+.tr em{margin-left:auto;font:10.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);font-style:normal;opacity:0;animation:count 4.8s infinite;animation-delay:inherit}
+@keyframes read{0%{opacity:.35}6%,80%{opacity:1}96%,100%{opacity:.35}}
+@keyframes count{0%,6%{opacity:0}14%,80%{opacity:1}96%,100%{opacity:0}}
+.tr:nth-child(1){animation-delay:0s}.tr:nth-child(2){animation-delay:.3s}.tr:nth-child(3){animation-delay:.6s}.tr:nth-child(4){animation-delay:.9s}.tr:nth-child(5){animation-delay:1.2s}.tr:nth-child(6){animation-delay:1.5s}.tr:nth-child(7){animation-delay:1.8s}.tr:nth-child(8){animation-delay:2.1s}
+.tr:nth-child(2) em{animation-delay:.3s}.tr:nth-child(4) em{animation-delay:.9s}.tr:nth-child(7) em{animation-delay:1.8s}
+.cells{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-top:12px}
+.cell{position:relative;aspect-ratio:1.3;border:1px solid var(--line);border-radius:3px;animation:found 4.8s infinite}
+.cell b{position:absolute;background:var(--line);border-radius:2px;animation:ink 4.8s infinite;animation-delay:inherit}
+.cell.k0 b:nth-child(1){left:20%;right:20%;top:38%;bottom:38%}
+.cell.k1 b:nth-child(1){left:18%;right:18%;top:32%;bottom:32%;background:transparent;border:1px solid var(--line)}
+.cell.k2 b:nth-child(1){left:22%;width:18%;top:34%;height:32%;background:transparent;border:1px solid var(--line)}
+.cell.k2 b:nth-child(2){left:48%;right:18%;top:46%;height:8%}
+.cell.k3 b:nth-child(1){left:22%;right:22%;top:38%;bottom:38%}
+.cell.k3 b:nth-child(2){left:24%;width:14%;top:30%;bottom:30%;background:var(--muted)}
+.cell.k4 b:nth-child(1){left:14%;width:20%;top:46%;height:8%}
+.cell.k4 b:nth-child(2){left:40%;width:20%;top:46%;height:8%}
+.cell.k4 b:nth-child(3){left:66%;width:20%;top:46%;height:8%}
+.cell.k5 b:nth-child(1){left:18%;width:32%;top:28%;height:16%}
+.cell.k5 b:nth-child(2){left:18%;right:30%;top:56%;height:8%}
+@keyframes found{0%{border-color:var(--line);background:transparent}4%,70%{border-color:var(--accent2);background:color-mix(in srgb,var(--accent2) 14%,transparent)}90%,100%{border-color:var(--line);background:transparent}}
+@keyframes ink{0%{opacity:.5}4%,70%{opacity:1}90%,100%{opacity:.5}}
+.cmeta{display:flex;justify-content:space-between;margin-top:12px;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+.cmeta .tag{animation:tag 4.8s infinite}
+.pgroups{display:flex;flex-direction:column;gap:14px;margin-top:12px}
+.pgroup{display:grid;grid-template-columns:repeat(3,1fr) 150px;gap:8px;align-items:center}
 .pcard{display:flex;flex-direction:column;gap:5px;padding:6px;border:1px solid var(--line);border-radius:3px;animation:match 4.8s infinite}
-.pcard:nth-child(2){animation-delay:.7s}
-.pcard:nth-child(3){animation-delay:1.4s}
+.pgroup .pcard:nth-child(2){animation-delay:.6s}
+.pgroup .pcard:nth-child(3){animation-delay:1.2s}
+.pgroup.g2 .pcard{animation-delay:2.2s}
+.pgroup.g2 .pcard:nth-child(2){animation-delay:2.8s}
+.pgroup.g2 .pcard:nth-child(3){border-style:dashed;animation:none;opacity:.5}
 .pcard i{display:block;background:var(--line);border-radius:2px;height:5px}
-.pcard i.im{height:22px}
+.pcard i.im{height:16px}
 .pcard i.s{width:60%}
 .pcard i.bt{width:40%;height:7px}
-@keyframes match{0%{border-color:var(--line);background:transparent}6%,72%{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}92%,100%{border-color:var(--line);background:transparent}}
-.plist{display:flex;gap:8px;align-items:center;margin-top:10px;padding:6px;border:1px solid var(--line);border-radius:3px;opacity:.6}
-.plist i{display:block;background:var(--line);border-radius:2px;height:5px}
-.plist .av{width:16px;height:16px;border-radius:50%}
-.plist span{display:flex;flex-direction:column;gap:4px;flex:1}
-.plist span i.s{width:50%}
-.pmatch{position:absolute;right:12px;bottom:10px;animation:tag 4.8s infinite}
-@keyframes tag{0%,50%{opacity:0}62%,88%{opacity:1}100%{opacity:0}}
+@keyframes match{0%{border-color:var(--line);background:transparent}6%,60%{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}80%,100%{border-color:var(--line);background:transparent}}
+.pmatch{justify-self:end;opacity:0;animation:tag 4.8s infinite}
+.pgroup.g2 .pmatch{animation-delay:2.4s}
+@keyframes tag{0%,40%{opacity:0}52%,80%{opacity:1}92%,100%{opacity:0}}
 .scenetext{margin:10px 0 0;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
 .scenetext b{color:var(--accent2);font-weight:400}
-@media (prefers-reduced-motion:reduce){.cell,.pcard,.sweep,.pmatch{animation:none}.cell{border-color:var(--accent2)}.pcard{border-color:var(--accent)}.sweep{display:none}}
-.fin{position:relative;overflow:hidden;padding:12px;border:1px solid var(--muted);border-radius:3px;background:var(--panel);margin-top:6px}
+@media (prefers-reduced-motion:reduce){.cell,.cell:before,.pcard,.sweep,.scan-line,.tr,.tr em,.pmatch,.cmeta .tag{animation:none}.tr em,.pmatch{opacity:1}.cell{border-color:var(--accent2)}.pcard{border-color:var(--accent)}.sweep,.scan-line{display:none}}
+.fin{padding:12px;border:1px solid var(--muted);border-radius:3px;background:var(--panel);margin-top:6px}
 .fin .cap{display:flex;justify-content:space-between;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.frow{display:grid;grid-template-columns:96px 1fr 16px;gap:12px;align-items:center;margin-top:14px;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text)}
-.fbar{position:relative;height:8px;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--sunk)}
-.fbar i{display:block;height:100%;background:var(--accent2);transform:scaleX(0);transform-origin:left;animation:fill 4.8s infinite}
-.fbar:after{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--text);opacity:.5;left:0;animation:head 4.8s infinite;animation-delay:inherit}
-.fok{color:var(--ok);opacity:0;animation:fok 4.8s infinite}
-.frow:nth-child(3) .fbar i,.frow:nth-child(3) .fbar:after,.frow:nth-child(3) .fok{animation-delay:.9s}
-.frow:nth-child(4) .fbar i,.frow:nth-child(4) .fbar:after,.frow:nth-child(4) .fok{animation-delay:1.8s}
-.frow:nth-child(2) .fbar i,.frow:nth-child(2) .fbar:after,.frow:nth-child(2) .fok{animation-delay:0s}
-@keyframes fill{0%{transform:scaleX(0);opacity:1}30%,86%{transform:scaleX(1);opacity:1}94%,100%{transform:scaleX(1);opacity:0}}
-@keyframes head{0%{left:0;opacity:.6}30%{left:calc(100% - 2px);opacity:.6}31%,100%{left:calc(100% - 2px);opacity:0}}
-@keyframes fok{0%,30%{opacity:0}36%,86%{opacity:1}94%,100%{opacity:0}}
-.fnote{margin:14px 0 0;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
-@media (prefers-reduced-motion:reduce){.fbar i,.fok{animation:none}.fbar i{transform:none}.fok{opacity:1}.fbar:after{display:none}}
+.pg{height:8px;margin-top:12px;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--sunk)}
+.pg i{display:block;height:100%;width:0;background:var(--accent2);transition:width .35s ease}
+.fl{list-style:none;margin:12px 0 0;padding:0;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.fl li{display:flex;gap:8px;padding:3px 0;color:var(--muted)}
+.fl li.now{color:var(--text)}
+.fl li .g{flex:none;width:1.2em}
+.fl li.ok .g{color:var(--ok)}
+.fl li.now .g{color:var(--accent2)}
+@media (prefers-reduced-motion:reduce){.pg i{transition:none}}
 .sr{position:absolute;left:-9999px}
 </style>
 </head>
@@ -180,20 +203,17 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 <p class="lead" id="lead"></p>
 <div id="banner"></div>
 <div id="scene" hidden aria-hidden="true">
-<div class="scene" id="sceneGrid" data-on="both">
-<div class="pane comp"><div class="cap"><span>Components</span><span>looking for UI parts</span></div><div class="cells" id="cells"></div><div class="sweep"></div></div>
-<div class="pane pat"><div class="cap"><span>Patterns</span><span>looking for repeats</span></div>
-<div class="pcards"><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div></div>
-<div class="plist"><i class="av"></i><span><i></i><i class="s"></i></span></div>
-<span class="tag pmatch">&times;3 recurring</span><div class="sweep"></div></div>
+<div class="scene" id="sceneGrid" data-on="scan">
+<div class="pane scn"><div class="cap"><span>Scan</span><span>reading every folder</span></div><div class="trows"><div class="tr"><i class="f"></i><i class="n" style="--w:30%"></i></div><div class="tr"><i class="f"></i><i class="n" style="--w:46%"></i><em>12 files</em></div><div class="tr d1"><i class="f"></i><i class="n" style="--w:38%"></i></div><div class="tr d1"><i class="f"></i><i class="n" style="--w:52%"></i><em>31 files</em></div><div class="tr d2"><i class="f"></i><i class="n" style="--w:34%"></i></div><div class="tr d2"><i class="f"></i><i class="n" style="--w:44%"></i></div><div class="tr"><i class="f"></i><i class="n" style="--w:40%"></i><em>96 files</em></div><div class="tr d1"><i class="f"></i><i class="n" style="--w:28%"></i></div></div><div class="scan-line"></div></div>
+<div class="pane comp"><div class="cap"><span>Components</span><span>finding the UI parts</span></div><div class="cells" id="cells"></div><div class="cmeta"><span>buttons, inputs, toggles, tabs, badges</span><span class="tag">matches your exports</span></div><div class="sweep"></div></div>
+<div class="pane pat"><div class="cap"><span>Patterns</span><span>finding what repeats</span></div><div class="pgroups"><div class="pgroup"><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><span class="tag pmatch">&times;3 same structure</span></div><div class="pgroup g2"><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><div class="pcard"><i class="im"></i><i></i><i class="s"></i><i class="bt"></i></div><span class="tag pmatch">&times;2 same structure</span></div></div></div>
 </div>
 <p class="scenetext" id="sceneText"></p>
 </div>
-<div id="finScene" hidden aria-hidden="true">
-<div class="fin"><div class="cap"><span>Finalizing</span><span>writing what you approved</span></div>
-<div class="frow"><span>Contract</span><span class="fbar"><i></i></span><span class="fok">&#10003;</span></div>
-<div class="frow"><span>Patterns</span><span class="fbar"><i></i></span><span class="fok">&#10003;</span></div>
-<div class="frow"><span>Checks</span><span class="fbar"><i></i></span><span class="fok">&#10003;</span></div>
+<div id="finScene" hidden>
+<div class="fin"><div class="cap"><span>Finalizing</span><span id="finCount"></span></div>
+<div class="pg" id="finBar" role="progressbar" aria-label="Finalizing setup" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="finFill"></i></div>
+<ul class="fl" id="finList"></ul>
 </div>
 <p class="scenetext" id="finText"></p>
 </div>
@@ -221,7 +241,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     plan: ["Apply the setup", "One plan. Yes confirms the contract and does everything in it."],
     done: ["Setup finished", "Here is what setup did, and what to do next."]
   };
-  function fresh() { return { phase: "scan", counts: {}, live: null, logs: {}, busy: null, ask: null, next: [], summary: [], ended: false, error: null, stopped: false, lost: false, widget: null, restarting: false, applying: false }; }
+  function fresh() { return { phase: "scan", counts: {}, live: null, logs: {}, busy: null, ask: null, next: [], summary: [], ended: false, error: null, stopped: false, lost: false, widget: null, restarting: false, applying: false, progress: { done: 0, total: 0 }, stages: [] }; }
   var state = fresh();
 
   function h(tag, props, kids) {
@@ -250,7 +270,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
   var root = document.documentElement;
   function theme() { return root.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"); }
   try { var saved = localStorage.getItem("theme"); if (saved === "light" || saved === "dark") root.setAttribute("data-theme", saved); } catch (e) {}
-  function paintTheme() { $("theme").textContent = theme() === "light" ? "\\u263E Dark" : "\\u2600 Light"; }
+  function paintTheme() { $("theme").textContent = theme() === "light" ? "\\u263E" : "\\u2600"; }
   $("theme").addEventListener("click", function () {
     var next = theme() === "light" ? "dark" : "light";
     root.setAttribute("data-theme", next);
@@ -466,9 +486,10 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 
   (function () {
     var cells = $("cells");
-    for (var i = 0; i < 18; i++) {
-      var e = h("i", { class: "cell" });
-      e.style.animationDelay = ((i % 6) * 0.55 + Math.floor(i / 6) * 0.12) + "s";
+    for (var i = 0; i < 24; i++) {
+      var e = h("i", { class: "cell k" + (i * 5 % 6) });
+      e.style.animationDelay = ((i % 8) * 0.4 + Math.floor(i / 8) * 0.1) + "s";
+      for (var j = 0; j < [1, 1, 2, 2, 3, 2][(i * 5) % 6]; j++) e.appendChild(h("b", {}));
       cells.appendChild(e);
     }
   })();
@@ -477,6 +498,17 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     var show = state.applying && !state.ask && !state.ended && !state.stopped && !state.restarting && state.phase === "plan";
     $("finScene").hidden = !show;
     if (!show) return;
+    var pr = state.progress;
+    var pct = pr.total > 0 ? Math.min(100, Math.round(pr.done / pr.total * 100)) : 0;
+    $("finFill").style.width = pct + "%";
+    $("finBar").setAttribute("aria-valuenow", String(pct));
+    $("finCount").textContent = pr.total > 0 ? pr.done + " of " + pr.total + " \u00B7 " + pct + "%" : "";
+    var list = $("finList"); clear(list);
+    var from = Math.max(0, state.stages.length - 5);
+    state.stages.slice(from).forEach(function (label, k) {
+      var i = from + k, ok = i < pr.done;
+      list.appendChild(h("li", { class: ok ? "ok" : "now" }, [h("span", { class: "g", text: ok ? "\u2713" : "\u25CF" }), h("span", { text: label })]));
+    });
     var t = $("finText"); clear(t);
     t.appendChild(h("b", { text: "\u25CF " }));
     t.appendChild(document.createTextNode(state.busy || "Working"));
@@ -486,7 +518,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     var show = !state.ask && !state.ended && !state.stopped && (state.phase === "scan" || state.phase === "components" || state.phase === "patterns");
     $("scene").hidden = !show;
     if (!show) return;
-    $("sceneGrid").setAttribute("data-on", state.phase === "scan" ? "both" : state.phase);
+    $("sceneGrid").setAttribute("data-on", state.phase);
     var t = $("sceneText"); clear(t);
     t.appendChild(h("b", { text: "\u25CF " }));
     t.appendChild(document.createTextNode(state.busy || "Working"));
@@ -560,8 +592,12 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     else if (e.type === "busy") state.busy = e.text;
     else if (e.type === "next") state.next.push({ title: e.title, lines: e.lines });
     else if (e.type === "summary") state.summary = e.rows;
+    else if (e.type === "progress") {
+      state.progress = { done: e.done, total: e.total };
+      if (e.label !== "Starting") state.stages[e.done] = e.label;
+    }
     else if (e.type === "ask") { state.ask = e; state.widget = null; state.busy = null; }
-    else if (e.type === "answered") { if (state.ask && state.ask.id === e.id) { state.ask = null; state.widget = null; } }
+    else if (e.type === "answered") { if (state.ask && state.ask.id === e.id) { if (state.phase === "plan") state.applying = true; state.ask = null; state.widget = null; } }
     else if (e.type === "done") { state.ended = true; state.busy = null; state.ask = null; }
     else if (e.type === "error") state.error = e.message;
   }

@@ -76,6 +76,7 @@ describe("the local setup server", () => {
     // The scan scene is there, and it stops moving for people who ask for less motion.
     expect(page).toContain('id="scene"')
     expect(page).toContain('id="finScene"')
+    expect(page).toContain('role="progressbar"')
     expect(page).toContain("prefers-reduced-motion")
     expect((await fetch(`${origin}/`)).status).toBe(403)
     expect((await fetch(`${origin}/?t=${"0".repeat(token.length)}`)).status).toBe(403)

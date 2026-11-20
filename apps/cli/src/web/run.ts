@@ -41,6 +41,8 @@ export async function runInBrowser(c: Context, setup: (c: Context) => Promise<nu
       if (e.kind === "busy") session.emit({ type: "busy", text: e.text })
       else if (e.kind === "next") session.emit({ type: "next", title: e.title, lines: e.lines })
       else if (e.kind === "summary") session.emit({ type: "summary", rows: e.rows })
+      else if (e.kind === "progress")
+        session.emit({ type: "progress", done: e.done, total: e.total, label: e.label })
       else session.emit({ type: "log", kind: e.kind, text: e.text })
     }
   }

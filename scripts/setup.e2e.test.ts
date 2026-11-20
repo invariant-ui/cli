@@ -1247,6 +1247,12 @@ describe("setup in the browser", () => {
     // The steps arrive in order.
     const phases = b.seen.flatMap((e) => (e.type === "phase" ? [e.id] : []))
     expect(phases).toEqual(["scan", "components", "patterns", "plan", "done"])
+    // The work after the plan is counted: the progress only moves forward, the total does not change, and it never passes it.
+    const progress = b.seen.flatMap((e) => (e.type === "progress" ? [e] : []))
+    expect(progress.length).toBeGreaterThan(1)
+    expect(new Set(progress.map((p) => p.total)).size).toBe(1)
+    expect(progress.map((p) => p.done)).toEqual([...progress.map((p) => p.done)].sort((x, y) => x - y))
+    expect(Math.max(...progress.map((p) => p.done))).toBeLessThanOrEqual(progress[0]?.total ?? 0)
     // The finish comes with a summary table of what setup did, besides the numbered next steps.
     const summary = b.seen.find((e) => e.type === "summary")
     expect(summary?.type === "summary" && summary.rows.map((r) => r.label)).toContain("contract")

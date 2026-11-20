@@ -37,6 +37,7 @@ export interface Io {
       | { kind: "busy"; text: string | null }
       | { kind: "next"; title: string; lines: string[] }
       | { kind: "summary"; rows: Array<{ label: string; text: string }> }
+      | { kind: "progress"; done: number; total: number; label: string }
   ) => void
   /** Tells the browser version of setup which step it is on. */
   phase?: (id: string, title: string) => void

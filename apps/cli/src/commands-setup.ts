@@ -1112,7 +1112,23 @@ export async function setup(c: Context): Promise<number> {
       : "contract not confirmed, so nothing is approved and no rule is turned on."
   )
 
-  // 4. Do it.
+  // 4. Do it. Each unit of work is counted up front, so the browser can show real progress: done of total.
+  const patternUnits = chosen.length > 0 && by ? chosen.length + 1 : 0
+  const workTotal =
+    patternUnits +
+    (posture !== undefined && config ? 1 : 0) +
+    (wantAgents ? clients.length : 0) +
+    (baselineWanted && wantBaseline ? 1 : 0) +
+    (wantPublish && publish ? 1 : 0) +
+    (wantCi ? 1 : 0)
+  let workDone = 0
+  const working = (label: string): void => {
+    if (workTotal > 0) c.io.report?.({ kind: "progress", done: workDone, total: workTotal, label })
+  }
+  const worked = (): void => {
+    workDone++
+  }
+  working("Starting")
   const did: string[] = []
   const promoted: Array<{ id: string; cand: Cand }> = []
   if (chosen.length > 0 && by) {
@@ -1128,6 +1144,7 @@ export async function setup(c: Context): Promise<number> {
     for (const x of chosen) {
       const category = categoryOf(x)
       const label = directed.get(x.id)?.name ?? x.suggestedName
+      working(`Adding the pattern ${label}`)
       let id = slugId(label, category)
       for (let n = 2; taken.has(id); n++) id = `${slugId(label, category)}-${n}`
       taken.add(id)
@@ -1149,6 +1166,7 @@ export async function setup(c: Context): Promise<number> {
           : a
       if (p.code === 0) promoted.push({ id, cand: x })
       else flag(`skipped ${x.suggestedName}: ${(p.err || p.out).trim().split("\n")[0]}`)
+      worked()
     }
   }
   if (by)
@@ -1183,10 +1201,12 @@ export async function setup(c: Context): Promise<number> {
         rulesOn += rules.length
       }
     }
+    working("Approving the patterns and compiling the contract again")
     writeFileSync(file, `${JSON.stringify(doc, null, 2)}\n`)
     const r = await sub("compile")
     if (r.code === 1)
       flag("compile reported errors after adding patterns; see invariant/invariant.diagnostics.json")
+    worked()
     did.push(
       approved > 0
         ? `patterns   ${approved} approved by ${by}. They guide agents.`
@@ -1196,6 +1216,7 @@ export async function setup(c: Context): Promise<number> {
   }
 
   if (posture !== undefined && config) {
+    working("Setting how AI writes are checked")
     writeConfig(configPath, {
       ...config,
       enforcement: { ...config.enforcement, hooks: posture as "gate-errors" | "warn" | "off" }
@@ -1203,11 +1224,14 @@ export async function setup(c: Context): Promise<number> {
     did.push(
       `enforcement   writes are ${posture === "gate-errors" ? "blocked when they break an error rule" : posture === "warn" ? "never blocked; findings are reported after the write" : "not checked"} (enforcement.hooks = ${posture})`
     )
+    worked()
   }
 
   if (wantAgents)
     for (const client of clients) {
+      working(`Connecting ${client}`)
       const r = await sub("agent", "init", client)
+      worked()
       did.push(
         r.code === 0
           ? `agents     connected ${client}`
@@ -1220,6 +1244,7 @@ export async function setup(c: Context): Promise<number> {
     )
 
   if (baselineWanted && wantBaseline) {
+    working("Recording the violations that already exist")
     const count = await countViolations()
     if (count > 0) {
       const w = await sub("validate", ...appPaths, "--update-baseline")
@@ -1232,9 +1257,11 @@ export async function setup(c: Context): Promise<number> {
         }`
       )
     }
+    worked()
   }
 
   if (wantPublish && publish) {
+    working("Updating what the package publishes")
     const edits = applyPublish(publish)
     const ignored = [".gitignore", ".npmignore"].filter(
       (f) =>
@@ -1244,10 +1271,12 @@ export async function setup(c: Context): Promise<number> {
     did.push(
       `publish    ${publish.name}: ${edits.join(" and ") || "already set up"}. Apps that install it can run ${npx("setup")}.${ignored.length > 0 ? ` Warning: ${ignored.join(" and ")} ignores invariant/, so it would not be published.` : ""}`
     )
+    worked()
   }
 
   let ciAdded = false
   if (wantCi) {
+    working("Writing the CI check")
     mkdirSync(path.dirname(workflowFile), { recursive: true })
     writeFileSync(
       workflowFile,
@@ -1261,6 +1290,7 @@ export async function setup(c: Context): Promise<number> {
     did.push(
       `CI         wrote ${WORKFLOW_PATH}. Commit it with the ${path.relative(c.cwd, dir) || "invariant"}/ folder, so CI has a contract to check against.`
     )
+    worked()
   }
   const hasCi = ciAdded || existsSync(workflowFile)
 
