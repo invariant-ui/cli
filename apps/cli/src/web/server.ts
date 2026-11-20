@@ -10,6 +10,7 @@ export type WebEvent =
   | { type: "log"; kind: "step" | "say" | "flag"; text: string }
   | { type: "busy"; text: string | null }
   | { type: "next"; title: string; lines: string[] }
+  | { type: "summary"; rows: Array<{ label: string; text: string }> }
   | {
       type: "ask"
       id: string

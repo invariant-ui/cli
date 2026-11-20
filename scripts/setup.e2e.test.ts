@@ -1,5 +1,14 @@
 import { execSync } from "node:child_process"
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import {
+  chmodSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -1083,6 +1092,41 @@ describe("setup in the browser", () => {
     return (ask.choices?.find((c) => c.value === want) ?? ask.choices?.[0])?.value
   }
 
+  it("says so when the AI agent finds no component directories, then asks again", async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "invariant-nothing-"))
+    made.push(dir)
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({ name: "tools", dependencies: { react: "18.0.0" } })
+    )
+    mkdirSync(path.join(dir, "src"))
+    writeFileSync(path.join(dir, "src/util.ts"), "export const x = 1\n")
+    const bin = path.join(dir, "bin")
+    mkdirSync(bin)
+    writeFileSync(
+      path.join(bin, "claude"),
+      `#!/bin/sh\ncat >/dev/null\necho '{"directories":[],"notes":"No design system lives here."}'\n`
+    )
+    chmodSync(path.join(bin, "claude"), 0o755)
+    const questions: string[] = []
+    const r = await cli(dir, ["setup", "--terminal", "--as", "ana"], [], {
+      env: { PATH: bin },
+      io: {
+        select: async <T extends string>(q: string, choices: ReadonlyArray<{ value: T }>) => {
+          questions.push(q)
+          const ask = choices.find((c) => c.value === ("claude-code" as string))
+          // The first time ask the agent; the second time, when it found nothing, stop.
+          return questions.filter((x) => /go on\?$/.test(x)).length === 1 ? ask?.value : choices.at(-1)?.value
+        }
+      }
+    })
+    expect(questions.filter((q) => /go on\?$/.test(q))).toEqual([
+      "How do you want to go on?",
+      "Claude Code found no directories that hold components. How do you want to go on?"
+    ])
+    expect(r.code).toBe(0)
+  })
+
   it("start over removes what the run wrote and scans again from the first step", async () => {
     const dir = project()
     let trees = 0
@@ -1203,6 +1247,9 @@ describe("setup in the browser", () => {
     // The steps arrive in order.
     const phases = b.seen.flatMap((e) => (e.type === "phase" ? [e.id] : []))
     expect(phases).toEqual(["scan", "components", "patterns", "plan", "done"])
+    // The finish comes with a summary table of what setup did, besides the numbered next steps.
+    const summary = b.seen.find((e) => e.type === "summary")
+    expect(summary?.type === "summary" && summary.rows.map((r) => r.label)).toContain("contract")
     // The components and the patterns are both lists to tick; the rest are choices.
     const kinds = b.seen.flatMap((e) => (e.type === "ask" ? [e.kind] : []))
     expect(kinds.filter((k) => k === "tree")).toHaveLength(2)

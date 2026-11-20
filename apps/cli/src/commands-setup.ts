@@ -290,6 +290,8 @@ export async function setup(c: Context): Promise<number> {
     // Looked for once, and only when someone can answer: an agent is never started on its own.
     const agents = canAsk ? detectAgents(c.io.env ?? {}) : []
     let candidates = found.candidates
+    /** What the last agent answered when it found nothing, so the next question says so instead of repeating itself. */
+    let lastAsk: string | undefined
 
     /** One of the choices, with arrows when there is a terminal and typed numbers when there is not. */
     const pick = async <T extends string>(
@@ -343,11 +345,13 @@ export async function setup(c: Context): Promise<number> {
       if (c.io.signal?.aborted) return "stopped"
       if (!ran.ok) {
         flag(`${agent.name}: ${ran.reason}`)
+        lastAsk = `${agent.name} could not answer.`
         return undefined
       }
       const findings = parseFindings(ran.text)
       if (!findings.ok) {
         flag(`${agent.name} answered, but setup cannot use the answer: ${findings.reason}`)
+        lastAsk = `${agent.name} answered, but setup cannot use the answer.`
         return undefined
       }
       const next = [...base]
@@ -382,6 +386,7 @@ export async function setup(c: Context): Promise<number> {
       step(
         `${agent.name} named ${findings.directories.length} director${findings.directories.length === 1 ? "y" : "ies"}; ${confirmed} hold${confirmed === 1 ? "s" : ""} components setup can find`
       )
+      lastAsk = `${agent.name} found no directories that hold components.`
       return confirmed === 0 ? undefined : next
     }
 
@@ -415,7 +420,7 @@ export async function setup(c: Context): Promise<number> {
       say()
       for (;;) {
         type Choose = AgentId | "review" | "everything" | "stop"
-        const picked = await pick<Choose>("How do you want to go on?", [
+        const picked = await pick<Choose>(`${lastAsk ? `${lastAsk} ` : ""}How do you want to go on?`, [
           ...agents.map((a, i) => ({
             value: a.id as Choose,
             label: `Ask ${a.name} to find them (it only reads files)`,
@@ -1272,6 +1277,28 @@ export async function setup(c: Context): Promise<number> {
     say(
       `\nSee it work: break this, then run ${npx(`validate ${appPaths.join(" ")}`)}\n  "${first.description}"`
     )
+  // The same facts as rows, for the browser's summary table (the terminal reads the lines above).
+  c.io.report?.({
+    kind: "summary",
+    rows: [
+      {
+        label: "contract",
+        text: `${contract.components.length} components, ${contract.tokens.length} tokens (${path.relative(c.cwd, dir) || "."}/)`
+      },
+      ...did.map((l) => {
+        const m = /^(\S+)\s{2,}([\s\S]*)$/.exec(l)
+        return { label: m?.[1] ?? "", text: (m?.[2] ?? l).trim() }
+      }),
+      ...(first && appPaths.length > 0
+        ? [
+            {
+              label: "see it work",
+              text: `"${first.description}" Break that, then run ${npx(`validate ${appPaths.join(" ")}`)}`
+            }
+          ]
+        : [])
+    ]
+  })
 
   // What setup did is above. This is the rest of the way: the steps that make the contract useful, in order.
   const out = path.relative(c.cwd, dir) || "invariant"

@@ -40,6 +40,7 @@ export async function runInBrowser(c: Context, setup: (c: Context) => Promise<nu
     report: (e) => {
       if (e.kind === "busy") session.emit({ type: "busy", text: e.text })
       else if (e.kind === "next") session.emit({ type: "next", title: e.title, lines: e.lines })
+      else if (e.kind === "summary") session.emit({ type: "summary", rows: e.rows })
       else session.emit({ type: "log", kind: e.kind, text: e.text })
     }
   }
