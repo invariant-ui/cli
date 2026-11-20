@@ -1,0 +1,26 @@
+# ADR 0010: A local web version of `setup`
+
+Status: **Accepted**. Adds the flags `--web` and `--terminal` to `setup`. No contract, config or compile change.
+
+## Context
+
+Setup asks a person to tick hundreds of components and patterns, read evidence and confirm a plan. A terminal list scrolls through a window of rows and has no search, so a large monorepo is slow to review, and the closing walkthrough is hard to read and copy from.
+
+## Decision
+
+**D1. The browser is another way to answer the same questions.** `setup` runs the same code in both. The web version replaces how a question is asked (`prompt`, `select`, `multiselect`, `tree`) and adds a structured copy of what setup prints (`report`, `phase`). Nothing about discovery, approval or compile differs, so the two cannot drift apart. The terminal keeps printing the same progress while the browser is open.
+
+**D2. It is offered first.** A person at a terminal (and with no `--yes`, `--include`, `--exclude` or `--only`) is asked "Where do you want to set up?" before anything else, with the browser as the first, recommended choice. `--web` skips the question, `--terminal` stays in the terminal. Without a terminal setup never offers it.
+
+**D3. The server is local and does the least it can** (`apps/cli/src/web/server.ts`). It listens on `127.0.0.1` on a free port, serves one fixed page, and relays answers. It needs a random 192-bit token in the link, and checks the `Host` header (so a page on another site cannot reach it through DNS rebinding) and the `Origin` header on every request. Every answer is checked against the question that was asked (a choice must be one of the choices, a tick must be an item that was listed). It reads no file, runs nothing, and takes no path from the browser. The page is sent with a Content-Security-Policy that allows no external request, and puts text from setup into the page with `textContent` only. When setup ends, or the person presses Stop (every open and later question then answers "cancelled"), the server closes. The browser is opened with the system's opener (`open`, `xdg-open`, `start`) on the printed address; if that fails the address is in the terminal.
+
+**D4. The page follows `site/design.md`** (tokens, type, square corners, flat panels, theme toggle stored in `localStorage` key `theme`, no external font, script or request). Setup's steps are Scan, Components, Patterns, Plan and Done. The two long lists are filterable tick lists with tick all, clear all, fold and unfold; a directory row ticks its whole group. The walkthrough at the end is a numbered list with a Copy button on each `npx` command.
+
+**D5. Start over.** The header has Start over. It cancels the open question (the way Stop does, but the server stays open), and every question answers "cancelled" until setup returns. `runInBrowser` then puts the project back as it was when the page opened, and runs `setup` again from the scan. Before the first run it copies the two things setup writes before the plan is confirmed: the configuration file and the compiled contract folder (`apps/cli/src/web/clean.ts`). A path that did not exist is removed; one that did is restored with its old content. Only paths inside the project are touched, never the project folder itself or anything under `node_modules`. A `reset` event clears the page. Setup cannot be interrupted while it is scanning or compiling, so a restart takes effect at the next question. Once setup reaches its last step it has written its files, so a restart then is ignored and setup ends. The same snapshot is used when setup ends before its last step without an error (Stop, Ctrl+C, "No, stop", a plan that was not confirmed): it puts the project back, says so in the terminal and in Activity, and leaves nothing behind. A failure keeps the files, since its message points at the diagnostics in the output folder. Start over is not offered after setup has finished or stopped: the server has closed by then, so run the command again.
+
+## Consequences
+
+- A tick list can be searched and read at any size; the terminal version is unchanged.
+- The page has no state of its own beyond what the events say: a reload replays the events and shows the same screen.
+- It adds no dependency (`node:http` only).
+- Limits: the page is a single local session; there is no second tab or second person. The list rows are the same text the terminal shows. The check of the page's layout was done in headless Chrome on desktop widths; narrow phones were not checked.

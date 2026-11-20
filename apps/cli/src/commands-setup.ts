@@ -47,6 +47,7 @@ import { definitionFiles, findPatterns } from "./sources/usage.js"
 import { type StarterRule, starterRules } from "./starter-rules.js"
 import { loadCompiled } from "./store.js"
 import { CLI_NAME, CLI_VERSION, NPM_PACKAGE } from "./version.js"
+import { runInBrowser } from "./web/run.js"
 import { installStepsFor, WORKFLOW_PATH, workflowYaml } from "./workflow.js"
 
 const TOP = 5
@@ -116,20 +117,34 @@ export async function setup(c: Context): Promise<number> {
   // Every line sits in the clack frame: say is a detail line, step a completed one, flag a warning.
   const fit = (m: string): string[] => m.split("\n").flatMap((l) => wrap(l, columns() - 3))
   const say = (m = ""): void => {
+    for (const l of m.split("\n")) if (l !== "") c.io.report?.({ kind: "say", text: l })
     for (const l of fit(m)) print(c, l === "" ? gap() : line(l))
   }
   const step = (m: string): void => {
+    c.io.report?.({ kind: "step", text: m })
     const [first = "", ...rest] = fit(m)
     print(c, done(first))
     for (const l of rest) print(c, line(l))
   }
   const flag = (m: string): void => {
+    c.io.report?.({ kind: "flag", text: m })
     const [first = "", ...rest] = fit(m)
     print(c, warn(first))
     for (const l of rest) print(c, line(l))
   }
-  const busy = <T>(label: string | (() => string), work: () => Promise<T>): Promise<T> =>
-    spin((t) => c.io.stdout(t), label, work)
+  const busy = <T>(label: string | (() => string), work: () => Promise<T>): Promise<T> => {
+    const report = c.io.report
+    if (!report) return spin((t) => c.io.stdout(t), label, work)
+    // The browser shows the same live label the terminal spinner does.
+    const tick = (): void => report({ kind: "busy", text: typeof label === "function" ? label() : label })
+    tick()
+    const timer = setInterval(tick, 400)
+    return spin((t) => c.io.stdout(t), label, work).finally(() => {
+      clearInterval(timer)
+      report({ kind: "busy", text: null })
+    })
+  }
+  const phase = (id: string, title: string): void => c.io.phase?.(id, title)
   const num = (n: number): string => n.toLocaleString("en-US")
   const yes = c.args.values.yes === true
   const carry = [
@@ -197,6 +212,7 @@ export async function setup(c: Context): Promise<number> {
   ): Promise<
     { config: InvariantConfig } | "stopped" | "needs-confirmation" | "nothing-found" | "everything"
   > => {
+    phase("scan", "Scan")
     let walked = { files: 0, directories: 0 }
     const analysis = await busy(
       () => `scanning every folder: ${num(walked.files)} files so far`,
@@ -268,6 +284,7 @@ export async function setup(c: Context): Promise<number> {
         ? { candidate: r.candidate, type }
         : `no components found in ${raw} (looked for React, Vue and Angular components)`
     }
+    phase("components", "Components")
     const assessment = assess({ candidates: found.candidates, recognition, thresholds })
     const canAsk = c.io.prompt !== undefined && !yesish && includes.length === 0 && excludes.length === 0
     // Looked for once, and only when someone can answer: an agent is never started on its own.
@@ -552,6 +569,34 @@ export async function setup(c: Context): Promise<number> {
     return 0
   }
 
+  // The browser version comes first: a person at a terminal is asked where to set up, unless a flag already says.
+  const browserOk =
+    c.io.select !== undefined &&
+    c.io.prompt !== undefined &&
+    !yesish &&
+    includes.length === 0 &&
+    excludes.length === 0 &&
+    only === undefined &&
+    c.args.values.terminal !== true
+  if (browserOk && c.io.select && c.args.values.web !== true) {
+    const where = await c.io.select<"web" | "terminal">("Where do you want to set up?", [
+      {
+        value: "web",
+        label: "In your browser (recommended): a local page that only this computer can open",
+        key: "w"
+      },
+      { value: "terminal", label: "In this terminal", key: "t" }
+    ])
+    if (where === undefined) return 0
+    if (where === "web") return runInBrowser(c, setup)
+  } else if (c.args.values.web === true) {
+    if (!browserOk)
+      throw new CliError(
+        "--web needs a terminal to start from, and cannot be combined with --yes, --include, --exclude or --only"
+      )
+    return runInBrowser(c, setup)
+  }
+
   print(c, intro(`${CLI_NAME} setup`))
   say()
 
@@ -723,6 +768,7 @@ export async function setup(c: Context): Promise<number> {
   const sourcePaths = (config?.sources ?? [])
     .map((s) => ("path" in s && typeof s.path === "string" ? s.path.replace(/^\.\//, "") : ""))
     .filter((p) => p !== "" && p !== ".")
+  phase("patterns", "Patterns")
   // Patterns come from how the confirmed components are used, wherever that is: every file in the project that can use
   // one is looked at, not only application folders.
   type Cand = CandidatesFile["candidates"][number]
@@ -799,6 +845,11 @@ export async function setup(c: Context): Promise<number> {
   if (all.length === 0)
     step("no structure recurs often enough to propose (a pattern needs to appear in 3 files)")
   else step(`found ${all.length} recurring structure${all.length === 1 ? "" : "s"}`)
+  const decidedBefore = priorReviews?.reviews.length ?? 0
+  if (decidedBefore > 0)
+    say(
+      `${decidedBefore} structure${decidedBefore === 1 ? "" : "s"} you decided on earlier ${decidedBefore === 1 ? "is" : "are"} not listed again (kept in ${path.basename(reviewsFile)}).`
+    )
 
   // Tick the ones that should guide AI tools, then rename or recategorize. Asked only when someone can answer.
   const directed = new Map<string, { name?: string; category?: string }>()
@@ -821,7 +872,7 @@ export async function setup(c: Context): Promise<number> {
     ]
       .filter((g) => g.items.length > 0)
       .map((g) => ({
-        label: `${g.label} (${g.items.length})`,
+        label: g.label,
         collapsed: all.length > 200,
         items: g.items.map((x) => ({ value: x.id, label: describe(x), ticked: ticked.has(x.id) }))
       }))
@@ -916,6 +967,7 @@ export async function setup(c: Context): Promise<number> {
   if (publishFinding && !publishFinding.ok) flag(`not wiring publishing: ${publishFinding.reason}`)
 
   // 3. One plan, one question.
+  phase("plan", "Plan")
   const noRules = c.args.values["no-rules"] === true
   const ruleCount = noRules ? 0 : top.reduce((n, x) => n + rulesFor(x).length, 0)
   const planLines = (approving: boolean): string[] => [
@@ -1208,6 +1260,7 @@ export async function setup(c: Context): Promise<number> {
   const hasCi = ciAdded || existsSync(workflowFile)
 
   say()
+  phase("done", "Done")
   step("set up")
   say(
     `contract   ${contract.components.length} components, ${contract.tokens.length} tokens (${path.relative(c.cwd, dir) || "."}/)`
@@ -1224,13 +1277,18 @@ export async function setup(c: Context): Promise<number> {
   const out = path.relative(c.cwd, dir) || "invariant"
   const connected = wantAgents && clients.length > 0
   const unapproved = promoted.length > 0 && approved < promoted.length
-  say()
-  step("what to do next")
+  // The walkthrough is printed in the terminal, and sent to the browser as cards: it is not repeated in the browser's log.
+  const tsay = (m = ""): void => {
+    for (const l of fit(m)) print(c, l === "" ? gap() : line(l))
+  }
+  tsay()
+  print(c, done("what to do next"))
   let n = 0
   const next = (title: string, ...lines: string[]): void => {
-    say(`${++n}. ${title}`)
-    for (const l of lines) say(l)
-    say()
+    c.io.report?.({ kind: "next", title, lines })
+    tsay(`${++n}. ${title}`)
+    for (const l of lines) tsay(l)
+    tsay()
   }
   next(
     "Check the contract.",
@@ -1256,7 +1314,7 @@ export async function setup(c: Context): Promise<number> {
   next(
     "Keep the contract current.",
     `After components, tokens or patterns change, run ${npx("compile")} (add --watch while you work) and commit the ${out}/ folder with the change.`,
-    `${npx("verify --fresh")} recompiles and shows what changed, so a pull request can show what it does to the contract.`
+    `To show what changed, so a pull request can show what it does to the contract: ${npx("verify --fresh")} (it recompiles first).`
   )
   next(
     "Check code as it is written and merged.",
@@ -1270,13 +1328,10 @@ export async function setup(c: Context): Promise<number> {
       : `Add this to CI: ${npx("verify --fresh")} && ${npx(`validate ${appPaths.length > 0 ? appPaths.join(" ") : "src/"}`)}`,
     `Check code yourself any time: ${npx(`validate ${appPaths.length > 0 ? appPaths.join(" ") : "src/"}`)}`
   )
-  next(
-    "See what it caught.",
-    `${npx("enforcement report")} shows the findings and fixes of your AI sessions.`
-  )
-  say(
-    `These commands need nothing installed. The shorter \`${CLI_NAME} <command>\` works only after you install the CLI: npm install -g ${NPM_PACKAGE}`
-  )
+  next("See what it caught.", `See the findings and fixes of your AI sessions: ${npx("enforcement report")}`)
+  const shortForm = `These commands need nothing installed. The shorter \`${CLI_NAME} <command>\` works only after you install the CLI: npm install -g ${NPM_PACKAGE}`
+  c.io.report?.({ kind: "next", title: "About these commands", lines: [shortForm] })
+  tsay(shortForm)
   print(c, outro(`done in ${Math.max(1, Math.round((Date.now() - started) / 1000))}s`, true))
   return 0
 }

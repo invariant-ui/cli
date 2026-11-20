@@ -30,5 +30,16 @@ export interface Io {
    * or undefined when cancelled. Absent without a terminal.
    */
   tree?: <T extends string>(question: string, groups: ReadonlyArray<TreeGroup<T>>) => Promise<T[] | undefined>
+  /** A structured copy of what setup prints, for the browser version of setup. Absent in the terminal. */
+  report?: (
+    event:
+      | { kind: "step" | "say" | "flag"; text: string }
+      | { kind: "busy"; text: string | null }
+      | { kind: "next"; title: string; lines: string[] }
+  ) => void
+  /** Tells the browser version of setup which step it is on. */
+  phase?: (id: string, title: string) => void
+  /** Opens a link in the person's browser. Absent when nothing can be opened (the link is printed instead). */
+  openUrl?: (url: string) => void
   browserDriver?: (browser: BrowserName, projectRoot: string) => Promise<BrowserDriver>
 }
