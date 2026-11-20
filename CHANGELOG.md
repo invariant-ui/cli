@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.0](https://github.com/invariant-ui/cli/compare/v0.13.1...v0.14.0) (2026-11-20)
+
+
+### Features
+
+* **cli:** find patterns from how components are used, anywhere, and walk through what is next ([#40](https://github.com/invariant-ui/cli/issues/40)) ([62f829e](https://github.com/invariant-ui/cli/commit/62f829e2904d401c5afbdebbe38fbecca419e64a))
+
+
+### Bug Fixes
+
+* **ci:** keep golden files the same across releases ([#38](https://github.com/invariant-ui/cli/issues/38)) ([5ad8305](https://github.com/invariant-ui/cli/commit/5ad830565c6517127bfb89b611b3b0eea3007bf9))
+
 ## [0.13.1](https://github.com/invariant-ui/cli/compare/v0.13.0...v0.13.1) (2026-11-19)
 
 
