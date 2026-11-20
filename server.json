@@ -3,7 +3,7 @@
   "name": "io.github.invariant-ui/cli",
   "title": "Invariant",
   "description": "Serves a compiled design-system contract (components, props, tokens, UX patterns) to AI agents, read-only, and validates UI code against it.",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "websiteUrl": "https://invariant-ui.com/",
   "repository": {
     "url": "https://github.com/invariant-ui/cli",
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "@invariant-ui/cli",
-      "version": "0.16.0",
+      "version": "0.17.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
