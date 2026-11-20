@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/invariant-ui/cli/compare/v0.15.0...v0.16.0) (2026-11-20)
+
+
+### Features
+
+* **cli:** finalizing animation, readable finish, and say when an AI agent finds nothing ([#43](https://github.com/invariant-ui/cli/issues/43)) ([6ad43b6](https://github.com/invariant-ui/cli/commit/6ad43b61c150a02f6908d01be16757e4fbae376f))
+
 ## [0.15.0](https://github.com/invariant-ui/cli/compare/v0.14.0...v0.15.0) (2026-11-20)
 
 
