@@ -87,10 +87,28 @@ input[type=checkbox]{accent-color:var(--accent);margin-top:3px;flex:none}
 .actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .banner{margin-top:22px;border:1px solid var(--bad);border-radius:3px;padding:10px 14px;color:var(--bad)}
 .notice{margin-top:22px;border:1px solid var(--line);border-radius:3px;padding:10px 14px;color:var(--muted)}
-.next{margin:26px 0 0;padding:0;list-style:none;counter-reset:n}
-.next li{border-top:1px solid var(--line);padding:14px 0 6px;counter-increment:n}
-.next li h3::before{content:counter(n) ".";font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);margin-right:8px;font-weight:400}
-.next p{margin:6px 0;color:var(--text)}
+.sum{margin:0 0 6px;border:1px solid var(--line);border-radius:3px;background:var(--panel)}
+.sum .r{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;padding:8px 12px;border-top:1px solid var(--line);font-size:13px}
+.sum .r:first-child{border-top:0}
+.sum .k{font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);padding-top:1px}
+.sum p{margin:0;overflow-wrap:anywhere}
+#summary{margin-top:22px}
+#summary .kicker,#nextHead{margin:0 0 8px}
+#nextHead{margin-top:26px}
+.next{margin:0;padding:0;list-style:none;counter-reset:n}
+.next li{display:grid;grid-template-columns:36px minmax(0,1fr);border-top:1px solid var(--line);padding:14px 0 8px;counter-increment:n}
+.next .no::before{content:counter(n);font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:1px 7px}
+.next h3{font-size:15px;margin:0 0 4px}
+.next p{margin:6px 0;color:var(--text);max-width:72ch}
+.next p.m{color:var(--muted)}
+.next li.note{display:block;counter-increment:none;color:var(--muted)}
+.next li.note h3{font-size:13px;color:var(--muted)}
+.next li.note p{color:var(--muted);font-size:13px}
+.cmdblock{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0;padding:7px 8px 7px 12px;background:var(--panel);border:1px solid var(--line);border-radius:3px;max-width:72ch}
+.cmdblock code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere;white-space:pre-wrap}
+.cmdblock .pr{color:var(--accent2);margin-right:8px;user-select:none}
+.ph{color:var(--accent)}
+code.il{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:0 5px;font-size:12.5px}
 code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:1px 6px;font-size:12.5px;overflow-wrap:anywhere}
 .copy{margin-left:6px}
 .act{position:sticky;top:0;padding:32px 0 0}
@@ -132,6 +150,21 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 .scenetext{margin:10px 0 0;font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
 .scenetext b{color:var(--accent2);font-weight:400}
 @media (prefers-reduced-motion:reduce){.cell,.pcard,.sweep,.pmatch{animation:none}.cell{border-color:var(--accent2)}.pcard{border-color:var(--accent)}.sweep{display:none}}
+.fin{position:relative;overflow:hidden;padding:12px;border:1px solid var(--muted);border-radius:3px;background:var(--panel);margin-top:6px}
+.fin .cap{display:flex;justify-content:space-between;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.frow{display:grid;grid-template-columns:96px 1fr 16px;gap:12px;align-items:center;margin-top:14px;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--text)}
+.fbar{position:relative;height:8px;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--sunk)}
+.fbar i{display:block;height:100%;background:var(--accent2);transform:scaleX(0);transform-origin:left;animation:fill 4.8s infinite}
+.fbar:after{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--text);opacity:.5;left:0;animation:head 4.8s infinite;animation-delay:inherit}
+.fok{color:var(--ok);opacity:0;animation:fok 4.8s infinite}
+.frow:nth-child(3) .fbar i,.frow:nth-child(3) .fbar:after,.frow:nth-child(3) .fok{animation-delay:.9s}
+.frow:nth-child(4) .fbar i,.frow:nth-child(4) .fbar:after,.frow:nth-child(4) .fok{animation-delay:1.8s}
+.frow:nth-child(2) .fbar i,.frow:nth-child(2) .fbar:after,.frow:nth-child(2) .fok{animation-delay:0s}
+@keyframes fill{0%{transform:scaleX(0);opacity:1}30%,86%{transform:scaleX(1);opacity:1}94%,100%{transform:scaleX(1);opacity:0}}
+@keyframes head{0%{left:0;opacity:.6}30%{left:calc(100% - 2px);opacity:.6}31%,100%{left:calc(100% - 2px);opacity:0}}
+@keyframes fok{0%,30%{opacity:0}36%,86%{opacity:1}94%,100%{opacity:0}}
+.fnote{margin:14px 0 0;font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.fbar i,.fok{animation:none}.fbar i{transform:none}.fok{opacity:1}.fbar:after{display:none}}
 .sr{position:absolute;left:-9999px}
 </style>
 </head>
@@ -156,7 +189,17 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
 </div>
 <p class="scenetext" id="sceneText"></p>
 </div>
+<div id="finScene" hidden aria-hidden="true">
+<div class="fin"><div class="cap"><span>Finalizing</span><span>writing what you approved</span></div>
+<div class="frow"><span>Contract</span><span class="fbar"><i></i></span><span class="fok">&#10003;</span></div>
+<div class="frow"><span>Patterns</span><span class="fbar"><i></i></span><span class="fok">&#10003;</span></div>
+<div class="frow"><span>Checks</span><span class="fbar"><i></i></span><span class="fok">&#10003;</span></div>
+</div>
+<p class="scenetext" id="finText"></p>
+</div>
 <div id="ask"></div>
+<div id="summary" hidden></div>
+<p class="kicker" id="nextHead" hidden>What to do next</p>
 <ol class="next" id="next" hidden></ol>
 <div id="notice"></div>
 </main>
@@ -178,7 +221,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     plan: ["Apply the setup", "One plan. Yes confirms the contract and does everything in it."],
     done: ["Setup finished", "Here is what setup did, and what to do next."]
   };
-  function fresh() { return { phase: "scan", counts: {}, live: null, logs: {}, busy: null, ask: null, next: [], ended: false, error: null, stopped: false, lost: false, widget: null, restarting: false }; }
+  function fresh() { return { phase: "scan", counts: {}, live: null, logs: {}, busy: null, ask: null, next: [], summary: [], ended: false, error: null, stopped: false, lost: false, widget: null, restarting: false, applying: false }; }
   var state = fresh();
 
   function h(tag, props, kids) {
@@ -264,17 +307,54 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, function () { btn.textContent = "Press Ctrl+C"; });
     else btn.textContent = "Press Ctrl+C";
   }
-  function line(text) {
+  var INSTALL = /npm install -g @[\\w.\\/-]+/;
+  function find(text) {
+    var a = COMMAND.exec(text), b = INSTALL.exec(text);
+    return a && b ? (a.index <= b.index ? a : b) : a || b;
+  }
+  // Text with code spans (between backticks) put into a parent.
+  function rich(parent, text) {
+    text.split(/\\u0060([^\\u0060]+)\\u0060/).forEach(function (part, i) {
+      if (i % 2 === 1) parent.appendChild(h("code", { class: "il", text: part }));
+      else if (part) parent.appendChild(document.createTextNode(part));
+    });
+    return parent;
+  }
+  function holders(parent, cmd) {
+    cmd.split(/(<[^>]+>)/).forEach(function (part, i) {
+      if (!part) return;
+      if (i % 2 === 1) parent.appendChild(h("span", { class: "ph", text: part }));
+      else parent.appendChild(document.createTextNode(part));
+    });
+    return parent;
+  }
+  function trimCmd(m) { return m[0].replace(/[.,;]+$/, ""); }
+  // A command inside a sentence, with a small Copy button after it.
+  function inline(text) {
     var p = h("p", {});
-    var m = COMMAND.exec(text);
-    if (!m) { p.textContent = text; return p; }
-    var cmd = m[0].replace(/[.,;]+$/, "");
-    p.appendChild(document.createTextNode(text.slice(0, m.index)));
-    p.appendChild(h("code", { class: "cmd", text: cmd }));
+    var m = find(text);
+    if (!m) return rich(p, text);
+    var cmd = trimCmd(m);
+    rich(p, text.slice(0, m.index));
+    p.appendChild(holders(h("code", { class: "cmd" }), cmd));
     var b = h("button", { class: "btn small copy", type: "button", text: "Copy", onclick: function () { copy(cmd, b); } });
     p.appendChild(b);
-    p.appendChild(document.createTextNode(text.slice(m.index + cmd.length)));
+    rich(p, text.slice(m.index + cmd.length));
     return p;
+  }
+  // A command on its own: the sentence, then a code block with a prompt and a Copy button, then what follows.
+  function line(text) {
+    var m = find(text);
+    if (!m) return rich(h("p", {}), text);
+    var cmd = trimCmd(m);
+    var before = text.slice(0, m.index).replace(/\\s+$/, "");
+    var after = text.slice(m.index + cmd.length).replace(/^[\\s.,;]+|[\\s]+$/g, "");
+    var box = h("div", {});
+    if (before) box.appendChild(rich(h("p", {}), before));
+    var b = h("button", { class: "btn small", type: "button", text: "Copy", onclick: function () { copy(cmd, b); } });
+    box.appendChild(h("div", { class: "cmdblock" }, [h("span", {}, [h("span", { class: "pr", text: "$" }), holders(h("code", {}), cmd)]), b]));
+    if (after) box.appendChild(rich(h("p", { class: "m" }), after));
+    return box;
   }
 
   // ---- questions ----
@@ -295,6 +375,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
   function answer(value) {
     var id = state.ask.id;
     if (state.ask.kind === "tree" || state.ask.kind === "multiselect") state.counts[state.phase] = value.length;
+    if (state.phase === "plan") state.applying = true;
     state.ask = null; state.widget = null; state.live = null; state.busy = "Working";
     post("/api/answer", { id: id, value: value });
     render();
@@ -391,7 +472,17 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
       cells.appendChild(e);
     }
   })();
+  function renderFinalizing() {
+    // After the plan is confirmed, setup writes files, compiles and connects tools, which can take a while.
+    var show = state.applying && !state.ask && !state.ended && !state.stopped && !state.restarting && state.phase === "plan";
+    $("finScene").hidden = !show;
+    if (!show) return;
+    var t = $("finText"); clear(t);
+    t.appendChild(h("b", { text: "\u25CF " }));
+    t.appendChild(document.createTextNode(state.busy || "Working"));
+  }
   function renderScene() {
+    renderFinalizing();
     var show = !state.ask && !state.ended && !state.stopped && (state.phase === "scan" || state.phase === "components" || state.phase === "patterns");
     $("scene").hidden = !show;
     if (!show) return;
@@ -441,11 +532,22 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     else if (state.stopped) notice.appendChild(h("div", { class: "notice", text: "Setup stopped. Nothing more will change. You can close this tab." }));
     else if (state.ended && !state.error) notice.appendChild(h("div", { class: "notice", text: "Setup is finished. You can close this tab." }));
     else if (state.lost) notice.appendChild(h("div", { class: "notice", text: "The setup process is no longer running. Return to your terminal." }));
+    var summary = $("summary"); clear(summary);
+    if (v === "done" && state.summary.length) {
+      summary.hidden = false;
+      summary.appendChild(h("p", { class: "kicker", text: "What setup did" }));
+      var table = h("div", { class: "sum" });
+      state.summary.forEach(function (r) { table.appendChild(h("div", { class: "r" }, [h("span", { class: "k", text: r.label }), inline(r.text)])); });
+      summary.appendChild(table);
+    } else summary.hidden = true;
     var next = $("next"); clear(next);
-    if (v === "done" && state.next.length) {
-      next.hidden = false;
-      state.next.forEach(function (n) { next.appendChild(h("li", {}, [h("h3", { text: n.title })].concat(n.lines.map(line)))); });
-    } else next.hidden = true;
+    var showNext = v === "done" && state.next.length > 0;
+    next.hidden = !showNext; $("nextHead").hidden = !showNext;
+    if (showNext) state.next.forEach(function (n) {
+      var note = n.title === "About these commands";
+      var body = h("div", {}, [h("h3", { text: n.title })].concat(n.lines.map(line)));
+      next.appendChild(note ? h("li", { class: "note" }, [body]) : h("li", {}, [h("span", { class: "no", "aria-hidden": "true" }), body]));
+    });
     renderScene();
     renderAsk();
   }
@@ -457,6 +559,7 @@ code.cmd{background:var(--panel);border:1px solid var(--line);border-radius:3px;
     else if (e.type === "log") { (state.logs[state.phase] = state.logs[state.phase] || []).push({ kind: e.kind, text: e.text }); state.busy = null; }
     else if (e.type === "busy") state.busy = e.text;
     else if (e.type === "next") state.next.push({ title: e.title, lines: e.lines });
+    else if (e.type === "summary") state.summary = e.rows;
     else if (e.type === "ask") { state.ask = e; state.widget = null; state.busy = null; }
     else if (e.type === "answered") { if (state.ask && state.ask.id === e.id) { state.ask = null; state.widget = null; } }
     else if (e.type === "done") { state.ended = true; state.busy = null; state.ask = null; }
