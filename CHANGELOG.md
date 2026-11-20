@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/invariant-ui/cli/compare/v0.17.0...v0.18.0) (2026-11-20)
+
+
+### Features
+
+* **cli:** a "Setting things up" scene and a skeleton for the finish in the browser page ([#47](https://github.com/invariant-ui/cli/issues/47)) ([4e415c0](https://github.com/invariant-ui/cli/commit/4e415c01ecbc86c710ffbf0056bcc39511e23ca4))
+
 ## [0.17.0](https://github.com/invariant-ui/cli/compare/v0.16.0...v0.17.0) (2026-11-20)
 
 
