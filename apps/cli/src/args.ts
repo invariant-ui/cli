@@ -59,6 +59,8 @@ const OPTIONS = {
   include: { type: "string" },
   exclude: { type: "string" },
   rediscover: { type: "boolean" },
+  web: { type: "boolean" },
+  terminal: { type: "boolean" },
   "discover-only": { type: "boolean" },
   contract: { type: "string" },
   ci: { type: "boolean" },
@@ -127,6 +129,8 @@ export interface Parsed {
     include?: string
     exclude?: string
     rediscover?: boolean
+    web?: boolean
+    terminal?: boolean
     "discover-only"?: boolean
     contract?: string
     ci?: boolean

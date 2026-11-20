@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url"
 import { run } from "@invariant/cli"
 import { FIXED_CLOCK } from "@invariant/compiler-core/testing"
 import { afterAll, describe, expect, it } from "vitest"
+import type { WebEvent } from "../apps/cli/src/web/server.js"
 
 const root = fileURLToPath(new URL("..", import.meta.url))
 // The CLI version under test: these checks must not break when release-please bumps it.
@@ -1022,6 +1023,230 @@ describe("setup when confirmed components do not reach the contract", () => {
     expect(text).toMatch(
       /Every confirmed package has an entry point, so they do not export the other components/
     )
+  })
+})
+
+describe("setup in the browser", () => {
+  /** Plays the browser: reads the event stream and answers each question the way a person accepting the defaults would. */
+  function browser(decide: (ask: Extract<WebEvent, { type: "ask" }>) => unknown) {
+    const seen: WebEvent[] = []
+    const link = { base: "", token: "" }
+    const finished = { promise: undefined as Promise<void> | undefined }
+    const open = (url: string): void => {
+      finished.promise = (async () => {
+        const u = new URL(url)
+        const t = u.searchParams.get("t") as string
+        link.base = u.origin
+        link.token = t
+        const res = await fetch(`${u.origin}/api/events?t=${t}`)
+        const reader = (res.body as ReadableStream<Uint8Array>).getReader()
+        let buf = ""
+        const handled = new Set<number>()
+        for (;;) {
+          const { value, done } = await reader.read()
+          if (done) return
+          buf += new TextDecoder().decode(value)
+          const blocks = buf.split("\n\n")
+          buf = blocks.pop() ?? ""
+          for (const block of blocks) {
+            const id = Number(/^id: (\d+)/m.exec(block)?.[1])
+            const data = /^data: (.*)$/m.exec(block)?.[1]
+            if (!data || handled.has(id)) continue
+            handled.add(id)
+            const e = JSON.parse(data) as WebEvent
+            seen.push(e)
+            if (e.type === "ask") {
+              const value = await decide(e)
+              await fetch(`${u.origin}/api/answer?t=${t}`, {
+                method: "POST",
+                headers: { "content-type": "application/json", origin: u.origin },
+                body: JSON.stringify({ id: e.id, value })
+              })
+            }
+            if (e.type === "done") return
+          }
+        }
+      })()
+    }
+    return { seen, open, finished, link }
+  }
+  const accept = (ask: Extract<WebEvent, { type: "ask" }>): unknown => {
+    if (ask.kind === "tree")
+      return ask.groups?.flatMap((g) => g.items.filter((i) => i.ticked).map((i) => i.value))
+    if (ask.kind === "multiselect") return ask.options?.filter((o) => o.ticked).map((o) => o.value)
+    if (ask.kind === "prompt") return ""
+    const want = /Next\?/.test(ask.question)
+      ? "confirm"
+      : /Looks right/.test(ask.question)
+        ? "yes"
+        : undefined
+    return (ask.choices?.find((c) => c.value === want) ?? ask.choices?.[0])?.value
+  }
+
+  it("start over removes what the run wrote and scans again from the first step", async () => {
+    const dir = project()
+    let trees = 0
+    let leftBehind: boolean | undefined
+    const b = browser(async (ask) => {
+      if (ask.kind === "tree" && ++trees === 2) {
+        // The components were confirmed, so the configuration and the compiled contract exist by now.
+        leftBehind =
+          existsSync(path.join(dir, "invariant.config.json")) && existsSync(path.join(dir, "invariant"))
+        const { base, token } = b.link
+        await fetch(`${base}/api/restart?t=${token}`, { method: "POST", headers: { origin: base } })
+        return undefined
+      }
+      return accept(ask)
+    })
+    const r = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"], [], {
+      io: {
+        openUrl: b.open,
+        select: async <T extends string>(_q: string, choices: ReadonlyArray<{ value: T }>) =>
+          (choices.find((c) => c.value === ("web" as string)) ?? choices[0])?.value
+      }
+    })
+    await b.finished.promise
+    expect(r.code).toBe(0)
+    expect(leftBehind).toBe(true)
+    expect(r.out).toMatch(/Starting over\. Put back invariant\.config\.json, invariant\//)
+    const at = b.seen.findIndex((e) => e.type === "reset")
+    expect(at).toBeGreaterThan(0)
+    // The components are asked about again: the old configuration no longer answers for them.
+    const after = b.seen.slice(at)
+    expect(after.flatMap((e) => (e.type === "phase" ? [e.id] : []))).toEqual([
+      "scan",
+      "components",
+      "patterns",
+      "plan",
+      "done"
+    ])
+    expect(after.filter((e) => e.type === "ask" && e.kind === "tree")).toHaveLength(2)
+    expect(existsSync(path.join(dir, "invariant.config.json"))).toBe(true)
+  })
+
+  it("start over on an already set up project reviews the components again", async () => {
+    const dir = project()
+    await cli(dir, ["setup", "--confirm-contract", "--as", "ana", "--no-ci", "--no-agent"])
+    let restarted = false
+    const b = browser(async (ask) => {
+      if (!restarted && /Looks right/.test(ask.question)) {
+        restarted = true
+        const { base, token } = b.link
+        await fetch(`${base}/api/restart?t=${token}`, { method: "POST", headers: { origin: base } })
+        return undefined
+      }
+      return accept(ask)
+    })
+    const r = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"], [], {
+      io: {
+        openUrl: b.open,
+        select: async <T extends string>(_q: string, choices: ReadonlyArray<{ value: T }>) =>
+          (choices.find((c) => c.value === ("web" as string)) ?? choices[0])?.value
+      }
+    })
+    await b.finished.promise
+    expect(r.code).toBe(0)
+    const at = b.seen.findIndex((e) => e.type === "reset")
+    expect(at).toBeGreaterThan(0)
+    // Before the restart the saved decisions answered for the components; after it they are asked about again.
+    expect(b.seen.slice(0, at).filter((e) => e.type === "ask" && e.kind === "tree")).toHaveLength(0)
+    expect(b.seen.slice(at).some((e) => e.type === "ask" && e.kind === "tree")).toBe(true)
+  })
+
+  it("stopping removes what the run wrote so far", async () => {
+    const dir = project()
+    let trees = 0
+    let existedAtStop: boolean | undefined
+    const b = browser(async (ask) => {
+      if (ask.kind === "tree" && ++trees === 2) {
+        existedAtStop =
+          existsSync(path.join(dir, "invariant.config.json")) && existsSync(path.join(dir, "invariant"))
+        const { base, token } = b.link
+        await fetch(`${base}/api/stop?t=${token}`, { method: "POST", headers: { origin: base } })
+        return undefined
+      }
+      return accept(ask)
+    })
+    const r = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"], [], {
+      io: {
+        openUrl: b.open,
+        select: async <T extends string>(_q: string, choices: ReadonlyArray<{ value: T }>) =>
+          (choices.find((c) => c.value === ("web" as string)) ?? choices[0])?.value
+      }
+    })
+    await b.finished.promise
+    expect(existedAtStop).toBe(true)
+    expect(r.out).toMatch(/Stopped\. Put back invariant\.config\.json, invariant\//)
+    expect(existsSync(path.join(dir, "invariant.config.json"))).toBe(false)
+    expect(existsSync(path.join(dir, "invariant"))).toBe(false)
+    expect(b.seen.some((e) => e.type === "log" && /^Stopped\. Put back/.test(e.text))).toBe(true)
+  })
+
+  it("is offered first, and runs the same setup with every question answered over HTTP", async () => {
+    const dir = project()
+    const b = browser(accept)
+    const asked: string[] = []
+    const r = await cli(dir, ["setup", "--as", "ana", "--no-ci", "--no-agent"], [], {
+      io: {
+        openUrl: b.open,
+        select: async <T extends string>(q: string, choices: ReadonlyArray<{ value: T }>) => {
+          asked.push(q)
+          return (choices.find((c) => c.value === ("web" as string)) ?? choices[0])?.value
+        }
+      }
+    })
+    await b.finished.promise
+    expect(r.code).toBe(0)
+    // The first question a person sees is where to set up.
+    expect(asked[0]).toBe("Where do you want to set up?")
+    expect(r.out).toMatch(/Setup is open in your browser: http:\/\/127\.0\.0\.1:\d+\/\?t=/)
+    // The steps arrive in order.
+    const phases = b.seen.flatMap((e) => (e.type === "phase" ? [e.id] : []))
+    expect(phases).toEqual(["scan", "components", "patterns", "plan", "done"])
+    // The components and the patterns are both lists to tick; the rest are choices.
+    const kinds = b.seen.flatMap((e) => (e.type === "ask" ? [e.kind] : []))
+    expect(kinds.filter((k) => k === "tree")).toHaveLength(2)
+    expect(kinds).toContain("select")
+    const logs = b.seen.flatMap((e) => (e.type === "log" ? [e.text] : []))
+    expect(logs.some((l) => /^compiled: \d+ components/.test(l))).toBe(true)
+    // Five steps, then a note that the commands need nothing installed.
+    expect(b.seen.filter((e) => e.type === "next")).toHaveLength(6)
+    expect(b.seen.at(-1)).toMatchObject({ type: "done", code: 0 })
+    // And it did the work: components confirmed, contract compiled, patterns added.
+    const config = JSON.parse(readFileSync(path.join(dir, "invariant.config.json"), "utf8")) as {
+      componentSources: Array<{ status: string }>
+    }
+    expect(config.componentSources.some((x) => x.status === "approved")).toBe(true)
+    expect(existsSync(path.join(dir, "invariant/invariant.contract.json"))).toBe(true)
+    expect(patterns(dir).patterns.length).toBeGreaterThan(0)
+  }, 60_000)
+
+  it("stays in the terminal when asked to, and never offers the browser without a terminal", async () => {
+    const dir = project()
+    const asked: string[] = []
+    const r = await cli(
+      dir,
+      ["setup", "--terminal", "--as", "ana", "--no-ci", "--no-agent"],
+      [...REVIEW, "y"],
+      {
+        io: {
+          select: async <T extends string>(q: string) => {
+            asked.push(q)
+            return (/Next\?/.test(q) ? "confirm" : "yes") as T
+          }
+        }
+      }
+    )
+    expect(r.code).toBe(0)
+    expect(asked).not.toContain("Where do you want to set up?")
+    expect(r.out).not.toMatch(/open in your browser/)
+    const plain = await cli(project(), ["setup", "--yes", "--as", "ana", "--no-ci", "--no-agent"])
+    expect(plain.out).not.toMatch(/open in your browser/)
+  })
+
+  it("--web cannot be mixed with answers given up front", async () => {
+    const r = await cli(project(), ["setup", "--web", "--yes", "--as", "ana"], [])
+    expect(r.err).toMatch(/--web needs a terminal/)
   })
 })
 

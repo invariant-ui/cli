@@ -2,6 +2,12 @@
 
 Status: locked 2026-11-17. Amended 2026-11-17: CLI terminal output uses the clack-style frame; hero terminal generated from real output. Applies to `site/index.html` (marketing), `site/docs/index.html` (docs) and `site/assets/`. Change a decision here first, then in the code. Related: `docs/design/site-and-docs-design-plan.md`, `docs/decisions/0006-site-and-docs-stack.md` (Proposed).
 
+## Web setup (local page)
+
+Added 2026-11-20. `invariant setup` can run in a local web page (`apps/cli/src/web/page.ts`, ADR 0010). It follows this document: the same tokens (dark and light, theme toggle in `localStorage` key `theme`), the system serif for h1 and h2, sans body, mono for output and lists, 3px corners, flat panels and ruled steps, a solid off-white primary button, status shown as text, the constraint-frame logo inline, and no external font, script, image or request. Do not add gradients or shadows to it either. Animation is allowed in one place only: the scan scene (two flat panes, Components and Patterns, shown while setup is scanning or compiling and no question is open). It uses token colors, `color-mix()` tints, no gradient or shadow, a 4.8s loop, and it stops under `prefers-reduced-motion`.
+
+Layout (workbench, chosen 2026-11-19): `.wrap` at 1280px; three columns at 960px and wider — a sticky step list on the left (170px, numbered; the current step sits in a panel with a 1px rule, and each step shows a check or its ticked count on the right), the question in the middle, and a sticky Activity pane on the right (260px) with the whole run's output in order. The list is one panel: a sticky bar (filter, tally tag, Tick all, Clear, Fold all, Unfold all), then rows with a tag on the right for how many of a group are ticked. A fixed footer carries a sentence ("7 patterns will be approved") and the Confirm button while a list question is open. Below 960px it is one column: steps in a grid, the question, then Activity. There is no Back button: the setup flow cannot re-ask a question, so the step list is not clickable. The header has Start over (two clicks: the first arms it for 4 seconds) and Stop setup; both disappear once setup has finished or stopped.
+
 ## Intent
 
 The site speaks to engineering, product and design-system leaders who must trust a governance tool. It should feel like a well-set technical document, not a SaaS template: flat, ruled, typographic, evidence first. Show real output instead of illustrations.

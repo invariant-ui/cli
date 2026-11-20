@@ -4,6 +4,7 @@ import { run } from "./cli.js"
 import { setColor, setLinks } from "./format.js"
 import { setLive } from "./frame.js"
 import { arrowMultiSelect, arrowSelect, arrowTree } from "./select.js"
+import { openBrowser } from "./web/open.js"
 
 // Color only for a person at a terminal: pipes, CI and NO_COLOR get plain text (https://no-color.org).
 const interactive = Boolean(process.stdout.isTTY) && process.env.TERM !== "dumb"
@@ -23,6 +24,7 @@ const code = await run(process.argv.slice(2), {
   input: process.stdin,
   output: process.stdout,
   signal: stop.signal,
+  openUrl: openBrowser,
   ...(process.stdin.isTTY && process.stdout.isTTY
     ? {
         prompt: async (question: string) => {
