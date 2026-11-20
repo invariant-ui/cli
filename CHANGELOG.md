@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/invariant-ui/cli/compare/v0.16.0...v0.17.0) (2026-11-20)
+
+
+### Features
+
+* **cli:** a scene for each setup step, a counted finalizing loader, and a setup demo video ([#45](https://github.com/invariant-ui/cli/issues/45)) ([bb42880](https://github.com/invariant-ui/cli/commit/bb428805e67534c9044bd525aaec2452b50bcd69))
+
 ## [0.16.0](https://github.com/invariant-ui/cli/compare/v0.15.0...v0.16.0) (2026-11-20)
 
 
