@@ -168,7 +168,7 @@ Every decision needs `--as <name>` (or `INVARIANT_USER`) and records when. A dec
 
 ## CI
 
-Exit codes plus formats are the integration: `--format github` prints workflow-command annotations, `--format sarif` prints SARIF 2.1.0 for code scanning, `--format json` is for scripts. Run `invariant compile` then `invariant validate <paths> --format github` in a job. No workflow file is generated because the tool is not published and an install step would be invented.
+Exit codes plus formats are the integration: `--format github` prints workflow-command annotations, `--format sarif` prints SARIF 2.1.0 for code scanning, `--format json` is for scripts. Run `invariant compile` then `invariant validate <paths> --format github` in a job. `invariant setup` can write this job as `.github/workflows/invariant.yml` (see `cli-v1.md`).
 
 ## Verification
 

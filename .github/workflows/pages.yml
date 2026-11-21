@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false  # cancelling an in-flight Pages deploy can fail it
+  cancel-in-progress: false # cancelling an in-flight Pages deploy can fail it
 
 jobs:
   deploy:
@@ -29,7 +29,7 @@ jobs:
           path: site
       - id: deployment
         uses: actions/deploy-pages@v4
-        continue-on-error: true  # GitHub-side "Deployment failed, try again later" is transient
+        continue-on-error: true # GitHub-side "Deployment failed, try again later" is transient
       - id: retry
         if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
