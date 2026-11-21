@@ -1,9 +1,17 @@
 // The enforcement loop, end to end, in a scratch copy of the Acme fixture:
 //   pnpm build && pnpm demo
+import { setTimeout as sleep } from "node:timers/promises"
 import { playLoop, prepare } from "./demo-loop.ts"
 
 const line = "─".repeat(72)
 const say = (text = ""): void => console.log(text)
+// DEMO_PACE=1 is for the recording: each step gets its own screen and is held long enough to read. Output is unchanged.
+const PACE = process.env.DEMO_PACE === "1"
+const hold = async (ms: number): Promise<void> => {
+  if (!PACE) return
+  await sleep(ms)
+  process.stdout.write("\x1b[2J\x1b[H")
+}
 
 say("An agent is asked: build a settings page with a delete button.\n")
 const dir = await prepare()
@@ -18,6 +26,7 @@ for (const [i, step] of steps.entries()) {
   )
   say(step.card.replace(/^/gm, "   "))
   say()
+  await hold(5000)
 }
 say(line)
 // Timestamps are the only thing that changes between runs, so the printed report drops them.

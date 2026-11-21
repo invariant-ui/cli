@@ -33,3 +33,7 @@ It writes `setup-web.mp4` (about 1.4 MB, 1280x800, about 51 seconds), `setup-web
 ```
 
 For the recording only, the page reaches the real server through a small proxy inside the script that hands over the server's events one at a time with pauses (1.1 s per step, under a third of a second per log line, 0.7 s per question and per finishing task). The scan on this small project would otherwise finish in a moment and skip the step animations, which a large project shows for longer. The server, the setup code and every answer are the real ones; only the arrival of the events is spaced out, and the product has no such delay. Change the `PAUSE` table in `scripts/demo-web-setup.ts` to speed it up or slow it down.
+
+## The full flow
+
+`docs/demo/full-flow.md` is the storyboard for the three-minute end-to-end video (setup, a rule change, an AI building UI through the MCP server, then a failing and a passing PR). `pnpm demo:governance` and `pnpm demo:pr` run its scenes 2 and 4; `pnpm demo:stitch` joins the recorded scenes.

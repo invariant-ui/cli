@@ -13,14 +13,14 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false # cancelling an in-flight Pages deploy can fail it
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.retry.outputs.page_url || steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
@@ -28,4 +28,8 @@ jobs:
         with:
           path: site
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true # GitHub-side "Deployment failed, try again later" is transient
+      - id: retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
