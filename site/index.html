@@ -96,7 +96,7 @@ h1{font-size:clamp(34px,6vw,60px);line-height:1.08;letter-spacing:-.03em;margin:
 .proptable th{text-align:left;font:12px var(--mono);color:var(--muted);padding:6px 10px 6px 14px;border-bottom:1px solid var(--line)}
 .proptable td{padding:8px 10px 8px 14px;border-bottom:1px solid var(--line);vertical-align:top}
 .proptable td:first-child{white-space:nowrap}
-.proptable td:nth-child(2),.facttable td:nth-child(4){min-width:130px}
+.proptable td:nth-child(2){min-width:130px}
 .proptable .fact{animation:none;white-space:nowrap}
 .proptable .req{color:var(--warn)}
 @media(max-width:720px){.explorer{grid-template-columns:minmax(0,1fr)}.extree{border-right:0;border-bottom:1px solid var(--line);max-height:180px}}
@@ -110,13 +110,6 @@ h1{font-size:clamp(34px,6vw,60px);line-height:1.08;letter-spacing:-.03em;margin:
 .flt[data-s=all][aria-pressed=true]{color:var(--text)}
 .flt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
-.facttable{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
-.facttable th{text-align:left;font:12px var(--mono);color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--line)}
-.facttable td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
-.facttable tr:last-child td{border-bottom:0}
-.facttable td .fact{animation:none;white-space:nowrap}
-.facttable td:first-child{white-space:nowrap}
-.facttable tr.none td{color:var(--muted)}
 .tnote{margin:14px 0 0;font-size:14px}
 .tnote .fact{animation:none}
 .tabs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px;align-items:start}
@@ -357,13 +350,68 @@ footer a:hover{color:var(--text)}
 .g1{animation:g1 20s infinite}.grun{animation:grun 20s infinite}.gfail{animation:gfail 20s infinite}
 .grun2{animation:grun2 20s infinite}.gpass{animation:gpass 20s infinite}.gan{animation:gan 20s infinite}
 .gcm{animation:gcm 20s infinite}.gmerge{opacity:.35;animation:gmerge 20s infinite}
-.gen{margin:26px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.gen{background:var(--panel);border:1px solid var(--line);border-radius:3px}
 .gen .term-bar{display:flex;justify-content:space-between;gap:12px}
-.gen pre{margin:0;padding:14px 16px;font:13px/1.8 var(--mono);overflow-x:auto}
-.gen .ln{display:block;white-space:pre}
-.gen .miss{display:block;white-space:pre;color:var(--bad)}
-.gen .miss i{font-style:normal;color:var(--muted)}
 .gennote{padding:10px 16px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+.gha{margin-bottom:36px;background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.gha .term-bar{display:flex;justify-content:space-between;gap:12px}
+.pvp{background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.pvp .term-bar{display:flex;justify-content:space-between;gap:12px}
+.pvb{padding:14px 16px 16px;font-size:13px}
+.pv-k{font:11px var(--mono);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 0 6px}
+.pv-region{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin-top:6px;border:1px dashed color-mix(in srgb,var(--muted) 60%,transparent);border-radius:3px;font:12px var(--mono)}
+.pv-region i,.pv-rules i{font-style:normal;font-size:11px;color:var(--muted)}
+.pv-region.bad{border-color:var(--bad)}
+.pv-rules{list-style:none;margin:0;padding:0;font:12px var(--mono)}
+.pv-rules li{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line)}
+.pv-rules li:first-child{border-top:0;padding-top:0}
+.pv-rules span{color:var(--muted)}.pv-rules b{font-weight:400}
+.pv-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pv-chips span{font:12px var(--mono);border:1px solid var(--line);border-radius:3px;padding:2px 8px}
+.pv-find{margin-top:12px;font:12px/1.5 var(--mono)}.pv-find b{font-weight:600}
+.pv-msg{margin:6px 0 0;color:var(--muted);font-size:12.5px;line-height:1.5}
+.pv-tag{margin-top:12px;font:12px/1.6 var(--mono)}
+.pv-name{display:flex;flex-direction:column;gap:2px}.pv-name b{font-size:14px}.pv-name .c,.pv-orig{font:12px var(--mono)}
+.pv-sum{margin-top:12px;font:12px/1.5 var(--mono)}
+.pvp [data-t]{transition:opacity .3s,border-color .3s,color .3s}
+.pv-off{opacity:0}
+.gha-body{display:grid;grid-template-columns:200px minmax(0,1fr)}
+.gha-side,.gha-main{padding:14px 16px;font-size:13.5px}
+.gha-side{border-right:1px solid var(--line)}
+.gha-k{font:11px var(--mono);text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 8px}
+.gha-side .gha-k:not(:first-child){margin-top:16px}
+.gha-wf{display:flex;flex-direction:column;gap:2px}.gha-wf span{font:12px var(--mono);color:var(--muted)}
+.gha-job{font:12.5px var(--mono);padding:6px 8px;border:1px solid var(--line);border-radius:3px}
+.gha-steps{list-style:none;margin:0;padding:0}
+.gha-steps>li{padding:7px 0;border-top:1px solid var(--line)}
+.gha-steps>li:first-child{border-top:0}
+.gha-steps>li>span:first-child{display:inline-block;width:1.6ch;margin-right:8px;font-family:var(--mono)}
+.gha-steps .open{font-weight:600}
+.gha-steps .pend{color:var(--muted)}
+.gha-steps .log{padding:0 0 8px 0;border-top:0}
+.gha-steps .log pre{margin:0;padding:8px 12px;background:var(--bg);border:1px solid var(--line);border-radius:3px;overflow-x:auto;font:12px/1.7 var(--mono)}
+.gha-steps .c{font:12px var(--mono);margin-left:6px}
+@media (max-width:720px){.gha-body{grid-template-columns:1fr}.gha-side{border-right:0;border-bottom:1px solid var(--line)}}
+.gen .wf{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
+.wf svg{display:block;width:100%;height:auto;padding:16px;box-sizing:border-box}
+.wf-box{fill:none;stroke:color-mix(in srgb,var(--muted) 60%,transparent);stroke-width:1}
+.wf-fill{fill:color-mix(in srgb,var(--muted) 30%,transparent);stroke:none}
+.wf-bad{stroke:var(--bad);stroke-dasharray:4 3}
+.wf-dim{stroke:var(--bad);stroke-width:1}
+.wf-spin{fill:none;stroke:var(--muted);stroke-width:2}
+.wf-t{font:11px var(--mono);fill:var(--muted)}
+.wf-badt{fill:var(--bad)}
+.wf-m circle{fill:var(--bad)}
+.wf-m text{font:700 12px var(--mono);fill:var(--bg)}
+.wf [data-t]{transition:opacity .3s}
+.wf-off{opacity:0}
+@media(prefers-reduced-motion:no-preference){.wf-spin{transform-box:view-box;transform-origin:188px 207px;animation:wfspin 1s linear infinite}}
+@keyframes wfspin{to{transform:rotate(360deg)}}
+.wf-key{list-style:none;margin:0;padding:16px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:16px;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.wf-key li{display:flex;gap:10px;align-items:flex-start}
+.wf-key b{color:var(--text);font-weight:600}
+.wf-key .n{flex:none;width:22px;height:22px;box-sizing:border-box;border:1px solid var(--bad);border-radius:3px;font:600 12px/20px var(--mono);text-align:center;color:var(--text)}
+@media (max-width:720px){.gen .wf{grid-template-columns:1fr}.wf-key{border-left:0;border-top:1px solid var(--line)}}
 .dgrid{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.7fr);gap:16px;margin:0 0 36px;align-items:stretch}
 .dgrid .term{max-width:none;margin:0}
 .dgrid .term pre.nowrap{white-space:pre;overflow-wrap:normal;font-size:11px}
@@ -372,11 +420,55 @@ footer a:hover{color:var(--text)}
 .drow{padding:10px 16px;border-bottom:1px solid var(--line);font:13px/1.6 var(--mono)}
 .drow:last-child{border-bottom:0}
 .drow small{display:block;color:var(--muted);font:12px var(--mono)}
+.dpanel .dfoot{margin-top:auto;padding:10px 16px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+.lad{background:var(--panel);border:1px solid var(--line);border-radius:3px}
+.lad .term-bar{display:flex;justify-content:space-between;gap:12px}
+.lads{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.lane{border-left:1px solid var(--line);padding:14px 0 6px}
+.lane:first-child{border-left:0}
+.lh{padding:0 14px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.lh small{font:12px var(--mono);color:var(--muted)}
+.lad .fact{animation:none}
+.lr{padding:10px 14px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.5;border-left:2px solid transparent}
+.lr b{display:block;font-weight:600;font-size:13px}
+.lr code{display:block;margin:2px 0;overflow-wrap:anywhere}
+.lr b code{display:inline;margin:0}
+.lr .c{display:block;font:11.5px/1.5 var(--mono)}
+.lr.hot{border-left-color:var(--warn)}
+.lask{display:block;margin-top:4px;font:11.5px var(--mono);color:var(--warn)}
+.lgate{margin:0 14px 10px;padding:8px 10px;min-height:3.6em;border:1px dashed var(--bad);border-radius:3px;font:12px/1.5 var(--mono)}
+.lgate.pass{border-color:var(--ok)}
+.lgate .gb{display:none}.lgate:not(.pass) .gb{display:block}.lgate:not(.pass) .go{display:none}
+.lad [data-t]{transition:opacity .3s,border-color .3s}
+.lad .d-off{opacity:0}
+@media(max-width:760px){.lads{grid-template-columns:repeat(2,minmax(0,1fr))}.lane:nth-child(3){border-left:0}.lane:nth-child(n+3){border-top:1px solid var(--line)}}
+@media(max-width:480px){.lads{grid-template-columns:minmax(0,1fr)}.lane{border-left:0}.lane:nth-child(n+2){border-top:1px solid var(--line)}}
+.dscanp{background:var(--panel);border:1px solid var(--line);border-radius:3px;margin:26px 0 0}
+.dscanp .term-bar{display:flex;justify-content:space-between;gap:12px}
+.dpgs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:16px}
+.dpgbox{position:relative;overflow:hidden;border-radius:3px}
+.dpgbox svg{display:block;width:100%;height:auto}
+.dmodal{fill:var(--panel);stroke:color-mix(in srgb,var(--muted) 60%,transparent)}
+.dbtn{fill:color-mix(in srgb,var(--muted) 45%,transparent)}
+.dhit{fill:color-mix(in srgb,var(--accent) 14%,transparent);stroke:var(--accent);stroke-dasharray:4 3}
+.dscan{position:absolute;left:0;right:0;top:0;height:2px;background:var(--accent);opacity:0;pointer-events:none}
+.dpg.scan .dscan{animation:dscan .9s linear forwards}
+@keyframes dscan{0%{top:0;opacity:1}95%{opacity:1}100%{top:calc(100% - 2px);opacity:0}}
+.dpgl{margin-top:8px;font:12px/1.5 var(--mono)}
+.dpgl b{display:block;font-weight:400;overflow-wrap:anywhere}
+.dpgl span{display:block;color:var(--muted)}
+.dtag{color:var(--accent)!important}
+.dscanp [data-t]{transition:opacity .3s}
+.d-off{opacity:0}
+.dres{border-top:1px solid var(--line);padding:12px 16px;font:12px/1.6 var(--mono)}
+.dcand{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:6px}
+.dcand b{font-weight:600}
+.dscanp .dfoot{padding:10px 16px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+@media(max-width:760px){.dpgs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.dgrid{grid-template-columns:minmax(0,1fr)}}
 .dconv{padding:10px 16px;font:12.5px var(--mono);color:var(--muted);border-bottom:1px solid var(--line)}
 .dstat{display:inline-block;font:12px var(--mono);padding:2px 8px;border:1px solid var(--line);border-radius:3px;margin-left:8px}
-.dpanel .dfoot{margin-top:auto;padding:10px 16px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
 .dline{display:block;white-space:pre-wrap}.dline.del{color:var(--bad)}.dline.add{color:var(--ok)}
-@media(max-width:760px){.dgrid{grid-template-columns:minmax(0,1fr)}}
 .pr{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:3px}
 .pr .prhead{padding:12px 16px}
 .pr .prtitle{font-size:15px}.pr .prtitle b{font-weight:600}.pr .prtitle span{color:var(--muted);font-family:var(--mono);font-size:13px}
@@ -481,7 +573,17 @@ section .wrap>h2{align-self:start}
 .ccbox .ccrow b{font-weight:400;color:var(--text)}
 .cctally{margin-top:0;font:12.5px var(--mono);color:var(--muted)}
 .cctally b{color:var(--text)}
-.faq h3{margin:28px 0 6px;font-size:17px}.faq h3:first-child{margin-top:0}.faq p{margin:0;color:var(--muted);max-width:680px}
+.faq{margin-top:24px}
+.faq details{border-top:1px solid var(--line)}
+.faq details:last-child{border-bottom:1px solid var(--line)}
+.faq summary{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:16px 0;cursor:pointer;list-style:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";flex:none;font:16px var(--mono);color:var(--muted)}
+.faq details[open] summary::after{content:"\2212"}
+.faq summary:hover h3{color:var(--accent)}
+.faq summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.faq h3{margin:0;font-size:17px}
+.faq p{margin:0 0 18px;color:var(--muted);max-width:680px}
 .plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:32px}
 .plan{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:24px;position:relative}
 .plan.featured{border-color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}.plan.featured .desc strong{color:var(--text);font-weight:600}
@@ -521,7 +623,6 @@ section .wrap>h2{align-self:start}
     <ul>
       <li><a href="#problem">Problem</a></li>
       <li><a href="#how">How it works</a></li>
-      <li><a href="#facts">Fact status</a></li>
       <li><a href="#patterns">Patterns</a></li>
       <!-- <li><a href="#proof">Proof</a></li> -->
 
@@ -566,9 +667,38 @@ section .wrap>h2{align-self:start}
     <div class="label">The problem</div>
     <h2>Your design system's rules live in Figma comments, Storybook, Slack threads and people's heads. The agent has read none of them.</h2>
     <p class="sub">Teams adopt AI coding tools and watch the design system erode one pull request at a time. The agent never saw your rules, so it guesses, and a person has to catch every guess.</p>
-    <div class="gen" aria-label="Illustrative example of agent-generated code that ignores the design system">
-      <div class="term-bar"><span>Dashboard.tsx, written by an agent</span><span>illustrative</span></div>
-<pre><span class="ln"><span class="c">// Button accepts "primary" | "secondary" | "ghost". Brand color is --color-brand.</span></span><span class="ln">&lt;<span class="k">Button</span> <span class="k">variant</span>=<span class="b">"danger"</span>&gt;Delete&lt;/<span class="k">Button</span>&gt;</span><span class="miss">                    ^ <i>no such variant. It renders unstyled.</i></span><span class="ln">&lt;<span class="k">div</span> <span class="k">style</span>={{ <span class="k">background</span>: <span class="b">"#0057ff"</span>, <span class="k">padding</span>: <span class="b">13</span> }}&gt;</span><span class="miss">                         ^ <i>brand color pasted in. It ignores dark theme. Padding is off the 16px token.</i></span><span class="ln">  &lt;<span class="k">Spinner</span> /&gt;</span><span class="miss">   ^ <i>no Spinner in the system. Button already has loading.</i></span></pre>
+    <div class="gen" aria-label="Illustrative wireframe of an agent-generated page that ignores the design system">
+      <div class="term-bar"><span>Dashboard page, written by an agent</span></div>
+      <div class="wf">
+        <svg viewBox="0 0 560 330" role="img" aria-label="Wireframe of a dashboard page. A Delete button, a card and a spinner are each marked with a numbered problem.">
+          <rect class="wf-box" x="1" y="1" width="558" height="328"/>
+          <line class="wf-box" x1="1" y1="30" x2="559" y2="30"/>
+          <circle class="wf-fill" cx="16" cy="15" r="3.5"/><circle class="wf-fill" cx="29" cy="15" r="3.5"/><circle class="wf-fill" cx="42" cy="15" r="3.5"/>
+          <rect class="wf-box" x="150" y="8" width="260" height="14"/>
+          <line class="wf-box" x1="120" y1="30" x2="120" y2="329"/>
+          <rect class="wf-fill" x="16" y="50" width="70" height="8"/><rect class="wf-fill" x="16" y="76" width="56" height="8"/><rect class="wf-fill" x="16" y="102" width="64" height="8"/><rect class="wf-fill" x="16" y="128" width="48" height="8"/>
+          <rect class="wf-fill" x="144" y="56" width="150" height="14"/>
+          <rect class="wf-box wf-bad" data-flag="600" x="446" y="48" width="92" height="30"/>
+          <text class="wf-t" x="492" y="67" text-anchor="middle">Delete</text>
+          <rect class="wf-box wf-bad" data-flag="2000" x="144" y="100" width="394" height="150" style="fill:color-mix(in srgb,var(--accent) 18%,transparent)"/>
+          <rect class="wf-fill" x="157" y="113" width="120" height="10"/>
+          <rect class="wf-fill" x="157" y="135" width="250" height="7"/><rect class="wf-fill" x="157" y="151" width="210" height="7"/>
+          <line class="wf-dim" data-t="2000" x1="144" y1="108" x2="157" y2="108"/>
+          <text class="wf-t wf-badt" data-t="2000" x="290" y="123">13px, not 16px</text>
+          <rect class="wf-box wf-bad" data-flag="3600" x="157" y="176" width="150" height="62"/>
+          <circle class="wf-box" cx="188" cy="207" r="12"/><path class="wf-spin" d="M188 195a12 12 0 0 1 12 12"/>
+          <rect class="wf-fill" x="214" y="200" width="80" height="7"/><rect class="wf-fill" x="214" y="214" width="56" height="7"/>
+          <rect class="wf-fill" x="144" y="272" width="394" height="7"/><rect class="wf-fill" x="144" y="290" width="330" height="7"/>
+          <g class="wf-m" data-t="600"><circle cx="446" cy="48" r="11"/><text x="446" y="52.5" text-anchor="middle">1</text></g>
+          <g class="wf-m" data-t="2000"><circle cx="538" cy="100" r="11"/><text x="538" y="104.5" text-anchor="middle">2</text></g>
+          <g class="wf-m" data-t="3600"><circle cx="307" cy="176" r="11"/><text x="307" y="180.5" text-anchor="middle">3</text></g>
+        </svg>
+        <ol class="wf-key">
+          <li data-t="600"><span class="n">1</span><span><b>Invented variant.</b> The system has primary, secondary and ghost. "danger" does not exist, so the button renders unstyled.</span></li>
+          <li data-t="2000"><span class="n">2</span><span><b>Hard-coded values.</b> The brand blue is pasted in as a hex, so it ignores dark theme. The padding is 13px, off the 16px token.</span></li>
+          <li data-t="3600"><span class="n">3</span><span><b>Component that is not in the system.</b> There is no Spinner. Button already has a loading state.</span></li>
+        </ol>
+      </div>
       <div class="gennote">It compiles and the page looks fine in the agent's screenshot. A reviewer finds all three, or nobody does.</div>
     </div>
     <div class="grid g3" style="margin-top:26px">
@@ -628,34 +758,40 @@ section .wrap>h2{align-self:start}
   </div>
 </section>
 
+<!-- Fact status: hidden for now. Uncomment to restore, along with the Fact status nav link. The ladder script near the Discover script returns early while the section is absent.
 <section id="facts">
   <div class="wrap">
     <div class="label">Fact status</div>
     <h2>Each fact in the contract is labeled with how Invariant knows it.</h2>
-    <p class="sub">Sample rows from Invariant's own <code>acme-ui</code> test fixture, copied from its compiled contract and evidence files. Filter by status to see what each one means.</p>
-    <div class="filters" id="factfilters" role="group" aria-label="Filter by status">
-      <button type="button" class="flt" data-s="all" aria-pressed="true">all</button>
-      <button type="button" class="flt fact d" data-s="discovered" aria-pressed="false">discovered</button>
-      <button type="button" class="flt fact m" data-s="documented" aria-pressed="false">documented</button>
-      <button type="button" class="flt fact i" data-s="inferred" aria-pressed="false">inferred</button>
-      <button type="button" class="flt fact a" data-s="approved" aria-pressed="false">approved</button>
+    <p class="sub">Rows are copied from Invariant's own <code>acme-ui</code> test fixture, from its compiled contract and evidence files. The fixture has no approved fact, so the approved step is illustrative.</p>
+    <div class="lad" aria-label="Illustrative ladder of fact statuses: discovered, documented, inferred and approved. An inferred fact is stopped at a gate until a named person decides.">
+      <div class="term-bar"><span>acme-ui fixture</span><span>illustrative</span></div>
+      <div class="lads">
+        <div class="lane">
+          <div class="lh"><span class="fact d">discovered</span><small>Read from code</small></div>
+          <div class="lr" data-t="400"><b>Badge prop <code>tone</code></b><code>"info" | "warn"</code><span class="c">src/Badge.tsx:3 &middot; compiler-api</span></div>
+          <div class="lr" data-t="800"><b>Button export</b><code>Button = forwardRef&lt;HTMLButtonElement, ButtonProps&gt;</code><span class="c">src/Button.tsx:28 &middot; compiler-api</span></div>
+        </div>
+        <div class="lane">
+          <div class="lh"><span class="fact m">documented</span><small>Written by a person</small></div>
+          <div class="lr" data-t="1200"><b>Button description</b><code>Triggers an action.</code><span class="c">src/Button.tsx:28 &middot; compiler-api</span></div>
+        </div>
+        <div class="lane">
+          <div class="lh"><span class="fact i">inferred</span><small>A guess, with a confidence</small></div>
+          <div class="lr" data-t="1600" data-hot="3000"><b>Guideline applies to Button</b><code>The file name "Button" is the component name "Button"</code><span class="c">confidence 0.8 &middot; src/Button.mdx:1 &middot; document-parse</span><span class="lask" data-t="3800">asks to be approved</span></div>
+          <div class="lr" data-t="2000"><b>Guideline kind</b><code>No keyword in the title or file name identifies a more specific kind of page</code><span class="c">confidence 0.4 &middot; src/Button.mdx:1 &middot; document-parse</span></div>
+        </div>
+        <div class="lane">
+          <div class="lh"><span class="fact a">approved</span><small>A named person's decision</small></div>
+          <div class="lgate pass" data-t="4400" data-pass="6200"><span class="gb b">&#10007; Blocked. An inferred fact needs a named person.</span><span class="go ok">&#10003; A named person decided.</span></div>
+          <div class="lr" data-t="6200"><b>Guideline applies to Button</b><code>Decision recorded in invariant.decisions.json</code><span class="c">decided by a named person</span></div>
+        </div>
+      </div>
     </div>
-    <div class="tablewrap">
-    <table class="facttable" id="facttable">
-      <thead><tr><th>Status</th><th>Fact</th><th>Value or reason</th><th>Source</th></tr></thead>
-      <tbody>
-        <tr data-s="discovered"><td><span class="fact d">discovered</span></td><td>Badge prop <code>tone</code></td><td><code>"info" | "warn"</code></td><td><code>src/Badge.tsx:3</code><br><span class="c">compiler-api</span></td></tr>
-        <tr data-s="discovered"><td><span class="fact d">discovered</span></td><td>Button export</td><td><code>Button = forwardRef&lt;HTMLButtonElement, ButtonProps&gt;</code></td><td><code>src/Button.tsx:28</code><br><span class="c">compiler-api</span></td></tr>
-        <tr data-s="documented"><td><span class="fact m">documented</span></td><td>Button description</td><td>Triggers an action.</td><td><code>src/Button.tsx:28</code><br><span class="c">compiler-api</span></td></tr>
-        <tr data-s="inferred"><td><span class="fact i">inferred</span> <span class="c">0.8</span></td><td>Guideline applies to Button</td><td>The file name "Button" is the component name "Button"</td><td><code>src/Button.mdx:1</code><br><span class="c">document-parse</span></td></tr>
-        <tr data-s="inferred"><td><span class="fact i">inferred</span> <span class="c">0.4</span></td><td>Guideline kind</td><td>No keyword in the title or file name identifies a more specific kind of page</td><td><code>src/Button.mdx:1</code><br><span class="c">document-parse</span></td></tr>
-        <tr data-s="approved" class="none"><td><span class="fact a">approved</span></td><td colspan="3">No sample in this fixture. Approval is a named person's decision, recorded in <code>invariant.decisions.json</code>. It is never set automatically.</td></tr>
-      </tbody>
-    </table>
-    </div>
-    <p class="c tnote">The number beside <span class="fact i">inferred</span> is a confidence. Inferred facts are guesses with their reasoning shown. Nothing inferred becomes approved without a person.</p>
+    <p class="c tnote">Confidence is the number on each inferred row. Inferred facts are guesses with their reasoning shown. Nothing inferred becomes approved without a person.</p>
   </div>
 </section>
+-->
 
 <!-- Explore the contract: hidden for now. Uncomment to restore; the explorer:data block below and its build script are unchanged.
 <section id="explorer">
@@ -678,31 +814,57 @@ section .wrap>h2{align-self:start}
 <section id="patterns">
   <div class="wrap">
     <div class="label">UX patterns &amp; layouts</div>
-    <h2>Component libraries don't record how your pages are laid out. Invariant does.</h2>
-    <p class="sub">Knowing which components exist is not enough. Invariant records your page archetypes, layout regions, interaction states and the rules between them as plain JSON. You approve them, and it checks real code against them.</p>
-    <div class="grid g2">
-      <div class="code"><pre><span class="c">// invariant.patterns.json</span>
-{
-  <span class="k">"id"</span>: <span class="ok">"page.detail"</span>,
-  <span class="k">"category"</span>: <span class="ok">"page"</span>,
-  <span class="k">"layout"</span>: { <span class="k">"regions"</span>: [
-    { <span class="k">"name"</span>: <span class="ok">"header"</span>,  <span class="k">"required"</span>: true },
-    { <span class="k">"name"</span>: <span class="ok">"summary"</span>, <span class="k">"required"</span>: true }
-  ]},
-  <span class="k">"variations"</span>: [{ <span class="k">"name"</span>: <span class="ok">"read-only"</span> }],
-  <span class="k">"constraints"</span>: [{
-    <span class="k">"kind"</span>: <span class="ok">"required-state"</span>,
-    <span class="k">"details"</span>: { <span class="k">"workflow"</span>: <span class="ok">"form-submission"</span>,
-                <span class="k">"state"</span>: <span class="ok">"error"</span> }
-  }]
-}</pre></div>
-      <div class="code"><pre class="out"><span class="ln"><span class="p">$ </span>invariant validate app/pages/Bad.tsx</span><span class="ln">app/pages/Bad.tsx:5:5 <span class="b">error</span> pattern-order-violated</span><span class="ln ind">Card at line 4: Card.Body (line 5) comes before Card.Header (line 8); Card.Header must come first (pattern pattern:page.settings)</span><span class="ln ind c">fix: Move Card.Header before Card.Body.</span><span class="ln ind c">evidence invariant.patterns.json (approved); policy policy:page.settings.header-first; subject pattern:page.settings</span><span class="ln"> </span><span class="ln c">…</span><span class="ln"> </span><span class="ln">7 errors, <span class="w">1 warnings</span>, 0 info in 1 files (6 components checked)</span></pre></div>
+    <h2>Invariant finds the layouts you already repeat and checks new code against them.</h2>
+    <p class="sub">Component libraries don't record how your pages are laid out. Point Invariant at your application code. It finds the structures that recur, shows the files and lines, and explains why it flagged them. You accept, reject or defer each one, and promote the good ones into patterns. Approved patterns hold layout regions, interaction states and the rules between them as plain JSON, and <code>validate</code> checks real code against them.</p>
+    <div class="dscanp" aria-label="Illustrative wireframes of four pages being scanned, with the repeated Modal containing Button structure found on each">
+      <div class="term-bar"><span>1 &middot; Find &middot; $ invariant discover app</span><span>illustrative</span></div>
+      <div class="dpgs">
+        <div class="dpg" data-scan="400"><div class="dpgbox"><svg viewBox="0 0 120 140" aria-hidden="true"><rect class="wf-box" x="0.5" y="0.5" width="119" height="139"/><rect class="wf-fill" x="10" y="9" width="40" height="6"/><rect class="wf-fill" x="10" y="20" width="24" height="3"/><rect class="wf-fill" x="10" y="34" width="100" height="6"/><rect class="wf-fill" x="10" y="48" width="100" height="6"/><rect class="wf-fill" x="10" y="62" width="100" height="6"/><rect class="wf-fill" x="10" y="76" width="100" height="6"/><rect class="wf-fill" x="10" y="90" width="100" height="6"/><rect class="wf-fill" x="10" y="104" width="100" height="6"/><rect class="wf-fill" x="10" y="118" width="100" height="6"/><rect class="dmodal" x="24" y="46" width="72" height="62"/><rect class="wf-fill" x="32" y="54" width="34" height="4"/><rect class="wf-fill" x="32" y="64" width="56" height="3"/><rect class="wf-fill" x="32" y="71" width="48" height="3"/><rect class="dbtn" x="62" y="88" width="26" height="12"/><rect class="dhit" data-t="1300" x="21" y="43" width="78" height="68"/></svg><i class="dscan"></i></div><div class="dpgl"><b>pages/Accounts.tsx:11:5</b><span class="dtag" data-t="1300">&lt;Modal&gt; containing Button</span></div></div>
+        <div class="dpg" data-scan="1700"><div class="dpgbox"><svg viewBox="0 0 120 140" aria-hidden="true"><rect class="wf-box" x="0.5" y="0.5" width="119" height="139"/><rect class="wf-fill" x="10" y="9" width="40" height="6"/><rect class="wf-fill" x="10" y="20" width="24" height="3"/><rect class="wf-box" x="10" y="34" width="47" height="40"/><rect class="wf-box" x="63" y="34" width="47" height="40"/><rect class="wf-fill" x="10" y="84" width="100" height="6"/><rect class="wf-fill" x="10" y="98" width="70" height="6"/><rect class="wf-fill" x="10" y="112" width="90" height="6"/><rect class="dmodal" x="24" y="46" width="72" height="62"/><rect class="wf-fill" x="32" y="54" width="34" height="4"/><rect class="wf-fill" x="32" y="64" width="56" height="3"/><rect class="wf-fill" x="32" y="71" width="48" height="3"/><rect class="dbtn" x="62" y="88" width="26" height="12"/><rect class="dhit" data-t="2600" x="21" y="43" width="78" height="68"/></svg><i class="dscan"></i></div><div class="dpgl"><b>pages/Invoices.tsx:11:5</b><span class="dtag" data-t="2600">&lt;Modal&gt; containing Button</span></div></div>
+        <div class="dpg" data-scan="3000"><div class="dpgbox"><svg viewBox="0 0 120 140" aria-hidden="true"><rect class="wf-box" x="0.5" y="0.5" width="119" height="139"/><rect class="wf-fill" x="10" y="9" width="40" height="6"/><rect class="wf-fill" x="10" y="20" width="24" height="3"/><rect class="wf-box" x="10" y="34" width="10" height="10"/><rect class="wf-fill" x="26" y="37" width="84" height="5"/><rect class="wf-box" x="10" y="52" width="10" height="10"/><rect class="wf-fill" x="26" y="55" width="84" height="5"/><rect class="wf-box" x="10" y="70" width="10" height="10"/><rect class="wf-fill" x="26" y="73" width="84" height="5"/><rect class="wf-box" x="10" y="88" width="10" height="10"/><rect class="wf-fill" x="26" y="91" width="84" height="5"/><rect class="wf-box" x="10" y="106" width="10" height="10"/><rect class="wf-fill" x="26" y="109" width="84" height="5"/><rect class="wf-box" x="10" y="124" width="10" height="10"/><rect class="wf-fill" x="26" y="127" width="84" height="5"/><rect class="dmodal" x="24" y="46" width="72" height="62"/><rect class="wf-fill" x="32" y="54" width="34" height="4"/><rect class="wf-fill" x="32" y="64" width="56" height="3"/><rect class="wf-fill" x="32" y="71" width="48" height="3"/><rect class="dbtn" x="62" y="88" width="26" height="12"/><rect class="dhit" data-t="3900" x="21" y="43" width="78" height="68"/></svg><i class="dscan"></i></div><div class="dpgl"><b>pages/Orders.tsx:11:5</b><span class="dtag" data-t="3900">&lt;Modal&gt; containing Button</span></div></div>
+        <div class="dpg" data-scan="4300"><div class="dpgbox"><svg viewBox="0 0 120 140" aria-hidden="true"><rect class="wf-box" x="0.5" y="0.5" width="119" height="139"/><rect class="wf-fill" x="10" y="9" width="40" height="6"/><rect class="wf-fill" x="10" y="20" width="24" height="3"/><rect class="wf-fill" x="12" y="70" width="14" height="50"/><rect class="wf-fill" x="32" y="50" width="14" height="70"/><rect class="wf-fill" x="52" y="84" width="14" height="36"/><rect class="wf-fill" x="72" y="60" width="14" height="60"/><rect class="wf-fill" x="92" y="76" width="14" height="44"/><rect class="dmodal" x="24" y="46" width="72" height="62"/><rect class="wf-fill" x="32" y="54" width="34" height="4"/><rect class="wf-fill" x="32" y="64" width="56" height="3"/><rect class="wf-fill" x="32" y="71" width="48" height="3"/><rect class="dbtn" x="62" y="88" width="26" height="12"/><rect class="dhit" data-t="5200" x="21" y="43" width="78" height="68"/></svg><i class="dscan"></i></div><div class="dpgl"><b>pages/Reports.tsx:12:5</b><span class="dtag" data-t="5200">&lt;Modal&gt; containing Button</span></div></div>
+      </div>
+      <div class="dres">
+        <div class="dstatus c" data-t="5500">5 of 6 files analyzed, 5 candidates written to invariant.candidates.json</div>
+        <div class="dcand" data-t="6200"><span class="c">candidate</span><b>arrangement.d70bb486</b><span>arrangement</span><span class="w">proposed</span><span>files 4</span><span>uses 4</span><span>Modal with Button</span></div>
+      </div>
+      <div class="dfoot" data-t="6900">Four pages, written the same way. Nobody decided that, so it starts as a candidate.</div>
     </div>
-    <div class="grid g3" style="margin-top:16px">
-      <div class="card"><h3>Page archetypes</h3><p>A data page, a detail page, an edit form. Each composes shared patterns, names its regions and lists the variations it allows.</p></div>
-      <div class="card"><h3>Layout and interaction rules</h3><p>Required children, ordering, counts and regions, plus required states like loading, error and confirm for forms, deletes and search.</p></div>
+    <div class="grid g2 pv" style="margin-top:16px" aria-label="Illustrative panels: the accepted Modal with Button candidate becomes an approved pattern with one rule, and a new page with a Modal that has no Button is flagged">
+      <div class="pvp">
+        <div class="term-bar"><span>2 &middot; Approve</span></div>
+        <div class="pvb">
+          <div class="pv-name" data-t="400"><b>Modal with Button</b><span class="c">pattern:page.modal-with-button</span></div>
+          <div class="pv-k" data-t="900">From the candidate</div>
+          <div class="pv-orig c" data-t="900">candidate:arrangement.d70bb486 &middot; 4 files, 4 uses</div>
+          <div class="pv-k" data-t="1400">Parts, both required</div>
+          <div class="pv-chips" data-t="1400"><span>Modal</span><span>Button</span></div>
+          <div class="pv-k" data-t="1900">Starter rule</div>
+          <ul class="pv-rules"><li data-t="1900"><span>Child</span><b>A Modal contains a Button.</b><i>warning</i></li></ul>
+          <div class="pv-tag" data-t="2600"><span class="fact a">approved</span> by maria</div>
+        </div>
+      </div>
+      <div class="pvp">
+        <div class="term-bar"><span>3 &middot; Check in CI</span></div>
+        <div class="pvb">
+          <div class="pv-k" style="margin-top:0;text-transform:none" data-t="3400">app/pages/Settings.tsx</div>
+          <div class="pv-page">
+            <div class="pv-region" data-t="3400"><span>Card</span><i>Card.Header, Card.Body</i></div>
+            <div class="pv-region bad" data-t="3400" data-flag="4100"><span>Modal</span><i>line 9, no Button</i></div>
+          </div>
+          <div class="pv-find" data-t="4700"><span class="w">&#9650;</span> <b>app/pages/Settings.tsx:9:5</b> <span class="c">pattern-required-child-missing</span></div>
+          <p class="pv-msg" data-t="5200">Modal at line 9 has no Button (pattern pattern:page.modal-with-button). Fix: Add Button inside Modal.</p>
+          <div class="pv-tag" data-t="5700"><span class="c">rule</span> policy:page.modal-with-button.modal-has-button <span class="fact a">approved</span></div>
+          <div class="pv-sum" data-t="6200">0 errors, <span class="w">1 warnings</span>, 0 info in 1 files (5 components checked)</div>
+        </div>
+      </div>
+    </div>
+    <div class="grid g3" style="margin-top:26px">
+      <div class="card"><h3>Candidates only</h3><p>Nothing discovered is approved or enforced. Promotion adds an unapproved definition with its provenance, and no rules.</p></div>
+      <div class="card"><h3>A person approves</h3><p>A candidate becomes a pattern only when a named person promotes and approves it. Starter rules restate what the arrangement did every time, such as a parent containing its children, and run as warnings.</p></div>
       <div class="card"><h3>Enforced, not just documented</h3><p>Approved rules become policies that <code>validate</code> checks in CI. Setup can turn on starter rules from the structures it found, as warnings, so you see them work without breaking a build.</p></div>
     </div>
+    <p class="fine">No model is in the loop: the same code gives the same candidates, and your decisions stay attached as files change. Structural overlap is measured and reported. It never claims two pages serve the same purpose.</p>
     <p class="fine">Centralized approval and review of patterns across teams is planned for Team. <a href="#plans" data-wl="patterns">Join the waitlist</a>.</p>
   </div>
 </section>
@@ -730,64 +892,41 @@ section .wrap>h2{align-self:start}
 <section id="ci">
   <div class="wrap">
     <div class="label">Every pull request</div>
-    <h2>Setup can add a GitHub Action that checks each pull request against your contract.</h2>
+    <h2>Add a GitHub Action that checks each pull request against your contract.</h2>
     <p class="sub">Answer yes to the <code>setup</code> plan and it writes a GitHub Action for you. From then on, each commit on an open pull request is checked against your contract, with annotations on the lines that break it.</p>
-    <div class="grid g2">
-      <div class="code"><pre class="out"><span class="ln"><span class="p">$</span> npx @invariant-ui/cli setup --ci</span><span class="ln"><span class="c">...</span></span><span class="ln"><span class="k">◆</span>  Looks right?  <span class="ok">Yes, apply this setup</span></span><span class="ln"><span class="ok">◇</span>  set up</span><span class="ln hang"><span class="c">│</span>  CI         wrote .github/workflows/invariant.yml. Commit it with the invariant/ folder, so CI has</span><span class="ln hang"><span class="c">│</span>  a contract to check against.</span><span class="ln hang"><span class="c">└</span>  <span class="ok">done in 1s</span></span></pre></div>
-      <div class="code"><pre class="out wide"><span class="ln c"># Added by `invariant setup`. Checks every commit on a pull request against your design system contract.</span><span class="ln" style="padding-left:6ch;text-indent:-6ch"><span class="k">name</span>: Invariant</span><span class="ln"><span class="k">on</span>:</span><span class="ln">  <span class="k">pull_request</span>:</span><span class="ln" style="padding-left:11ch;text-indent:-7ch"><span class="k">types</span>: [opened, synchronize, reopened]</span><span class="ln"><span class="k">jobs</span>:</span><span class="ln">  <span class="k">invariant</span>:</span><span class="ln" style="padding-left:13ch;text-indent:-9ch"><span class="k">runs-on</span>: ubuntu-latest</span><span class="ln">    <span class="k">steps</span>:</span><span class="ln" style="padding-left:14ch;text-indent:-8ch">- <span class="k">name</span>: Verify the contract is current</span><span class="ln" style="padding-left:13ch;text-indent:-5ch"><span class="k">run</span>: npx @invariant-ui/cli@0.19.0 verify --fresh</span><span class="ln" style="padding-left:14ch;text-indent:-8ch">- <span class="k">name</span>: Validate code against the contract</span><span class="ln" style="padding-left:13ch;text-indent:-5ch"><span class="k">run</span>: npx @invariant-ui/cli@0.19.0 validate 'app' --format github</span><span class="ln" style="padding-left:14ch;text-indent:-8ch">- <span class="k">name</span>: Upload the Invariant report</span><span class="ln" style="padding-left:12ch;text-indent:-4ch"><span class="k">if</span>: always()</span><span class="ln" style="padding-left:14ch;text-indent:-6ch"><span class="k">uses</span>: actions/upload-artifact@v4</span><span class="ln">        <span class="k">with</span>:</span><span class="ln" style="padding-left:16ch;text-indent:-6ch"><span class="k">name</span>: invariant-report</span><span class="ln" style="padding-left:16ch;text-indent:-6ch"><span class="k">path</span>: 'invariant/invariant.report.html'</span><span class="ln c">      ...</span></pre></div>
+    <div class="gha" aria-label="Illustrative GitHub Actions run of the Invariant workflow, with the validate step failing">
+      <div class="term-bar"><span>Pull request #42 &middot; Checks &middot; Invariant</span></div>
+      <div class="gha-body">
+        <div class="gha-side">
+          <div class="gha-k">Workflow</div>
+          <div class="gha-wf"><b>Invariant</b><span>on: pull_request</span></div>
+          <div class="gha-k">Jobs</div>
+          <div class="gha-job"><span class="b">&#10007;</span> invariant <span class="c">failed</span></div>
+        </div>
+        <div class="gha-main">
+          <div class="gha-k">invariant</div>
+          <ul class="gha-steps">
+            <li><span class="ok">&#10003;</span> Set up job</li>
+            <li><span class="ok">&#10003;</span> Run actions/checkout@v4</li>
+            <li><span class="ok">&#10003;</span> Run actions/setup-node@v4</li>
+            <li><span class="ok">&#10003;</span> Run npm ci</li>
+            <li><span class="ok">&#10003;</span> Verify the contract is current</li>
+            <li class="open"><span class="b">&#10007;</span> Validate code against the contract</li>
+            <li class="log"><pre class="out"><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:5 <span class="c">pattern-order-violated</span></span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">pattern-parent-required</span></span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">required-prop-missing</span></span><span class="ln c">&hellip;and 5 more annotations</span></pre></li>
+            <li><span class="ok">&#10003;</span> Upload the Invariant report <span class="c">if: always()</span></li>
+            <li><span class="ok">&#10003;</span> Link the Invariant report from the run summary</li>
+            <li><span class="ok">&#10003;</span> Complete job</li>
+          </ul>
+        </div>
+      </div>
+      <div class="gennote"><code>npx @invariant-ui/cli setup --ci</code> writes this workflow to <code>.github/workflows/invariant.yml</code>. Commit it with the invariant/ folder, so CI has a contract to check against.</div>
     </div>
-    <div class="pr" aria-label="Illustrative pull request with the Invariant check, animated">
-      <div class="prhead gx g1"><span class="prtitle"><b>Move Card.Header above Card.Body</b> <span>#42</span></span><span class="c prtag">illustrative</span></div>
-      <div class="prrow gx g1"><b>invariant</b>
-        <span class="sl"><span class="gx grun w">&#9679; running</span><span class="gx gfail b">&#10007; failed</span><span class="gx grun2 w">&#9679; running</span><span class="gx gpass ok">&#10003; passed</span></span>
-        <span class="sum"><span class="gx gfail" style="position:absolute">7 errors, 1 warning</span><span class="gx gpass">no violations</span></span>
-        <span class="c prtag">validate app --format github</span></div>
-      <div class="prann"><div class="gx gpassnote c">No new violations against the contract. The merge is no longer blocked.</div><pre class="out gx gan"><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:5 <span class="c">pattern-order-violated</span></span><span class="ln ind c">Card at line 4: Card.Body (line 5) comes before Card.Header (line 8); Card.Header must come first (pattern pattern:page.settings). Fix: Move Card.Header before Card.Body.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">pattern-parent-required</span></span><span class="ln ind c">IconButton at line 6 must be inside Stack, but sits inside Card.Body instead (pattern pattern:page.settings). Fix: Wrap it in Stack.</span><span class="ln"><span class="b">&#10007;</span> app/pages/Bad.tsx:6 <span class="c">required-prop-missing</span></span><span class="ln ind c">IconButton requires the prop "label". Fix: Add label (string).</span><span class="ln c">&hellip;and 5 more annotations</span></pre></div>
-      <div class="prcommit gx gcm"><b>new commit</b> Fix card order and add the label <span class="c prtag">pushed &middot; check runs again</span></div>
-      <div class="prmerge gmerge"><span class="mbtn">Merge pull request</span><span style="position:relative;display:inline-block;min-width:min(34ch,100%);height:1.4em"><span class="c gx gblk" style="position:absolute">Blocked while a required check fails.</span><span class="c gx gok">Ready to merge.</span></span></div>
-    </div>
-    <div class="grid g3" style="margin-top:16px">
+    <div class="grid g3" style="margin-top:26px">
       <div class="card"><h3>New problems only</h3><p>Existing violations are baselined, so a pull request is checked on what it adds, not on history.</p></div>
       <div class="card"><h3>Stale contract caught</h3><p><code>verify --fresh</code> fails when the committed contract no longer matches your sources, or was edited by hand.</p></div>
       <div class="card"><h3>Pinned and read-only</h3><p>The job pins the exact version and asks for read access only. A later release can't change what your CI does.</p></div>
     </div>
     <p class="fine">Running this across several repositories, with shared policy and exception management, is planned for Team. <a href="#plans" data-wl="ci">Join the waitlist</a>.</p>
-  </div>
-</section>
-
-<section id="discover">
-  <div class="wrap">
-    <div class="label">Discover</div>
-    <h2>Point it at your app code and it lists the layouts and structures you already repeat.</h2>
-    <p class="sub">Point Invariant at your application code. It finds the structures that recur, shows the files and lines, and explains why it flagged them. You accept, reject or defer each one, and promote the good ones into your patterns.</p>
-    <div class="dgrid" aria-label="Real output of invariant discover on the pattern-discovery fixture">
-      <div class="dpanel">
-        <div class="term-bar"><span>app/pages</span><span>4 files</span></div>
-        <div class="drow">pages/Accounts.tsx:11:5<small>&lt;Modal&gt; containing Button</small></div>
-        <div class="drow">pages/Invoices.tsx:11:5<small>&lt;Modal&gt; containing Button</small></div>
-        <div class="drow">pages/Orders.tsx:11:5<small>&lt;Modal&gt; containing Button</small></div>
-        <div class="drow">pages/Reports.tsx:12:5<small>&lt;Modal&gt; containing Button</small></div>
-        <div class="dfoot">Four pages, written the same way. Nobody decided that, so it starts as a candidate.</div>
-      </div>
-      <div class="term">
-        <div class="term-bar">~/your-project</div>
-<pre class="nowrap"><span class="p">$ </span>invariant discover app
-5 of 6 files analyzed, 5 candidates written to
-  invariant.candidates.json
-<span class="p">$ </span>invariant candidates list
-<span class="c">id                      kind           status    files  uses  name</span>
-arrangement.d70bb486    arrangement    <span class="w">proposed</span>  4      4     Modal with Button
-<span class="c">…</span>
-<span class="p">$ </span>invariant candidates accept arrangement.d70bb486 --as maria
-accepted candidate:arrangement.d70bb486, recorded in
-  invariant.candidate-reviews.json.</pre>
-      </div>
-    </div>
-    <div class="grid g3">
-      <div class="card"><h3>Candidates only</h3><p>Nothing discovered is approved or enforced. Promotion adds an unapproved definition with its provenance, and no rules.</p></div>
-      <div class="card"><h3>Similar is not the same</h3><p>Structural overlap is measured and reported. It never claims two pages serve the same purpose.</p></div>
-      <div class="card"><h3>Deterministic</h3><p>No model in the loop. The same code gives the same candidates, and your decisions stay attached as files change.</p></div>
-    </div>
   </div>
 </section>
 
@@ -981,20 +1120,13 @@ invariant --help</pre></div>
     <div class="label">FAQ</div>
     <h2>Questions people ask before installing.</h2>
     <div class="faq">
-      <h3>What is Invariant?</h3>
-      <p>Invariant is a source-available command-line tool that compiles a design system (components, props, tokens) and the UX patterns a team approves into one machine-readable JSON contract. AI coding agents read the contract before they write UI, and Invariant checks the resulting code against it in CI.</p>
-      <h3>How do I make an AI coding agent follow my design system?</h3>
-      <p>Run npx @invariant-ui/cli setup in the project that holds your design system. Invariant compiles a contract, connects your AI tool (Claude Code, Cursor, Codex or Windsurf) through a read-only MCP server, and adds a CI check. The agent looks up real components, props and tokens instead of guessing, and invariant validate flags code that departs from them.</p>
-      <h3>Does Invariant use an LLM to read my design system?</h3>
-      <p>No. Components, props, events, default values and token values are extracted statically from source code, so an LLM is never the authority for them. Anything inferred is labeled inferred with a confidence, and nothing becomes an approved rule until a person approves it.</p>
-      <h3>Which frameworks and design-system sources does it support?</h3>
-      <p>React, Vue, Angular, Storybook and design token files. Figma and zeroheight are not supported yet. Pattern checks and pattern discovery read React only, and browser verification is early.</p>
-      <h3>Does Invariant send my code anywhere?</h3>
-      <p>No. It runs locally with no account and no network access. Source is parsed and never executed, unless you explicitly pass --trust-config for a code configuration.</p>
-      <h3>How is Invariant different from a Figma or Storybook MCP server?</h3>
-      <p>Those servers expose one source. Invariant reconciles several sources (code, Storybook, tokens) into one contract, keeps the file and line behind every fact, reports conflicts between sources instead of choosing silently, and then enforces the contract on pull requests. It also holds the page layouts and interaction rules your team approves, which component libraries do not record.</p>
-      <h3>What does Invariant cost and what is the license?</h3>
-      <p>The CLI is free to run. A hosted plan for teams is planned and has a waitlist; it is not available to buy yet. The license is the Functional Source License (FSL-1.1-ALv2): you can read, run, modify and use it inside your company, but not use it to offer a competing product or service. Each version becomes Apache-2.0 two years after release.</p>
+      <details><summary><h3>What is Invariant?</h3></summary><p>Invariant is a source-available command-line tool that compiles a design system (components, props, tokens) and the UX patterns a team approves into one machine-readable JSON contract. AI coding agents read the contract before they write UI, and Invariant checks the resulting code against it in CI.</p></details>
+      <details><summary><h3>How do I make an AI coding agent follow my design system?</h3></summary><p>Run npx @invariant-ui/cli setup in the project that holds your design system. Invariant compiles a contract, connects your AI tool (Claude Code, Cursor, Codex or Windsurf) through a read-only MCP server, and adds a CI check. The agent looks up real components, props and tokens instead of guessing, and invariant validate flags code that departs from them.</p></details>
+      <details><summary><h3>Does Invariant use an LLM to read my design system?</h3></summary><p>No. Components, props, events, default values and token values are extracted statically from source code, so an LLM is never the authority for them. Anything inferred is labeled inferred with a confidence, and nothing becomes an approved rule until a person approves it.</p></details>
+      <details><summary><h3>Which frameworks and design-system sources does it support?</h3></summary><p>React, Vue, Angular, Storybook and design token files. Figma and zeroheight are not supported yet. Pattern checks and pattern discovery read React only, and browser verification is early.</p></details>
+      <details><summary><h3>Does Invariant send my code anywhere?</h3></summary><p>No. It runs locally with no account and no network access. Source is parsed and never executed, unless you explicitly pass --trust-config for a code configuration.</p></details>
+      <details><summary><h3>How is Invariant different from a Figma or Storybook MCP server?</h3></summary><p>Those servers expose one source. Invariant reconciles several sources (code, Storybook, tokens) into one contract, keeps the file and line behind every fact, reports conflicts between sources instead of choosing silently, and then enforces the contract on pull requests. It also holds the page layouts and interaction rules your team approves, which component libraries do not record.</p></details>
+      <details><summary><h3>What does Invariant cost and what is the license?</h3></summary><p>The CLI is free to run. A hosted plan for teams is planned and has a waitlist; it is not available to buy yet. The license is the Functional Source License (FSL-1.1-ALv2): you can read, run, modify and use it inside your company, but not use it to offer a competing product or service. Each version becomes Apache-2.0 two years after release.</p></details>
     </div>
   </div>
 </section>
@@ -1120,13 +1252,6 @@ invariant --help</pre></div>
     document.getElementById('clientname').textContent = b.dataset.c;
   }));
 
-  var flts = Array.from(document.querySelectorAll('#factfilters .flt'));
-  flts.forEach((f) => f.addEventListener('click', () => {
-    flts.forEach((g) => g.setAttribute('aria-pressed', g === f));
-    document.querySelectorAll('#facttable tbody tr').forEach((r) => {
-      r.hidden = f.dataset.s !== 'all' && r.dataset.s !== f.dataset.s;
-    });
-  }));
 
 })();
 </script>
@@ -1179,6 +1304,109 @@ b.onclick=function(){var n=cur()==="light"?"dark":"light";r.dataset.theme=n;try{
 m.addEventListener("change",paint);paint()})();
 </script>
 <script>
+// Fact status section: rows fill their lanes, the inferred 0.8 row asks to be approved and is blocked at a gate, then a named person's decision passes it. Loops. Static final state without JavaScript or with reduced motion.
+(function(){
+  var g=document.querySelector(".lad");if(!g)return;
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  if(!("IntersectionObserver" in window))return;
+  var items=[].slice.call(g.querySelectorAll("[data-t]")),hot=g.querySelector("[data-hot]"),gate=g.querySelector("[data-pass]"),timers=[];
+  function later(ms,fn){timers.push(setTimeout(fn,ms))}
+  function stop(){timers.forEach(clearTimeout);timers=[]}
+  function reset(){items.forEach(function(e){e.classList.add("d-off")});hot.classList.remove("hot");gate.classList.remove("pass")}
+  function done(){items.forEach(function(e){e.classList.remove("d-off")});hot.classList.remove("hot");gate.classList.add("pass")}
+  function play(){
+    stop();reset();
+    items.forEach(function(e){later(+e.getAttribute("data-t"),function(){e.classList.remove("d-off")})});
+    later(+hot.getAttribute("data-hot"),function(){hot.classList.add("hot")});
+    later(+gate.getAttribute("data-pass"),function(){gate.classList.add("pass")});
+    later(14000,play)
+  }
+  new IntersectionObserver(function(e){if(e[0].isIntersecting)play();else{stop();done()}},{threshold:.3}).observe(g)
+})();
+// Patterns section: find. A scan line crosses each page wireframe, the repeated Modal containing Button is outlined on each, then the candidate row appears and it loops. Static final state without JavaScript or with reduced motion.
+(function(){
+  var g=document.querySelector(".dscanp");if(!g)return;
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  if(!("IntersectionObserver" in window))return;
+  var items=[].slice.call(g.querySelectorAll("[data-t]")),pages=[].slice.call(g.querySelectorAll("[data-scan]")),timers=[];
+  function later(ms,fn){timers.push(setTimeout(fn,ms))}
+  function stop(){timers.forEach(clearTimeout);timers=[]}
+  function reset(){items.forEach(function(e){e.classList.add("d-off")});pages.forEach(function(p){p.classList.remove("scan")})}
+  function done(){items.forEach(function(e){e.classList.remove("d-off")});pages.forEach(function(p){p.classList.remove("scan")})}
+  function play(){
+    stop();reset();
+    items.forEach(function(e){later(+e.getAttribute("data-t"),function(){e.classList.remove("d-off")})});
+    pages.forEach(function(p){later(+p.getAttribute("data-scan"),function(){p.classList.add("scan")})});
+    later(12000,play)
+  }
+  new IntersectionObserver(function(e){if(e[0].isIntersecting)play();else{stop();done()}},{threshold:.3}).observe(g)
+})();
+// Problem section: the wireframe looks fine at first, then the three problems get flagged one by one, then it loops. Static final state without JavaScript or with reduced motion.
+(function(){
+  var g=document.querySelector(".gen .wf");if(!g)return;
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  if(!("IntersectionObserver" in window))return;
+  var items=[].slice.call(g.querySelectorAll("[data-t]")),flags=[].slice.call(g.querySelectorAll("[data-flag]")),timers=[];
+  function later(ms,fn){timers.push(setTimeout(fn,ms))}
+  function stop(){timers.forEach(clearTimeout);timers=[]}
+  function reset(){items.forEach(function(e){e.classList.add("wf-off")});flags.forEach(function(e){e.classList.remove("wf-bad")})}
+  function done(){items.forEach(function(e){e.classList.remove("wf-off")});flags.forEach(function(e){e.classList.add("wf-bad")})}
+  function play(){
+    stop();reset();
+    items.forEach(function(e){later(+e.getAttribute("data-t"),function(){e.classList.remove("wf-off")})});
+    flags.forEach(function(e){later(+e.getAttribute("data-flag"),function(){e.classList.add("wf-bad")})});
+    later(9500,play)
+  }
+  new IntersectionObserver(function(e){if(e[0].isIntersecting)play();else{stop();done()}},{threshold:.3}).observe(g)
+})();
+// Patterns section: the two panels build up in order (approved pattern, failed check), then loop. Static final state without JavaScript or with reduced motion.
+(function(){
+  var g=document.querySelector(".pv");if(!g)return;
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  if(!("IntersectionObserver" in window))return;
+  var items=[].slice.call(g.querySelectorAll("[data-t]")),flags=[].slice.call(g.querySelectorAll("[data-flag]")),timers=[],END=6200;
+  function later(ms,fn){timers.push(setTimeout(fn,ms))}
+  function stop(){timers.forEach(clearTimeout);timers=[]}
+  function reset(){items.forEach(function(e){e.classList.add("pv-off")});flags.forEach(function(e){e.classList.remove("bad")})}
+  function done(){items.forEach(function(e){e.classList.remove("pv-off")});flags.forEach(function(e){e.classList.add("bad")})}
+  function play(){
+    stop();reset();
+    items.forEach(function(e){later(+e.getAttribute("data-t"),function(){e.classList.remove("pv-off")})});
+    flags.forEach(function(e){later(+e.getAttribute("data-flag"),function(){e.classList.add("bad")})});
+    later(END+5000,play)
+  }
+  new IntersectionObserver(function(e){if(e[0].isIntersecting)play();else{stop();done()}},{threshold:.3}).observe(g)
+})();
+// Pull request section: GitHub Actions run mock. Steps run one by one, the validate step fails, then it loops. Static final state without JavaScript or with reduced motion.
+(function(){
+  var g=document.querySelector(".gha");if(!g)return;
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  if(!("IntersectionObserver" in window))return;
+  var steps=[].slice.call(g.querySelectorAll(".gha-steps>li:not(.log)")),log=g.querySelector(".gha-steps .log"),jm=g.querySelector(".gha-job span:first-child"),js=g.querySelector(".gha-job .c"),timers=[];
+  var FAIL=5,STEP=700;
+  function mark(li,cls,ch){var m=li.firstElementChild;m.className=cls;m.textContent=ch}
+  function job(cls,ch,txt){jm.className=cls;jm.textContent=ch;js.textContent=txt}
+  function later(ms,fn){timers.push(setTimeout(fn,ms))}
+  function stop(){timers.forEach(clearTimeout);timers=[]}
+  // Keep the panel at its final height so the log opening pushes nothing outside it.
+  var main=g.querySelector(".gha-main");
+  function fit(){var d=log.style.display;main.style.minHeight="";log.style.display="";main.style.minHeight=main.offsetHeight+"px";log.style.display=d}
+  fit();addEventListener("resize",fit);
+  function reset(){steps.forEach(function(li){mark(li,"pend","\u25CB")});log.style.display="none";job("w","\u25CF","running")}
+  function done(){steps.forEach(function(li,i){mark(li,i===FAIL?"b":"ok",i===FAIL?"\u2717":"\u2713")});log.style.display="";job("b","\u2717","failed")}
+  function play(){
+    stop();reset();
+    steps.forEach(function(li,i){
+      later(i*STEP,function(){mark(li,"w","\u25CF")});
+      later(i*STEP+STEP-100,function(){
+        if(i===FAIL){mark(li,"b","\u2717");log.style.display="";job("b","\u2717","failed")}
+        else mark(li,"ok","\u2713")
+      })
+    });
+    later(steps.length*STEP+5000,play)
+  }
+  new IntersectionObserver(function(e){if(e[0].isIntersecting)play();else{stop();done()}},{threshold:.3}).observe(g)
+})();
 // Hero: rotates build with / verify against / enforce. Stays on "enforce" without JavaScript or with reduced motion.
 (function(){var r=document.getElementById("rot");if(!r||(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches))return;
 var w=r.children,i=0;
