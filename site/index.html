@@ -408,7 +408,8 @@ nav{backdrop-filter:none}
 .btn.primary{background:var(--text);border-color:var(--text);color:var(--bg)}
 .btn.primary:hover{filter:none;background:var(--text)}
 h1,h2{font-family:var(--serif);font-weight:500;letter-spacing:-.015em}
-h1{font-size:clamp(38px,6.2vw,68px);line-height:1.04}
+h1{font-size:clamp(16px,calc((100vw - 40px)/15.5),64px);line-height:1.08;text-wrap:balance}
+@media(max-width:600px){h1{font-size:clamp(20px,calc((100vw - 40px)/11.5),48px)}}
 .rot{display:inline-grid;overflow:hidden;white-space:nowrap;padding-bottom:.14em;margin-bottom:-.14em}
 .rot>span{grid-area:1/1;opacity:0;transform:translateY(70%);transition:transform .6s cubic-bezier(.2,.8,.2,1),opacity .45s ease}
 .rot>span.on{opacity:1;transform:none}
@@ -536,8 +537,8 @@ section .wrap>h2{align-self:start}
 
 <header class="hero" id="top">
   <div class="wrap">
-    <h1>Stop AI coding agents from inventing props, bypassing tokens, and breaking your UX patterns.</h1>
-    <p class="lead">Compile your React, Vue, Angular, Storybook, and tokens into one deterministic MCP contract and block drift on every PR. Free, local CLI.</p>
+    <h1>Stop AI coding agents from inventing props, bypassing tokens, and breaking <em>your UX patterns</em>.</h1>
+    <p class="lead">Compile your design system's components, tokens and UX patterns into a deterministic contract that agents enforce and every PR is checked against. Free, local CLI.</p>
     <div class="install">
       <span class="p" aria-hidden="true">$</span><code id="installcmd">npx @invariant-ui/cli setup</code>
       <button class="copy" type="button" id="copybtn" aria-label="Copy install command">Copy</button>
